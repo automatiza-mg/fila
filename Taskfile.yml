@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+dotenv: ['.env']
+
+vars:
+  BINARY_NAME: server
+  MAIN_PATH: cmd/server/*.go
+  BUILD_DIR: "bin"
+  DB_URL: postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_HOST}}:{{.POSTGRES_PORT}}/{{.POSTGRES_DB}}
+  MIGRATIONS_DIR: migrations
+
+tasks:
+  migrate:up:
+    desc: Aplica as migrações do banco de dados (Up)
+    cmds:
+      - goose -dir {{.MIGRATIONS_DIR}} postgres "{{.DB_URL}}" up
+    silent: true
+
+  migrate:down:
+    desc: Reverte a última migração do banco de dados (Down)
+    cmds:
+      - goose -dir {{.MIGRATIONS_DIR}} postgres "{{.DB_URL}}" down
+    silent: true
+
+  server:build:
+    desc: Compila a aplicação
+    sources:
+      - ./**/*.go
+    generates:
+      - "{{.BUILD_DIR}}/{{.BINARY_NAME}}"
+    cmds:
+      - go build -o {{.BUILD_DIR}}/{{.BINARY_NAME}} {{.MAIN_PATH}}
+    silent: true
+
+  server:run:
+    desc: Compila e executa a aplicação
+    deps: ['server:build']
+    cmds:
+      - "{{.BUILD_DIR}}/{{.BINARY_NAME}}"
+    silent: true
+
+  server:watch:
+    cmds:
+      - reflex -r '\.go$|\.env$' -d none -s task server:run

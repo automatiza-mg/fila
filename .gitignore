@@ -1,0 +1,11 @@
+bin
+node_modules
+.idea
+.task
+.cursor
+.vscode
+.DS_Store
+
+.env
+.env.*
+!.env.example

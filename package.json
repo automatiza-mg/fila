@@ -1,0 +1,17 @@
+{
+  "name": "fila",
+  "private": true,
+  "scripts": {
+    "test": "vitest"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.18",
+    "concurrently": "^9.2.1",
+    "prettier": "^3.8.1",
+    "prettier-plugin-go-template": "^0.0.15",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "tailwindcss": "^4.1.18",
+    "vitest": "^4.0.18"
+  }
+}

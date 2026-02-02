@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {{with .HTMLTitle}}{{printf "%s - " .}}{{end}}Fila Aposentadoria
+    </title>
+  </head>
+  <body>
+    {{block "pre-content" .}}{{end}}
+    {{template "content" .}}
+    {{block "post-content" .}}{{end}}
+  </body>
+</html>
