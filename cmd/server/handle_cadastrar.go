@@ -93,8 +93,7 @@ func (app *application) handleCadastrarPost(w http.ResponseWriter, r *http.Reque
 
 	// Atualiza os dados do usuário, finalizando o cadastro.
 	usuario.EmailVerificado = true
-	err = usuario.SetSenha(form.Senha)
-	if err != nil {
+	if err := usuario.SetSenha(form.Senha); err != nil {
 		app.serverError(w, r, err)
 		return
 	}
@@ -109,15 +108,13 @@ func (app *application) handleCadastrarPost(w http.ResponseWriter, r *http.Reque
 	store := app.store.WithTx(tx)
 
 	// Salva os dados do usuário
-	err = store.UpdateUsuario(ctx, usuario)
-	if err != nil {
+	if err := store.UpdateUsuario(ctx, usuario); err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
 	// Remove os tokens
-	err = store.DeleteTokensUsuario(ctx, usuario.ID, database.EscopoSetup)
-	if err != nil {
+	if err := store.DeleteTokensUsuario(ctx, usuario.ID, database.EscopoSetup); err != nil {
 		app.serverError(w, r, err)
 		return
 	}
