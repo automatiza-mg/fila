@@ -20,6 +20,13 @@ var (
 	ErrNoPassword = errors.New("user has no password")
 )
 
+const (
+	PapelAdmin         = "ADMIN"
+	PapelSubsecretario = "SUBSECRETARIO"
+	PapelGestor        = "GESTOR"
+	PapelAnalista      = "ANALISTA"
+)
+
 // Anonymous representa um usuário não autenticado
 var Anonymous = &Usuario{}
 
@@ -53,6 +60,22 @@ func (u *Usuario) SetSenha(senha string) error {
 	}
 	u.HashSenha = sql.Null[string]{V: string(hashSenha), Valid: true}
 	return nil
+}
+
+// HasPapel reporta se o usuário possui determinado papel.
+func (u *Usuario) HasPapel(papel string) bool {
+	if !u.Papel.Valid {
+		return false
+	}
+	return u.Papel.V == papel
+}
+
+// SetPapel define o papel do usuário.
+func (u *Usuario) SetPapel(papel string) {
+	u.Papel = sql.Null[string]{
+		V:     papel,
+		Valid: true,
+	}
 }
 
 // CheckSenha verifica se a senha informada equivale ao campo HashSenha do usuário.

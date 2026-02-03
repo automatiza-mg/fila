@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #00183b;
+  --color-secondary: #59a1ba;
+  --color-accent: #f13054;
+  --color-background: #fafaf9;
+  --color-foreground: #1c1917;
+  --color-muted-foreground: #44403b;
+
+  --font-sans: "Inter", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply text-foreground bg-background;
+  }
+}
+
+@layer components {
+  .form-control {
+    @apply rounded-xl border border-stone-200 px-3 py-2 shadow-xs;
+    @apply focus-visible:border-secondary focus-visible:ring-secondary/50 outline-none focus-visible:ring-3;
+  }
+}

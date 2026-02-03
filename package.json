@@ -2,7 +2,9 @@
   "name": "fila",
   "private": true,
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "tw:watch": "tailwindcss -i web/input.css -o web/static/css/style.css --minify --watch",
+    "tw:build": "tailwindcss -i web/input.css -o web/static/css/style.css --minify"
   },
   "type": "module",
   "devDependencies": {

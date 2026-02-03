@@ -1,0 +1,79 @@
+{{define "content"}}
+  <main class="flex min-h-svh flex-col items-center justify-center p-6">
+    <section class="mx-auto w-full max-w-lg space-y-8">
+      <h1 class="text-center text-2xl font-semibold">Adicionar Usuário</h1>
+
+      {{template "usuarios/criar-form" .}}
+    </section>
+  </main>
+{{end}}
+
+{{define "usuarios/criar-form"}}
+  <form
+    hx-post="/gestor/usuarios/criar"
+    hx-swap="outerHTML"
+    class="flex flex-col gap-8"
+  >
+    <div class="space-y-4">
+      <div class="grid gap-1">
+        <label for="nome" class="w-fit font-medium">Nome</label>
+        <input
+          id="nome"
+          type="text"
+          name="nome"
+          class="form-control"
+          required
+          maxlength="255"
+          value="{{.Form.Nome}}"
+        />
+      </div>
+
+      <div class="grid gap-1">
+        <label for="cpf" class="w-fit font-medium">CPF</label>
+        <input
+          id="cpf"
+          type="text"
+          name="cpf"
+          class="form-control"
+          data-format="cpf"
+          required
+          minlength="14"
+          value="{{.Form.CPF}}"
+        />
+      </div>
+
+      <div class="grid gap-1">
+        <label for="email" class="w-fit font-medium">Email</label>
+        <input
+          id="email"
+          type="email"
+          name="email"
+          class="form-control"
+          required
+          maxlength="255"
+          value="{{.Form.Email}}"
+        />
+        <span class="text-muted-foreground text-sm">
+          Um link de conclusão do cadastro será enviado a esse email.
+        </span>
+      </div>
+
+      <div class="grid gap-1">
+        <label for="papel">Papel</label>
+        <select name="papel" id="papel" class="form-control" required>
+          {{range .PapelOptions}}
+            <option value="{{.Value}}" {{if .Selected}}selected{{end}}>
+              {{.Label}}
+            </option>
+          {{end}}
+        </select>
+      </div>
+    </div>
+
+    <button
+      class="bg-primary text-background rounded-xl px-4 py-2 font-semibold"
+    >
+      Enviar
+    </button>
+  </form>
+{{end}}
