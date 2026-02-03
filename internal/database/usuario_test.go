@@ -24,7 +24,33 @@ func seedUsuario(t *testing.T, store *Store) *Usuario {
 	return usuario
 }
 
-func TestUserLifecycle(t *testing.T) {
+func TestUsuario_Senha(t *testing.T) {
+	t.Parallel()
+
+	var usuario Usuario
+	err := usuario.SetSenha("foobar")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	matches, err := usuario.CheckSenha("foobar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !matches {
+		t.Fatal("want: true, got: false")
+	}
+
+	matches, err = usuario.CheckSenha("foobarx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if matches {
+		t.Fatal("want: false, got: true")
+	}
+}
+
+func TTestUsuario_Lifecycle(t *testing.T) {
 	t.Parallel()
 
 	store := newTestStore(t)
@@ -65,7 +91,7 @@ func TestUserLifecycle(t *testing.T) {
 	}
 }
 
-func TestUser_EmailTaken(t *testing.T) {
+func TestUsuario_EmailTaken(t *testing.T) {
 	t.Parallel()
 
 	store := newTestStore(t)
@@ -82,7 +108,7 @@ func TestUser_EmailTaken(t *testing.T) {
 	}
 }
 
-func TestUser_CPFTaken(t *testing.T) {
+func TestUsuario_CPFTaken(t *testing.T) {
 	t.Parallel()
 
 	store := newTestStore(t)

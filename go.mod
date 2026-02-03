@@ -11,6 +11,7 @@ require (
 	github.com/ory/dockertest/v3 v3.12.0
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/redis/go-redis/v9 v9.17.3
+	golang.org/x/crypto v0.40.0
 )
 
 require (

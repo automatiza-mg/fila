@@ -8,14 +8,20 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
 	// ErrUsuarioCPFTaken é o erro retornado ao tentar salvar um usuário com CPF duplicado.
-	ErrUsuarioCPFTaken = errors.New("duplicate usuario cpf")
+	ErrUsuarioCPFTaken = errors.New("duplicate user cpf")
 	// ErrUsuarioEmailTaken é o erro retornado ao tentar salvar um usuário com Email duplicado.
-	ErrUsuarioEmailTaken = errors.New("duplicate usuario email")
+	ErrUsuarioEmailTaken = errors.New("duplicate user email")
+	// ErrNoPassword é o erro retornado quando não é possível verificar a senha de um usuário que não possui uma.
+	ErrNoPassword = errors.New("user has no password")
 )
+
+// Anonymous representa um usuário não autenticado
+var Anonymous = &Usuario{}
 
 type Usuario struct {
 	ID              int64
@@ -27,6 +33,43 @@ type Usuario struct {
 	Papel           sql.Null[string]
 	CriadoEm        time.Time
 	AtualizadoEm    time.Time
+}
+
+// IsAnonymous reporta se o usuário é anônimo (não autenticado).
+func (u *Usuario) IsAnonymous() bool {
+	return u == Anonymous
+}
+
+// HasSenha reporta se o usuário possui uma senha.
+func (u *Usuario) HasSenha() bool {
+	return u.HashSenha.Valid
+}
+
+// SetSenha faz o hash e atribui ao usuário.
+func (u *Usuario) SetSenha(senha string) error {
+	hashSenha, err := bcrypt.GenerateFromPassword([]byte(senha), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	u.HashSenha = sql.Null[string]{V: string(hashSenha), Valid: true}
+	return nil
+}
+
+// CheckSenha verifica se a senha informada equivale ao campo HashSenha do usuário.
+// Caso o usuário não possua uma senha, retorna [ErrNoPassword].
+func (u *Usuario) CheckSenha(senha string) (bool, error) {
+	if !u.HashSenha.Valid {
+		return false, ErrNoPassword
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(u.HashSenha.V), []byte(senha))
+	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // SaveUsuario adiciona o usuário ao banco de dados. Retorna [ErrUsuarioCPFTaken] e [ErrUsuarioEmailTaken]
