@@ -1,0 +1,43 @@
+{{define "content"}}
+  <main class="mx-auto max-w-5xl p-6">
+    <section class="space-y-6">
+      <div class="flex justify-end">
+        <a class="btn-primary" href="/gestor/usuarios/criar">Novo Usuário</a>
+      </div>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-stone-300">
+            <th class="px-2 py-1 text-left">Nome</th>
+            <th class="px-2 py-1 text-left">CPF</th>
+            <th class="px-2 py-1 text-left">Email</th>
+            <th class="px-2 py-1 text-left">Papel</th>
+            <th class="px-2 py-2 text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range $u := .Usuarios}}
+            <tr>
+              <td class="px-2 py-1">{{$u.Nome}}</td>
+              <td class="px-2 py-1">{{$u.CPF}}</td>
+              <td class="px-2 py-1">{{$u.Email}}</td>
+              <td class="px-2 py-1">
+                {{if $u.Papel.Valid}}
+                  {{$u.Papel.V}}
+                {{else}}
+                  Não possui
+                {{end}}
+              </td>
+              <td class="flex items-center justify-end px-2 py-1">
+                <a
+                  href="/gestor/usuarios/{{$u.ID}}"
+                  class="text-primary underline"
+                  >Detalhes</a
+                >
+              </td>
+            </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </section>
+  </main>
+{{end}}

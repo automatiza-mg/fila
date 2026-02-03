@@ -34,6 +34,11 @@ func (app *application) serverError(w http.ResponseWriter, r *http.Request, err 
 	app.serveErrorPage(w, r, http.StatusInternalServerError, "Algo deu errado ao processar sua requisição")
 }
 
+// Retorna responsta adequada para recursos não encontrados (404).
+func (app *application) notFound(w http.ResponseWriter, r *http.Request) {
+	app.serveErrorPage(w, r, http.StatusNotFound, "O recurso solicitado não foi encontrado")
+}
+
 // Retorna responsta adequada para requisições inválidas (400).
 func (app *application) badRequest(w http.ResponseWriter, r *http.Request, err error) {
 	app.logger.Warn(

@@ -15,8 +15,26 @@ import (
 	"github.com/justinas/nosurf"
 )
 
+type usuarioIndexPage struct {
+	basePage
+	Usuarios []*database.Usuario
+}
+
+func (app *application) handleUsuarioIndex(w http.ResponseWriter, r *http.Request) {
+	usuarios, err := app.store.ListUsuarios(r.Context())
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	app.servePage(w, r, http.StatusOK, "gestor/usuarios/index.tmpl", usuarioIndexPage{
+		basePage: app.newBasePage(r, "Usuários"),
+		Usuarios: usuarios,
+	})
+}
+
 // Retorna as opções de papeis disponíveis para usuários, excluindo ADMIN.
-func (app *application) papelOptions() []option {
+func papelOptions() []option {
 	return []option{
 		{Label: "Selecione um papel"},
 		{Label: "Subsecretário(a)", Value: database.PapelSubsecretario},
@@ -36,7 +54,7 @@ func (app *application) handleUsuarioCriar(w http.ResponseWriter, r *http.Reques
 	app.servePage(w, r, http.StatusOK, "gestor/usuarios/criar.tmpl", usuarioCriarPage{
 		basePage:     app.newBasePage(r, "Criar Usuário"),
 		CSRFToken:    nosurf.Token(r),
-		PapelOptions: app.papelOptions(),
+		PapelOptions: papelOptions(),
 	})
 }
 
@@ -64,7 +82,7 @@ func (app *application) handleUsuarioCriarPost(w http.ResponseWriter, r *http.Re
 	}
 
 	// Marca papel como selecionado.
-	papelOptions := app.papelOptions()
+	papelOptions := papelOptions()
 	for i := range papelOptions {
 		if papelOptions[i].Value == form.Papel {
 			papelOptions[i].Selected = true
@@ -165,9 +183,34 @@ func (app *application) handleUsuarioCriarPost(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	app.serveComponent(w, r, http.StatusOK, "usuarios/criar-form", usuarioCriarComponent{
-		Form:         form,
-		CSRFToken:    nosurf.Token(r),
-		PapelOptions: papelOptions,
+	w.Header().Set("HX-Redirect", fmt.Sprintf("/gestor/usuarios/%d", usuario.ID))
+}
+
+type usuarioDetalhePage struct {
+	basePage
+	Usuario *database.Usuario
+}
+
+func (app *application) handleUsuarioDetalhe(w http.ResponseWriter, r *http.Request) {
+	usuarioID, err := app.intParam(r, "usuarioID")
+	if err != nil || usuarioID < 1 {
+		app.notFound(w, r)
+		return
+	}
+
+	usuario, err := app.store.GetUsuario(r.Context(), usuarioID)
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrNotFound):
+			app.notFound(w, r)
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	app.servePage(w, r, http.StatusOK, "gestor/usuarios/detalhe.tmpl", usuarioDetalhePage{
+		basePage: app.newBasePage(r, usuario.Nome),
+		Usuario:  usuario,
 	})
 }

@@ -15,6 +15,8 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("GET /cadastrar", app.handleCadastrar)
 	mux.HandleFunc("POST /cadastrar", app.handleCadastrarPost)
 
+	mux.HandleFunc("GET /gestor/usuarios", app.handleUsuarioIndex)
+	mux.HandleFunc("GET /gestor/usuarios/{usuarioID}", app.handleUsuarioDetalhe)
 	mux.HandleFunc("GET /gestor/usuarios/criar", app.handleUsuarioCriar)
 	mux.HandleFunc("POST /gestor/usuarios/criar", app.handleUsuarioCriarPost)
 
