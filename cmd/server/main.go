@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/automatiza-mg/fila/internal/config"
+	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/postgres"
 	"github.com/joho/godotenv"
 )
@@ -33,6 +34,12 @@ func run(ctx context.Context) error {
 		return err
 	}
 	defer pool.Close()
+
+	sender, err := mail.NewSMTPSender(&cfg.Mail)
+	if err != nil {
+		return err
+	}
+	defer sender.Close()
 
 	<-ctx.Done()
 

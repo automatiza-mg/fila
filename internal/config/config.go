@@ -1,11 +1,13 @@
 package config
 
 import (
+	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/postgres"
 	"github.com/caarlos0/env/v11"
 )
 
 type Config struct {
+	Mail     mail.Config
 	Postgres postgres.Config
 }
 
