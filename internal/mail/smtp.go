@@ -49,7 +49,7 @@ func NewSMTPSender(cfg *Config) (*SMTPSender, error) {
 
 // Send envia um Email usando um servidor SMTP. O campo Email.Text nunca deve estar em branco e
 // retorna [ErrEmptyText] se estiver. O campo Email.HTML é sempre usado como alternativa.
-func (s *SMTPSender) Send(ctx context.Context, email Email) error {
+func (s *SMTPSender) Send(ctx context.Context, email *Email) error {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 

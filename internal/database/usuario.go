@@ -52,7 +52,7 @@ func (u *Usuario) HasSenha() bool {
 	return u.HashSenha.Valid
 }
 
-// SetSenha faz o hash e atribui ao usuário.
+// SetSenha faz o hash da senha e atribui ao usuário.
 func (u *Usuario) SetSenha(senha string) error {
 	hashSenha, err := bcrypt.GenerateFromPassword([]byte(senha), bcrypt.DefaultCost)
 	if err != nil {

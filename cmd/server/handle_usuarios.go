@@ -1,9 +1,17 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/mail"
+	"github.com/automatiza-mg/fila/internal/validator"
 	"github.com/justinas/nosurf"
 )
 
@@ -37,6 +45,8 @@ type usuarioCriarForm struct {
 	CPF   string `form:"cpf"`
 	Email string `form:"email"`
 	Papel string `form:"papel"`
+
+	validator.Validator `form:"-"`
 }
 
 type usuarioCriarComponent struct {
@@ -59,6 +69,100 @@ func (app *application) handleUsuarioCriarPost(w http.ResponseWriter, r *http.Re
 		if papelOptions[i].Value == form.Papel {
 			papelOptions[i].Selected = true
 		}
+	}
+
+	// Papeis permitidos para validação
+	papeisAllowed := make([]string, 0, len(papelOptions))
+	for _, opt := range papelOptions {
+		if opt.Value != "" {
+			papeisAllowed = append(papeisAllowed, opt.Value)
+		}
+	}
+
+	form.Check(validator.NotBlank(form.Nome), "nome", "Campo obrigatório")
+	form.Check(validator.NotBlank(form.CPF), "cpf", "Campo obrigatório")
+	form.Check(validator.Matches(form.CPF, validator.CpfRX), "cpf", "Deve ser um CPF válido")
+	form.Check(validator.NotBlank(form.Email), "email", "Campo obrigatório")
+	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", "Deve ser um email válido")
+	form.Check(validator.PermittedValue(form.Papel, papeisAllowed...), "papel", "Deve ser um papel válido")
+	if !form.Valid() {
+		app.serveComponent(w, r, http.StatusUnprocessableEntity, "usuarios/criar-form", usuarioCriarComponent{
+			Form:         form,
+			CSRFToken:    nosurf.Token(r),
+			PapelOptions: papelOptions,
+		})
+		return
+	}
+
+	usuario := &database.Usuario{
+		Nome:  form.Nome,
+		CPF:   form.CPF,
+		Email: form.Email,
+	}
+	usuario.SetPapel(form.Papel)
+
+	ctx := r.Context()
+	tx, err := app.pool.Begin(ctx)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	store := app.store.WithTx(tx)
+
+	// Salva usuário no banco de dados
+	err = store.SaveUsuario(r.Context(), usuario)
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrUsuarioCPFTaken):
+			form.SetFieldError("cpf", "CPF em uso por outro usuário")
+			app.serveComponent(w, r, http.StatusUnprocessableEntity, "usuarios/criar-form", usuarioCriarComponent{
+				Form:         form,
+				CSRFToken:    nosurf.Token(r),
+				PapelOptions: papelOptions,
+			})
+		case errors.Is(err, database.ErrUsuarioEmailTaken):
+			form.SetFieldError("email", "Email em uso por outro usuário")
+			app.serveComponent(w, r, http.StatusUnprocessableEntity, "usuarios/criar-form", usuarioCriarComponent{
+				Form:         form,
+				CSRFToken:    nosurf.Token(r),
+				PapelOptions: papelOptions,
+			})
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	token, err := store.CreateToken(ctx, usuario.ID, database.EscopoSetup, 72*time.Hour)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	// TODO: Enviar o email através de um worker.
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		email, err := mail.NewSetupEmail(usuario.Email, mail.SetupEmailParams{
+			SetupURL: fmt.Sprintf("%s/cadastrar?token=%s", app.cfg.BaseURL, url.QueryEscape(token.Plaintext)),
+		})
+		if err != nil {
+			app.logger.Error("Não foi possível gerar email", slog.String("err", err.Error()))
+			return
+		}
+
+		if err := app.mail.Send(ctx, email); err != nil {
+			app.logger.Error("Não foi possível enviar email", slog.String("err", err.Error()))
+		}
+	}()
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
 	}
 
 	app.serveComponent(w, r, http.StatusOK, "usuarios/criar-form", usuarioCriarComponent{

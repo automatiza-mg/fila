@@ -43,7 +43,7 @@ func (s *Store) CreateToken(ctx context.Context, usuarioID int64, escopo Escopo,
 	b := make([]byte, 32)
 	_, _ = rand.Read(b)
 
-	plaintext := base64.URLEncoding.EncodeToString(b)
+	plaintext := base64.RawURLEncoding.EncodeToString(b)
 
 	token := &Token{
 		Plaintext: plaintext,

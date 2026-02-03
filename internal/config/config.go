@@ -7,6 +7,8 @@ import (
 )
 
 type Config struct {
+	BaseURL string `env:"BASE_URL,notEmpty"`
+
 	Mail     mail.Config
 	Postgres postgres.Config
 }

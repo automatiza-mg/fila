@@ -17,7 +17,7 @@
     {{template "csrf" .}}
     <div class="space-y-4">
       <div class="grid gap-1">
-        <label for="nome" class="w-fit font-medium">Nome</label>
+        <label for="nome" class="form-label">Nome</label>
         <input
           id="nome"
           type="text"
@@ -26,11 +26,17 @@
           required
           maxlength="255"
           value="{{.Form.Nome}}"
+          {{if .Form.FieldErrors.nome}}
+            aria-invalid="true"
+          {{end}}
         />
+        {{with .Form.FieldErrors.nome}}
+          <span class="text-sm text-red-600">{{.}}</span>
+        {{end}}
       </div>
 
       <div class="grid gap-1">
-        <label for="cpf" class="w-fit font-medium">CPF</label>
+        <label for="cpf" class="form-label">CPF</label>
         <input
           id="cpf"
           type="text"
@@ -40,11 +46,17 @@
           required
           minlength="14"
           value="{{.Form.CPF}}"
+          {{if .Form.FieldErrors.cpf}}
+            aria-invalid="true"
+          {{end}}
         />
+        {{with .Form.FieldErrors.cpf}}
+          <span class="text-sm text-red-600">{{.}}</span>
+        {{end}}
       </div>
 
       <div class="grid gap-1">
-        <label for="email" class="w-fit font-medium">Email</label>
+        <label for="email" class="form-label">Email</label>
         <input
           id="email"
           type="email"
@@ -53,28 +65,47 @@
           required
           maxlength="255"
           value="{{.Form.Email}}"
+          {{if .Form.FieldErrors.email}}
+            aria-invalid="true"
+          {{end}}
         />
-        <span class="text-muted-foreground text-sm">
-          Um link de conclusão do cadastro será enviado a esse email.
-        </span>
+        {{with .Form.FieldErrors.email}}
+          <span class="text-sm text-red-600">{{.}}</span>
+        {{else}}
+          <span class="text-muted-foreground text-sm">
+            Um link de conclusão do cadastro será enviado a esse email.
+          </span>
+        {{end}}
       </div>
 
       <div class="grid gap-1">
-        <label for="papel">Papel</label>
-        <select name="papel" id="papel" class="form-control" required>
+        <label for="papel" class="form-label">Papel</label>
+        <select
+          id="papel"
+          name="papel"
+          class="form-control"
+          required
+          {{if .Form.FieldErrors.papel}}
+            aria-invalid="true"
+          {{end}}
+        >
           {{range .PapelOptions}}
             <option value="{{.Value}}" {{if .Selected}}selected{{end}}>
               {{.Label}}
             </option>
           {{end}}
         </select>
+        {{with .Form.FieldErrors.papel}}
+          <span class="text-sm text-red-600">{{.}}</span>
+        {{end}}
       </div>
     </div>
 
     <button
+      type="submit"
       class="bg-primary text-background rounded-xl px-4 py-2 font-semibold"
     >
-      Enviar
+      Salvar Alterações
     </button>
   </form>
 {{end}}

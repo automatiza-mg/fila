@@ -11,5 +11,5 @@ type Email struct {
 
 // Sender é uma interface mínima para o envio de emails.
 type Sender interface {
-	Send(ctx context.Context, email Email) error
+	Send(ctx context.Context, email *Email) error
 }

@@ -1,0 +1,81 @@
+{{define "content"}}
+  <main
+    class="from-secondary to-primary flex min-h-svh flex-col items-center justify-center bg-linear-to-b"
+  >
+    <section
+      class="bg-background w-full max-w-md space-y-6 rounded-4xl px-6 py-8"
+    >
+      <div>
+        <h1 class="text-2xl font-bold">Concluir Cadastro</h1>
+        <p class="text-muted-foreground text-sm">
+          Preencha o formulário abaixo com sua senha para concluir seu cadastro
+        </p>
+      </div>
+
+      {{template "cadastrar/form" .}}
+    </section>
+  </main>
+{{end}}
+
+{{define "cadastrar/form"}}
+  <form hx-post="/cadastrar" class="flex flex-col gap-8">
+    {{template "csrf" .}}
+    <input type="hidden" name="token" value="{{.Token}}" />
+
+    <div class="flex flex-col gap-4">
+      <div class="grid gap-1">
+        <label for="nome" class="form-label">Nome</label>
+        <input
+          id="nome"
+          type="text"
+          name="nome"
+          disabled
+          value="{{.Usuario.Nome}}"
+          class="form-control"
+        />
+      </div>
+
+      <div class="grid gap-1">
+        <label for="senha" class="form-label">Senha</label>
+        <input
+          id="senha"
+          type="password"
+          name="senha"
+          class="form-control"
+          required
+          minlength="8"
+          maxlength="50"
+          {{if .Form.FieldErrors.senha}}
+            aria-invalid="true"
+          {{end}}
+        />
+        {{with .Form.FieldErrors.senha}}
+          <span class="text-sm text-red-600">{{.}}</span>
+        {{end}}
+      </div>
+
+      <div class="grid gap-1">
+        <label for="confirmar_senha" class="form-label">
+          Confirmar Senha
+        </label>
+        <input
+          id="confirmar_senha"
+          type="password"
+          name="confirmar_senha"
+          class="form-control"
+          required
+          minlength="8"
+          maxlength="50"
+          {{if .Form.FieldErrors.confirmar_senha}}
+            aria-invalid="true"
+          {{end}}
+        />
+        {{with .Form.FieldErrors.confirmar_senha}}
+          <span class="text-sm text-red-600">{{.}}</span>
+        {{end}}
+      </div>
+    </div>
+
+    <button class="btn-primary">Enviar</button>
+  </form>
+{{end}}
