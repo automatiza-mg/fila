@@ -13,3 +13,10 @@ func (app *application) newBasePage(_ *http.Request, title string) basePage {
 		HTMLTitle: title,
 	}
 }
+
+// Dados necessários para renderizar uma tag <option>.
+type option struct {
+	Label    string
+	Value    string
+	Selected bool
+}

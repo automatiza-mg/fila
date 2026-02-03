@@ -12,5 +12,5 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("GET /gestor/usuarios/criar", app.handleUsuarioCriar)
 	mux.HandleFunc("POST /gestor/usuarios/criar", app.handleUsuarioCriarPost)
 
-	return mux
+	return app.csrfProtection(mux)
 }

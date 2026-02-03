@@ -14,7 +14,7 @@ import (
 //
 // O diretório `pages` é adicionado ao caminho da página informada. Por exemplo: `entrar.tmpl` => `pages/entrar.tmpl`.
 func (app *application) servePage(w http.ResponseWriter, r *http.Request, status int, page string, data any) {
-	patterns := []string{"base.tmpl", filepath.Join("pages", page)}
+	patterns := []string{"base.tmpl", "shared/*.tmpl", filepath.Join("pages", page)}
 
 	tmpl := template.New("base.tmpl").Option("missingkey=zero")
 	_, err := tmpl.ParseFS(app.views, patterns...)
@@ -46,7 +46,7 @@ func (app *application) servePage(w http.ResponseWriter, r *http.Request, status
 }
 
 func (app *application) serveComponent(w http.ResponseWriter, r *http.Request, status int, name string, data any) {
-	patterns := []string{"base.tmpl"}
+	patterns := []string{"base.tmpl", "shared/*.tmpl"}
 
 	pages := make([]string, 0)
 	err := fs.WalkDir(app.views, "pages", func(path string, d fs.DirEntry, err error) error {

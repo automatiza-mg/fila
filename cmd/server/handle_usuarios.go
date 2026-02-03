@@ -4,9 +4,10 @@ import (
 	"net/http"
 
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/justinas/nosurf"
 )
 
-// Retorna as opções de papeis disponíveis para usuários.
+// Retorna as opções de papeis disponíveis para usuários, excluindo ADMIN.
 func (app *application) papelOptions() []option {
 	return []option{
 		{Label: "Selecione um papel"},
@@ -16,14 +17,9 @@ func (app *application) papelOptions() []option {
 	}
 }
 
-type option struct {
-	Label    string
-	Value    string
-	Selected bool
-}
-
 type usuarioCriarPage struct {
 	basePage
+	CSRFToken    string
 	PapelOptions []option
 	Form         usuarioCriarForm
 }
@@ -31,6 +27,7 @@ type usuarioCriarPage struct {
 func (app *application) handleUsuarioCriar(w http.ResponseWriter, r *http.Request) {
 	app.servePage(w, r, http.StatusOK, "gestor/usuarios/criar.tmpl", usuarioCriarPage{
 		basePage:     app.newBasePage(r, "Criar Usuário"),
+		CSRFToken:    nosurf.Token(r),
 		PapelOptions: app.papelOptions(),
 	})
 }
@@ -44,6 +41,7 @@ type usuarioCriarForm struct {
 
 type usuarioCriarComponent struct {
 	PapelOptions []option
+	CSRFToken    string
 	Form         usuarioCriarForm
 }
 
@@ -65,6 +63,7 @@ func (app *application) handleUsuarioCriarPost(w http.ResponseWriter, r *http.Re
 
 	app.serveComponent(w, r, http.StatusOK, "usuarios/criar-form", usuarioCriarComponent{
 		Form:         form,
+		CSRFToken:    nosurf.Token(r),
 		PapelOptions: papelOptions,
 	})
 }
