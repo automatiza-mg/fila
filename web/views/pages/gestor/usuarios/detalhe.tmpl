@@ -8,14 +8,23 @@
     </section>
 
     {{if .Usuario.HasPapel "ANALISTA"}}
-      <section>
+      <section class="space-y-2">
         <h2 class="text-xl font-bold">Dados Analista</h2>
 
         {{if .Analista}}
-          <button class="btn-primary">Editar</button>
+          <div>Órgão: {{.Analista.Orgao}}</div>
+          <div>Unidade SEI: {{.Analista.SEIUnidadeID}}</div>
+          <div>Afastado: {{.Analista.Afastado}}</div>
+
+          <button class="btn-primary">Desativar</button>
         {{else}}
           <p>Os dados de analista ainda não foram cadastrados</p>
-          <button class="btn-primary">Cadastrar</button>
+          <a
+            href="/gestor/usuarios/{{.Usuario.ID}}/analista"
+            class="btn-primary"
+          >
+            Cadastrar
+          </a>
         {{end}}
       </section>
     {{end}}

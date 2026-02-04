@@ -67,12 +67,6 @@ type usuarioCriarForm struct {
 	validator.Validator `form:"-"`
 }
 
-type usuarioCriarComponent struct {
-	PapelOptions []option
-	CSRFToken    string
-	Form         usuarioCriarForm
-}
-
 func (app *application) handleUsuarioCriarPost(w http.ResponseWriter, r *http.Request) {
 	var form usuarioCriarForm
 	err := app.decodeForm(r, &form)
@@ -104,7 +98,7 @@ func (app *application) handleUsuarioCriarPost(w http.ResponseWriter, r *http.Re
 	form.Check(validator.Matches(form.Email, validator.EmailRX), "email", "Deve ser um email válido")
 	form.Check(validator.PermittedValue(form.Papel, papeisAllowed...), "papel", "Deve ser um papel válido")
 	if !form.Valid() {
-		app.serveComponent(w, r, http.StatusUnprocessableEntity, "usuarios/criar-form", usuarioCriarComponent{
+		app.serveComponent(w, r, http.StatusUnprocessableEntity, "usuarios/criar-form", usuarioCriarPage{
 			Form:         form,
 			CSRFToken:    nosurf.Token(r),
 			PapelOptions: papelOptions,
@@ -135,14 +129,14 @@ func (app *application) handleUsuarioCriarPost(w http.ResponseWriter, r *http.Re
 		switch {
 		case errors.Is(err, database.ErrUsuarioCPFTaken):
 			form.SetFieldError("cpf", "CPF em uso por outro usuário")
-			app.serveComponent(w, r, http.StatusUnprocessableEntity, "usuarios/criar-form", usuarioCriarComponent{
+			app.serveComponent(w, r, http.StatusUnprocessableEntity, "usuarios/criar-form", usuarioCriarPage{
 				Form:         form,
 				CSRFToken:    nosurf.Token(r),
 				PapelOptions: papelOptions,
 			})
 		case errors.Is(err, database.ErrUsuarioEmailTaken):
 			form.SetFieldError("email", "Email em uso por outro usuário")
-			app.serveComponent(w, r, http.StatusUnprocessableEntity, "usuarios/criar-form", usuarioCriarComponent{
+			app.serveComponent(w, r, http.StatusUnprocessableEntity, "usuarios/criar-form", usuarioCriarPage{
 				Form:         form,
 				CSRFToken:    nosurf.Token(r),
 				PapelOptions: papelOptions,

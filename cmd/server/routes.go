@@ -16,9 +16,12 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("POST /cadastrar", app.handleCadastrarPost)
 
 	mux.HandleFunc("GET /gestor/usuarios", app.handleUsuarioIndex)
-	mux.HandleFunc("GET /gestor/usuarios/{usuarioID}", app.handleUsuarioDetalhe)
 	mux.HandleFunc("GET /gestor/usuarios/criar", app.handleUsuarioCriar)
 	mux.HandleFunc("POST /gestor/usuarios/criar", app.handleUsuarioCriarPost)
+	mux.HandleFunc("GET /gestor/usuarios/{usuarioID}", app.handleUsuarioDetalhe)
+
+	mux.HandleFunc("GET /gestor/usuarios/{usuarioID}/analista", app.handleAnalistaCriar)
+	mux.HandleFunc("POST /gestor/usuarios/{usuarioID}/analista", app.handleAnalistaCriarPost)
 
 	return app.csrfProtection(mux)
 }

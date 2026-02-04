@@ -12,7 +12,7 @@ type ListarUnidadesRequest struct {
 }
 
 type Unidade struct {
-	IdUnidade       int    `xml:"IdUnidade" json:"id_unidade"`
+	IdUnidade       string `xml:"IdUnidade" json:"id_unidade"`
 	Sigla           string `xml:"Sigla,omitempty" json:"sigla"`
 	Descricao       string `xml:"Descricao,omitempty" json:"descricao"`
 	SinProtocolo    string `xml:"SinProtocolo,omitempty" json:"sin_protocolo"`

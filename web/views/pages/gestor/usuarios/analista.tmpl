@@ -1,0 +1,59 @@
+{{define "content"}}
+  <main class="mx-auto max-w-xl p-4">
+    <form
+      hx-post="/gestor/usuarios/{{.Usuario.ID}}/analista"
+      class="flex flex-col gap-4"
+    >
+      {{template "csrf" .}}
+      <div class="grid gap-1">
+        <label for="orgao">Órgão</label>
+        <select id="orgao" name="orgao" class="form-control" required>
+          {{template "options" .OrgaoOptions}}
+        </select>
+      </div>
+
+      <div class="grid gap-1">
+        <label for="sei_unidade_id">Unidade SEI</label>
+        <select
+          id="sei_unidade_id"
+          name="sei_unidade_id"
+          class="form-control"
+          required
+        >
+          {{template "options" .UnidadeOptions}}
+        </select>
+      </div>
+
+      <button class="btn-primary">Salvar</button>
+    </form>
+  </main>
+{{end}}
+
+{{define "usuarios/analista-form"}}
+  <form
+    hx-post="/gestor/usuarios/{{.Usuario.ID}}/analista"
+    class="flex flex-col gap-4"
+  >
+    {{template "csrf" .}}
+    <div class="grid gap-1">
+      <label for="orgao">Órgão</label>
+      <select id="orgao" name="orgao" class="form-control" required>
+        {{template "options" .OrgaoOptions}}
+      </select>
+    </div>
+
+    <div class="grid gap-1">
+      <label for="sei_unidade_id">Unidade SEI</label>
+      <select
+        id="sei_unidade_id"
+        name="sei_unidade_id"
+        class="form-control"
+        required
+      >
+        {{template "options" .UnidadeOptions}}
+      </select>
+    </div>
+
+    <button class="btn-primary">Salvar</button>
+  </form>
+{{end}}

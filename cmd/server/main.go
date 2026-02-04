@@ -13,8 +13,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/config"
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/fila"
 	"github.com/automatiza-mg/fila/internal/infra"
 	"github.com/automatiza-mg/fila/internal/logging"
 	"github.com/automatiza-mg/fila/internal/mail"
@@ -44,7 +46,7 @@ type application struct {
 	pool   *pgxpool.Pool
 	store  *database.Store
 	mail   mail.Sender
-	sei    *sei.Client
+	fila   *fila.Service
 
 	decoder *form.Decoder
 	views   fs.FS
@@ -82,6 +84,10 @@ func run(ctx context.Context) error {
 
 	sei := sei.NewClient(&cfg.SEI)
 
+	redisCache := cache.NewRedisCache(rdb)
+
+	fila := fila.NewService(pool, sei, redisCache)
+
 	app := &application{
 		cfg:    cfg,
 		logger: logger,
@@ -89,7 +95,7 @@ func run(ctx context.Context) error {
 		pool:   pool,
 		store:  database.New(pool),
 		mail:   sender,
-		sei:    sei,
+		fila:   fila,
 
 		decoder: form.NewDecoder(),
 		views:   os.DirFS("web/views"),
