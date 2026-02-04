@@ -8,8 +8,8 @@ import (
 )
 
 type Config struct {
-	BaseURL string `env:"BASE_URL,notEmpty"`
-
+	BaseURL  string `env:"BASE_URL,notEmpty"`
+	RedisURL string `env:"REDIS_URL,notEmpty" envDefault:"redis://localhost:6379"`
 	Mail     mail.Config
 	Postgres postgres.Config
 	SEI      sei.Config

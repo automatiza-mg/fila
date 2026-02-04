@@ -15,6 +15,7 @@ import (
 
 	"github.com/automatiza-mg/fila/internal/config"
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/infra"
 	"github.com/automatiza-mg/fila/internal/logging"
 	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/postgres"
@@ -22,6 +23,7 @@ import (
 	"github.com/go-playground/form/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -38,6 +40,7 @@ func main() {
 type application struct {
 	cfg    *config.Config
 	logger *slog.Logger
+	rdb    *redis.Client
 	pool   *pgxpool.Pool
 	store  *database.Store
 	mail   mail.Sender
@@ -59,6 +62,12 @@ func run(ctx context.Context) error {
 
 	logger := logging.NewLogger(os.Stdout, *dev)
 
+	rdb, err := infra.NewRedis(ctx, cfg.RedisURL)
+	if err != nil {
+		return err
+	}
+	defer rdb.Close()
+
 	pool, err := postgres.New(ctx, &cfg.Postgres)
 	if err != nil {
 		return err
@@ -76,6 +85,7 @@ func run(ctx context.Context) error {
 	app := &application{
 		cfg:    cfg,
 		logger: logger,
+		rdb:    rdb,
 		pool:   pool,
 		store:  database.New(pool),
 		mail:   sender,
