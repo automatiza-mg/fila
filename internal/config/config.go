@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/postgres"
+	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/caarlos0/env/v11"
 )
 
@@ -11,6 +12,7 @@ type Config struct {
 
 	Mail     mail.Config
 	Postgres postgres.Config
+	SEI      sei.Config
 }
 
 func NewFromEnv() (*Config, error) {

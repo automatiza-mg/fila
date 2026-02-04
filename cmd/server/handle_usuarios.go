@@ -188,7 +188,8 @@ func (app *application) handleUsuarioCriarPost(w http.ResponseWriter, r *http.Re
 
 type usuarioDetalhePage struct {
 	basePage
-	Usuario *database.Usuario
+	Usuario  *database.Usuario
+	Analista *database.Analista
 }
 
 func (app *application) handleUsuarioDetalhe(w http.ResponseWriter, r *http.Request) {
@@ -209,8 +210,18 @@ func (app *application) handleUsuarioDetalhe(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	var analista *database.Analista
+	if usuario.HasPapel(database.PapelAnalista) {
+		analista, err = app.store.GetAnalista(r.Context(), usuario.ID)
+		if err != nil && !errors.Is(err, database.ErrNotFound) {
+			app.serverError(w, r, err)
+			return
+		}
+	}
+
 	app.servePage(w, r, http.StatusOK, "gestor/usuarios/detalhe.tmpl", usuarioDetalhePage{
 		basePage: app.newBasePage(r, usuario.Nome),
 		Usuario:  usuario,
+		Analista: analista,
 	})
 }

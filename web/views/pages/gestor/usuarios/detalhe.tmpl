@@ -1,7 +1,23 @@
 {{define "content"}}
-  <main class="p-4">
-    <div>{{.Usuario.Nome}}</div>
-    <div>{{.Usuario.CPF}}</div>
-    <div>{{.Usuario.Email}}</div>
+  <main class="space-y-6 p-4">
+    <section>
+      <h1 class="text-2xl font-bold">Dados Usuário</h1>
+      <div>{{.Usuario.Nome}}</div>
+      <div>{{.Usuario.CPF}}</div>
+      <div>{{.Usuario.Email}}</div>
+    </section>
+
+    {{if .Usuario.HasPapel "ANALISTA"}}
+      <section>
+        <h2 class="text-xl font-bold">Dados Analista</h2>
+
+        {{if .Analista}}
+          <button class="btn-primary">Editar</button>
+        {{else}}
+          <p>Os dados de analista ainda não foram cadastrados</p>
+          <button class="btn-primary">Cadastrar</button>
+        {{end}}
+      </section>
+    {{end}}
   </main>
 {{end}}

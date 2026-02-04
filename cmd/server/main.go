@@ -18,6 +18,7 @@ import (
 	"github.com/automatiza-mg/fila/internal/logging"
 	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/postgres"
+	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/go-playground/form/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -40,6 +41,7 @@ type application struct {
 	pool   *pgxpool.Pool
 	store  *database.Store
 	mail   mail.Sender
+	sei    *sei.Client
 
 	decoder *form.Decoder
 	views   fs.FS
@@ -69,12 +71,15 @@ func run(ctx context.Context) error {
 	}
 	defer sender.Close()
 
+	sei := sei.NewClient(&cfg.SEI)
+
 	app := &application{
 		cfg:    cfg,
 		logger: logger,
 		pool:   pool,
 		store:  database.New(pool),
 		mail:   sender,
+		sei:    sei,
 
 		decoder: form.NewDecoder(),
 		views:   os.DirFS("web/views"),
