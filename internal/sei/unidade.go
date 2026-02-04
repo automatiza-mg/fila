@@ -15,9 +15,9 @@ type Unidade struct {
 	IdUnidade       string `xml:"IdUnidade" json:"id_unidade"`
 	Sigla           string `xml:"Sigla,omitempty" json:"sigla"`
 	Descricao       string `xml:"Descricao,omitempty" json:"descricao"`
-	SinProtocolo    string `xml:"SinProtocolo,omitempty" json:"sin_protocolo"`
-	SinArquivamento string `xml:"SinArquivamento,omitempty" json:"sin_arquivamento"`
-	SinOuvidoria    string `xml:"SinOuvidoria,omitempty" json:"sin_ouvidoria"`
+	SinProtocolo    string `xml:"SinProtocolo,omitempty" json:"-"`
+	SinArquivamento string `xml:"SinArquivamento,omitempty" json:"-"`
+	SinOuvidoria    string `xml:"SinOuvidoria,omitempty" json:"-"`
 }
 
 type ListarUnidadesResponse struct {

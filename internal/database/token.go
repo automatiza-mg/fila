@@ -23,6 +23,8 @@ const (
 	EscopoSetup Escopo = "setup"
 	// EscopoResetSenha é o escopo usado para redefinir a senha de um usuário.
 	EscopoResetSenha Escopo = "reset-senha"
+	// EscopoAuth é o escopo usado para autenticar um usuário.
+	EscopoAuth Escopo = "auth"
 )
 
 type Token struct {
