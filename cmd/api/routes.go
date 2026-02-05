@@ -16,9 +16,12 @@ func (app *application) routes() http.Handler {
 
 		r.Use(app.authenticate)
 
+		// TODO: Adicionar verificação de admin.
 		r.Route("/datalake", func(r chi.Router) {
 			r.Get("/processos", app.handleDatalakeProcessos)
 			r.Get("/processos/unidades", app.handleDatalakeUnidadesProcessos)
+
+			r.Get("/servidores/{cpf}", app.handleDatalakeServidor)
 		})
 
 		r.Route("/usuarios", func(r chi.Router) {

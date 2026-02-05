@@ -3,9 +3,14 @@ package datalake
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	_ "github.com/sclgo/impala-go"
+)
+
+var (
+	ErrNotFound = errors.New("record not found")
 )
 
 type DataLake struct {

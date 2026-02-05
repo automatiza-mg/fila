@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -13,7 +15,7 @@ func (app *application) handleDatalakeProcessos(w http.ResponseWriter, r *http.R
 	unidade := r.URL.Query().Get("unidade")
 	if unidade == "" {
 		app.writeJSON(w, http.StatusBadRequest, ErrorResponse{
-			Message: "O parâmtro 'unidade' deve ser informado",
+			Message: "O parâmetro 'unidade' deve ser informado",
 		})
 		return
 	}
@@ -50,4 +52,36 @@ func (app *application) handleDatalakeUnidadesProcessos(w http.ResponseWriter, r
 	}
 
 	app.writeJSON(w, http.StatusOK, unidades)
+}
+
+func (app *application) handleDatalakeServidor(w http.ResponseWriter, r *http.Request) {
+	cpf := r.PathValue("cpf")
+
+	key := fmt.Sprintf("fila:datalake:servidores:%s", cpf)
+	b, err := app.cache.Remember(r.Context(), key, 24*time.Hour, func() ([]byte, error) {
+		servidor, err := app.dl.GetServidorByCPF(r.Context(), cpf)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(servidor)
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, datalake.ErrNotFound):
+			app.notFound(w, r)
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	var servidor datalake.Servidor
+	err = json.Unmarshal(b, &servidor)
+	if err != nil {
+		_ = app.cache.Del(context.Background(), key)
+		app.serverError(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, servidor)
 }
