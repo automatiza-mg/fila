@@ -12,7 +12,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			ctx := app.setUsuario(r.Context(), database.Anonymous)
+			ctx := app.setAuth(r.Context(), database.Anonymous)
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
@@ -39,14 +39,14 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := app.setUsuario(r.Context(), usuario)
+		ctx := app.setAuth(r.Context(), usuario)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func (app *application) requireAuth(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		usuario := app.getUsuario(r.Context())
+func (app *application) requireAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		usuario := app.getAuth(r.Context())
 		if usuario.IsAnonymous() {
 			app.writeJSON(w, http.StatusUnauthorized, ErrorResponse{
 				Message: "Você deve estar autenticado para acessar esse recurso",
@@ -55,5 +55,5 @@ func (app *application) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		next.ServeHTTP(w, r)
-	}
+	})
 }

@@ -16,6 +16,7 @@ CREATE TABLE "analistas" (
     "usuario_id" BIGINT PRIMARY KEY,
     "orgao" TEXT NOT NULL,
     "sei_unidade_id" TEXT NOT NULL UNIQUE,
+    "sei_unidade_sigla" TEXT NOT NULL,
     "afastado" BOOLEAN NOT NULL DEFAULT FALSE,
     "ultima_atribuicao_em" TIMESTAMPTZ,
     FOREIGN KEY ("usuario_id") REFERENCES "usuarios"("id") ON DELETE CASCADE

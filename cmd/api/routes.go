@@ -16,20 +16,31 @@ func (app *application) routes() http.Handler {
 
 		r.Use(app.authenticate)
 
-		// Unidades SEI
-		r.Get("/unidades", app.requireAuth(app.handleUnidadeList))
-
-		// Usuários
 		r.Route("/usuarios", func(r chi.Router) {
-			r.Get("/", app.requireAuth(app.handleUsuarioList))
-			r.Get("/{usuarioID}", app.requireAuth(app.handleUsuarioDetail))
+			r.Get("/", app.handleUsuarioList)
+			r.Post("/", app.handleUsuarioCreate)
+
+			r.Route("/{usuarioID}", func(r chi.Router) {
+				r.Use(app.loadUsuario)
+
+				r.Get("/", app.handleUsuarioDetail)
+
+				r.Post("/analista", app.handleAnalistaCreate)
+			})
 		})
 
-		// Auth
+		r.Route("/unidades", func(r chi.Router) {
+			r.Get("/", app.handleUnidadeList)
+		})
+
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/entrar", app.handleAuthEntrar)
 
-			r.Get("/me", app.requireAuth(app.handleAuthUsuarioAtual))
+			r.Group(func(r chi.Router) {
+				r.Use(app.requireAuth)
+
+				r.Get("/me", app.handleAuthUsuarioAtual)
+			})
 		})
 	})
 

@@ -2,37 +2,46 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 )
 
+var (
+	ErrAnalistaExists = errors.New("analista already exists")
+)
+
 type Analista struct {
-	UsuarioID          int64
-	Orgao              string
-	SEIUnidadeID       string
-	Afastado           bool
-	UltimaAtribuicaoEm sql.Null[time.Time]
+	UsuarioID          int64      `json:"-"`
+	Orgao              string     `json:"orgao"`
+	SEIUnidadeID       string     `json:"sei_unidade_id"`
+	SEIUnidadeSigla    string     `json:"sei_unidade_sigla"`
+	Afastado           bool       `json:"afastado"`
+	UltimaAtribuicaoEm *time.Time `json:"ultima_atribuicao_em"`
 }
 
 // SaveAnalista insere os dados de analista vinculado a um usuário no banco de dados.
 func (s *Store) SaveAnalista(ctx context.Context, analista *Analista) error {
 	q := `
-	INSERT INTO analistas (usuario_id, orgao, sei_unidade_id, afastado, ultima_atribuicao_em)
-	VALUES ($1, $2, $3, $4, $5)`
+	INSERT INTO analistas (usuario_id, orgao, sei_unidade_id, sei_unidade_sigla, afastado, ultima_atribuicao_em)
+	VALUES ($1, $2, $3, $4, $5, $6)`
 
 	args := []any{
 		analista.UsuarioID,
 		analista.Orgao,
 		analista.SEIUnidadeID,
+		analista.SEIUnidadeSigla,
 		analista.Afastado,
 		analista.UltimaAtribuicaoEm,
 	}
 
 	_, err := s.db.Exec(ctx, q, args...)
 	if err != nil {
+		if strings.Contains(err.Error(), "analistas_pkey") {
+			return ErrAnalistaExists
+		}
 		return err
 	}
 	return nil
@@ -42,7 +51,8 @@ func (s *Store) SaveAnalista(ctx context.Context, analista *Analista) error {
 func (s *Store) GetAnalista(ctx context.Context, usuarioID int64) (*Analista, error) {
 	q := `
 	SELECT 
-		usuario_id, orgao, sei_unidade_id, afastado, ultima_atribuicao_em
+		usuario_id, orgao, sei_unidade_id, sei_unidade_sigla,
+		afastado, ultima_atribuicao_em
 	FROM analistas
 	WHERE usuario_id = $1`
 
@@ -51,6 +61,7 @@ func (s *Store) GetAnalista(ctx context.Context, usuarioID int64) (*Analista, er
 		&analista.UsuarioID,
 		&analista.Orgao,
 		&analista.SEIUnidadeID,
+		&analista.SEIUnidadeSigla,
 		&analista.Afastado,
 		&analista.UltimaAtribuicaoEm,
 	)
@@ -64,13 +75,51 @@ func (s *Store) GetAnalista(ctx context.Context, usuarioID int64) (*Analista, er
 	return &analista, nil
 }
 
+func (s *Store) GetAnalistasByUsuarioIDs(ctx context.Context, ids []int64) (map[int64]*Analista, error) {
+	q := `
+	SELECT
+		usuario_id, orgao, sei_unidade_id, sei_unidade_sigla,
+		afastado, ultima_atribuicao_em
+	FROM analistas
+	WHERE usuario_id = ANY($1)`
+
+	rows, err := s.db.Query(ctx, q, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	analistas := make(map[int64]*Analista)
+	for rows.Next() {
+		var analista Analista
+		err := rows.Scan(
+			&analista.UsuarioID,
+			&analista.Orgao,
+			&analista.SEIUnidadeID,
+			&analista.SEIUnidadeSigla,
+			&analista.Afastado,
+			&analista.UltimaAtribuicaoEm,
+		)
+		if err != nil {
+			return nil, err
+		}
+		analistas[analista.UsuarioID] = &analista
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return analistas, nil
+}
+
 func (s *Store) UpdateAnalista(ctx context.Context, analista *Analista) error {
 	q := `
 	UPDATE analistas SET
 		orgao = $2,
 		sei_unidade_id = $3,
-		afastado = $4,
-		ultima_atribuicao_em = $5
+		sei_unidade_sigla = $4,
+		afastado = $5,
+		ultima_atribuicao_em = $6
 	WHERE usuario_id = $1
 	RETURNING ultima_atribuicao_em`
 
@@ -78,6 +127,7 @@ func (s *Store) UpdateAnalista(ctx context.Context, analista *Analista) error {
 		analista.UsuarioID,
 		analista.Orgao,
 		analista.SEIUnidadeID,
+		analista.SEIUnidadeSigla,
 		analista.Afastado,
 		analista.UltimaAtribuicaoEm,
 	}

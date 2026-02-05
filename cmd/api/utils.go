@@ -2,12 +2,18 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"strconv"
 )
 
 const (
 	maxBodySize = 5 << 20
+)
+
+var (
+	errMultipleJSONValues = errors.New("multiple json values in body")
 )
 
 func (app *application) writeJSON(w http.ResponseWriter, status int, v any) {
@@ -27,7 +33,15 @@ func (app *application) decodeJSON(w http.ResponseWriter, r *http.Request, v any
 
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
-	return dec.Decode(v)
+
+	if err := dec.Decode(v); err != nil {
+		return err
+	}
+	if err := dec.Decode(&struct{}{}); err != io.EOF {
+		return errMultipleJSONValues
+	}
+
+	return nil
 }
 
 func (app *application) intParam(r *http.Request, key string) (int64, error) {

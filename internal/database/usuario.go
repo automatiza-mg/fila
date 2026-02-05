@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"strings"
 	"time"
@@ -31,15 +30,16 @@ const (
 var Anonymous = &Usuario{}
 
 type Usuario struct {
-	ID              int64
-	Nome            string
-	CPF             string
-	Email           string
-	EmailVerificado bool
-	HashSenha       sql.Null[string]
-	Papel           sql.Null[string]
-	CriadoEm        time.Time
-	AtualizadoEm    time.Time
+	ID              int64     `json:"id"`
+	Nome            string    `json:"nome"`
+	CPF             string    `json:"cpf"`
+	Email           string    `json:"email"`
+	EmailVerificado bool      `json:"email_verificado"`
+	HashSenha       *string   `json:"-"`
+	Papel           *string   `json:"papel"`
+	Analista        *Analista `json:"analista,omitempty"`
+	CriadoEm        time.Time `json:"criado_em"`
+	AtualizadoEm    time.Time `json:"atualizado_em"`
 }
 
 // IsAnonymous reporta se o usuário é anônimo (não autenticado).
@@ -49,43 +49,42 @@ func (u *Usuario) IsAnonymous() bool {
 
 // HasSenha reporta se o usuário possui uma senha.
 func (u *Usuario) HasSenha() bool {
-	return u.HashSenha.Valid
+	return u.HashSenha != nil
 }
 
 // SetSenha faz o hash da senha e atribui ao usuário.
 func (u *Usuario) SetSenha(senha string) error {
-	hashSenha, err := bcrypt.GenerateFromPassword([]byte(senha), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(senha), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
-	u.HashSenha = sql.Null[string]{V: string(hashSenha), Valid: true}
+
+	hashSenha := string(hash)
+	u.HashSenha = &hashSenha
 	return nil
 }
 
 // HasPapel reporta se o usuário possui determinado papel.
 func (u *Usuario) HasPapel(papel string) bool {
-	if !u.Papel.Valid {
+	if u.Papel == nil {
 		return false
 	}
-	return u.Papel.V == papel
+	return *u.Papel == papel
 }
 
 // SetPapel define o papel do usuário.
 func (u *Usuario) SetPapel(papel string) {
-	u.Papel = sql.Null[string]{
-		V:     papel,
-		Valid: true,
-	}
+	u.Papel = &papel
 }
 
 // CheckSenha verifica se a senha informada equivale ao campo HashSenha do usuário.
 // Caso o usuário não possua uma senha, retorna [ErrNoPassword].
 func (u *Usuario) CheckSenha(senha string) (bool, error) {
-	if !u.HashSenha.Valid {
+	if u.HashSenha == nil {
 		return false, ErrNoPassword
 	}
 
-	err := bcrypt.CompareHashAndPassword([]byte(u.HashSenha.V), []byte(senha))
+	err := bcrypt.CompareHashAndPassword([]byte(*u.HashSenha), []byte(senha))
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return false, nil
 	}
@@ -185,19 +184,27 @@ func (s *Store) GetUsuarioByCPF(ctx context.Context, cpf string) (*Usuario, erro
 	return &usuario, nil
 }
 
-func (s *Store) ListUsuarios(ctx context.Context) ([]*Usuario, error) {
+type ListUsuariosParams struct {
+	Papel string
+}
+
+// ListUsuarios retorna a lista de usuários e o total de resultados com os filtros aplicados.
+func (s *Store) ListUsuarios(ctx context.Context, params ListUsuariosParams) ([]*Usuario, int, error) {
 	query := `
 	SELECT 
 		id, nome, cpf, email, email_verificado,
-		hash_senha, papel, criado_em, atualizado_em
-	FROM usuarios`
+		hash_senha, papel, criado_em, atualizado_em,
+		COUNT(*) OVER()
+	FROM usuarios
+	WHERE (papel = $1 OR $1 = '')`
 
-	rows, err := s.db.Query(ctx, query)
+	rows, err := s.db.Query(ctx, query, params.Papel)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
+	var totalCount int
 	usuarios := make([]*Usuario, 0)
 	for rows.Next() {
 		var usuario Usuario
@@ -211,17 +218,18 @@ func (s *Store) ListUsuarios(ctx context.Context) ([]*Usuario, error) {
 			&usuario.Papel,
 			&usuario.CriadoEm,
 			&usuario.AtualizadoEm,
+			&totalCount,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		usuarios = append(usuarios, &usuario)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return usuarios, nil
+	return usuarios, totalCount, nil
 }
 
 // UpdateUsuario atualiza os dados do usuário no banco de dados.

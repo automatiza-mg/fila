@@ -9,9 +9,24 @@ import (
 type contextKey int
 
 const (
-	usuarioContextKey contextKey = iota
+	authContextKey contextKey = iota
+	usuarioContextKey
 )
 
+// Retorna o usuário autenticado. Não confundir com o método getUsuario.
+func (app *application) getAuth(ctx context.Context) *database.Usuario {
+	usuario, ok := ctx.Value(authContextKey).(*database.Usuario)
+	if !ok {
+		panic("usuario not present in context")
+	}
+	return usuario
+}
+
+func (app *application) setAuth(ctx context.Context, usuario *database.Usuario) context.Context {
+	return context.WithValue(ctx, authContextKey, usuario)
+}
+
+// Retorna um usuário {usuarioID}. Não confundir com o método getAuth.
 func (app *application) getUsuario(ctx context.Context) *database.Usuario {
 	usuario, ok := ctx.Value(usuarioContextKey).(*database.Usuario)
 	if !ok {

@@ -3,19 +3,33 @@ package database
 import (
 	"crypto/rand"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
+type seedUsuarioOpt func(u *Usuario)
+
+func withPapel(papel string) seedUsuarioOpt {
+	return func(u *Usuario) {
+		u.SetPapel(papel)
+	}
+}
+
 // Cria um novo usuário com dados aleatórios para fins de teste.
-func seedUsuario(t *testing.T, store *Store) *Usuario {
+func seedUsuario(t *testing.T, store *Store, opts ...seedUsuarioOpt) *Usuario {
 	t.Helper()
 
 	usuario := &Usuario{
 		CPF:   rand.Text(),
 		Email: rand.Text(),
 	}
+
+	for _, opt := range opts {
+		opt(usuario)
+	}
+
 	err := store.SaveUsuario(t.Context(), usuario)
 	if err != nil {
 		t.Fatal(err)
@@ -152,5 +166,51 @@ func TestUsuario_Empty(t *testing.T) {
 	}
 	if !empty {
 		t.Fatal("want: true, got: false")
+	}
+}
+
+func TestUsuario_List(t *testing.T) {
+	t.Parallel()
+
+	store := newTestStore(t)
+
+	seed := map[string]int{
+		PapelAdmin:         1,
+		PapelAnalista:      4,
+		PapelGestor:        2,
+		PapelSubsecretario: 3,
+	}
+
+	total := 0
+
+	var wg sync.WaitGroup
+	for papel, qty := range seed {
+		total += qty
+		for range qty {
+			wg.Go(func() {
+				seedUsuario(t, store, withPapel(papel))
+			})
+		}
+	}
+	wg.Wait()
+
+	_, count, err := store.ListUsuarios(t.Context(), ListUsuariosParams{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != total {
+		t.Fatalf("expected len(usuario) to be %d", total)
+	}
+
+	for papel, qty := range seed {
+		_, count, err := store.ListUsuarios(t.Context(), ListUsuariosParams{
+			Papel: papel,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if count != qty {
+			t.Fatalf("expected %d usuarios with papel %s, got: %d", qty, papel, count)
+		}
 	}
 }

@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"errors"
 	"testing"
 	"time"
@@ -16,9 +15,10 @@ func TestAnalistaLifecycle(t *testing.T) {
 	usuario := seedUsuario(t, store)
 
 	analista := &Analista{
-		UsuarioID:    usuario.ID,
-		Orgao:        "SEPLAG",
-		SEIUnidadeID: "123123",
+		UsuarioID:       usuario.ID,
+		Orgao:           "SEPLAG",
+		SEIUnidadeID:    "123123",
+		SEIUnidadeSigla: "SEPLAG/AP00",
 	}
 	err := store.SaveAnalista(t.Context(), analista)
 	if err != nil {
@@ -34,10 +34,9 @@ func TestAnalistaLifecycle(t *testing.T) {
 	}
 
 	analista.Afastado = true
-	analista.UltimaAtribuicaoEm = sql.Null[time.Time]{
-		V:     time.Now(),
-		Valid: true,
-	}
+
+	now := time.Now()
+	analista.UltimaAtribuicaoEm = &now
 
 	err = store.UpdateAnalista(t.Context(), analista)
 	if err != nil {
