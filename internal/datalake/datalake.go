@@ -25,8 +25,8 @@ func New(ctx context.Context, cfg *Config) (*DataLake, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxIdleConns(5)
-	db.SetMaxOpenConns(5)
+	db.SetMaxIdleConns(3)
+	db.SetMaxOpenConns(3)
 
 	if err := db.PingContext(ctx); err != nil {
 		return nil, err

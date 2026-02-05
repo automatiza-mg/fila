@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/validator"
 )
 
@@ -121,7 +125,18 @@ func (app *application) handleUsuarioCreate(w http.ResponseWriter, r *http.Reque
 	}
 	usuario.SetPapel(input.Papel)
 
-	err = app.store.SaveUsuario(r.Context(), usuario)
+	ctx := r.Context()
+
+	tx, err := app.pool.Begin(ctx)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	store := app.store.WithTx(tx)
+
+	err = store.SaveUsuario(ctx, usuario)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrUsuarioCPFTaken):
@@ -133,6 +148,36 @@ func (app *application) handleUsuarioCreate(w http.ResponseWriter, r *http.Reque
 		default:
 			app.serverError(w, r, err)
 		}
+		return
+	}
+
+	token, err := store.CreateToken(ctx, usuario.ID, database.EscopoSetup, 72*time.Hour)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	// TODO: Criar uma tarefa em background.
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		email, err := mail.NewSetupEmail(usuario.Email, mail.SetupEmailParams{
+			SetupURL: fmt.Sprintf("%s/cadastro?token=%s", app.cfg.BaseURL, token.Plaintext),
+		})
+		if err != nil {
+			app.logger.Error("Não foi possível criar email de cadastro", slog.String("err", err.Error()))
+			return
+		}
+
+		err = app.mail.Send(ctx, email)
+		if err != nil {
+			app.logger.Error("Não foi possível enviar email", slog.String("err", err.Error()))
+		}
+	}()
+
+	if err := tx.Commit(ctx); err != nil {
+		app.serverError(w, r, err)
 		return
 	}
 

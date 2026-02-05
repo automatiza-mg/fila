@@ -41,6 +41,7 @@ func main() {
 }
 
 type application struct {
+	dev    bool
 	cfg    *config.Config
 	logger *slog.Logger
 	rdb    *redis.Client
@@ -98,6 +99,7 @@ func run(ctx context.Context) error {
 	fila := fila.NewService(pool, sei, redisCache)
 
 	app := &application{
+		dev:    *dev,
 		cfg:    cfg,
 		logger: logger,
 		rdb:    rdb,

@@ -44,6 +44,8 @@ func (app *application) routes() http.Handler {
 
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/entrar", app.handleAuthEntrar)
+			r.Get("/cadastro", app.handleAuthCadastrarDetalhe)
+			r.Post("/cadastro", app.handleAuthCadastrar)
 
 			r.Group(func(r chi.Router) {
 				r.Use(app.requireAuth)

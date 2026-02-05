@@ -77,3 +77,9 @@ func (app *application) decodeError(w http.ResponseWriter, _ *http.Request, err 
 		Message: msg,
 	})
 }
+
+func (app *application) tokenError(w http.ResponseWriter, r *http.Request) {
+	app.writeJSON(w, http.StatusUnauthorized, ErrorResponse{
+		Message: "O token informado é inválido ou expirou.",
+	})
+}
