@@ -16,6 +16,7 @@ import (
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/config"
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/datalake"
 	"github.com/automatiza-mg/fila/internal/fila"
 	"github.com/automatiza-mg/fila/internal/infra"
 	"github.com/automatiza-mg/fila/internal/logging"
@@ -47,6 +48,8 @@ type application struct {
 	store  *database.Store
 	mail   mail.Sender
 	fila   *fila.Service
+	cache  cache.Cache
+	dl     *datalake.DataLake
 
 	decoder *form.Decoder
 	views   fs.FS
@@ -76,6 +79,12 @@ func run(ctx context.Context) error {
 	}
 	defer pool.Close()
 
+	dl, err := datalake.New(ctx, &cfg.DataLake)
+	if err != nil {
+		return err
+	}
+	defer dl.Close()
+
 	sender, err := mail.NewSMTPSender(&cfg.Mail)
 	if err != nil {
 		return err
@@ -96,6 +105,8 @@ func run(ctx context.Context) error {
 		store:  database.New(pool),
 		mail:   sender,
 		fila:   fila,
+		cache:  redisCache,
+		dl:     dl,
 
 		decoder: form.NewDecoder(),
 		views:   os.DirFS("web/views"),

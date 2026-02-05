@@ -11,7 +11,7 @@ import (
 var (
 	// Fonte: https://html.spec.whatwg.org/#valid-e-mail-address
 	EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-	CpfRX   = regexp.MustCompile(`^\d{11}$|^\d{3}\.\d{3}\.\d{3}\-\d{2}$`)
+	CpfRX   = regexp.MustCompile(`^\d{3}\.\d{3}\.\d{3}\-\d{2}$`)
 )
 
 // Verifica se a string s é compativel com a expressão regular rx.

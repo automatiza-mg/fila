@@ -16,6 +16,11 @@ func (app *application) routes() http.Handler {
 
 		r.Use(app.authenticate)
 
+		r.Route("/datalake", func(r chi.Router) {
+			r.Get("/processos", app.handleDatalakeProcessos)
+			r.Get("/processos/unidades", app.handleDatalakeUnidadesProcessos)
+		})
+
 		r.Route("/usuarios", func(r chi.Router) {
 			r.Get("/", app.handleUsuarioList)
 			r.Post("/", app.handleUsuarioCreate)
@@ -24,6 +29,7 @@ func (app *application) routes() http.Handler {
 				r.Use(app.loadUsuario)
 
 				r.Get("/", app.handleUsuarioDetail)
+				r.Delete("/", app.handleUsuarioDelete)
 
 				r.Post("/analista", app.handleAnalistaCreate)
 			})

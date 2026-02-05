@@ -264,3 +264,12 @@ func (s *Store) IsUsuariosEmpty(ctx context.Context) (bool, error) {
 
 	return empty, nil
 }
+
+func (s *Store) DeleteUsuario(ctx context.Context, id int64) error {
+	q := `DELETE FROM usuarios WHERE id = $1`
+	_, err := s.db.Exec(ctx, q, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
