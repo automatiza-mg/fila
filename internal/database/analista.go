@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strings"
 	"time"
@@ -14,12 +15,12 @@ var (
 )
 
 type Analista struct {
-	UsuarioID          int64      `json:"usuario_id"`
-	Orgao              string     `json:"orgao"`
-	SEIUnidadeID       string     `json:"sei_unidade_id"`
-	SEIUnidadeSigla    string     `json:"sei_unidade_sigla"`
-	Afastado           bool       `json:"afastado"`
-	UltimaAtribuicaoEm *time.Time `json:"ultima_atribuicao_em"`
+	UsuarioID          int64               `json:"usuario_id"`
+	Orgao              string              `json:"orgao"`
+	SEIUnidadeID       string              `json:"sei_unidade_id"`
+	SEIUnidadeSigla    string              `json:"sei_unidade_sigla"`
+	Afastado           bool                `json:"afastado"`
+	UltimaAtribuicaoEm sql.Null[time.Time] `json:"ultima_atribuicao_em"`
 }
 
 // SaveAnalista insere os dados de analista vinculado a um usuário no banco de dados.

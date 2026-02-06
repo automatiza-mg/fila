@@ -36,7 +36,7 @@ type Usuario struct {
 	CPF             string
 	Email           string
 	EmailVerificado bool
-	HashSenha       *string
+	HashSenha       sql.Null[string]
 	Papel           sql.Null[string]
 	CriadoEm        time.Time
 	AtualizadoEm    time.Time
@@ -49,7 +49,7 @@ func (u *Usuario) IsAnonymous() bool {
 
 // HasSenha reporta se o usuário possui uma senha.
 func (u *Usuario) HasSenha() bool {
-	return u.HashSenha != nil
+	return u.HashSenha.Valid
 }
 
 // SetSenha faz o hash da senha e atribui ao usuário.
@@ -60,18 +60,21 @@ func (u *Usuario) SetSenha(senha string) error {
 	}
 
 	hashSenha := string(hash)
-	u.HashSenha = &hashSenha
+	u.HashSenha = sql.Null[string]{
+		V:     hashSenha,
+		Valid: true,
+	}
 	return nil
 }
 
 // CheckSenha verifica se a senha informada equivale ao campo HashSenha do usuário.
 // Caso o usuário não possua uma senha, retorna [ErrNoPassword].
 func (u *Usuario) CheckSenha(senha string) (bool, error) {
-	if u.HashSenha == nil {
+	if !u.HasSenha() {
 		return false, ErrNoPassword
 	}
 
-	err := bcrypt.CompareHashAndPassword([]byte(*u.HashSenha), []byte(senha))
+	err := bcrypt.CompareHashAndPassword([]byte(u.HashSenha.V), []byte(senha))
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return false, nil
 	}

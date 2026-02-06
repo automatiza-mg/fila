@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/database"
 )
 
@@ -12,7 +13,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			ctx := app.setAuth(r.Context(), database.Anonymous)
+			ctx := app.setAuth(r.Context(), auth.Anonymous)
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
@@ -26,7 +27,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		}
 
 		token := parts[1]
-		usuario, err := app.store.GetUsuarioForToken(r.Context(), token, database.EscopoAuth)
+		usuario, err := app.auth.GetTokenOwner(r.Context(), token, auth.EscopoAuth)
 		if err != nil {
 			switch {
 			case errors.Is(err, database.ErrInvalidToken):

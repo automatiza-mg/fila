@@ -37,6 +37,9 @@ func (app *application) routes() http.Handler {
 
 				r.Get("/analista", app.handleAnalistaDetail)
 				r.Post("/analista", app.handleAnalistaCreate)
+
+				r.Post("/analista/afastar", app.handleAnalistaAfastar)
+				r.Post("/analista/retornar", app.handleAnalistaRetornar)
 			})
 		})
 

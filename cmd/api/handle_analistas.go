@@ -65,9 +65,10 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 	analista := &database.Analista{
 		UsuarioID:       usuario.ID,
 		Orgao:           input.Orgao,
-		SEIUnidadeID:    unidade.IdUnidade,
+		SEIUnidadeID:    unidade.ID,
 		SEIUnidadeSigla: unidade.Sigla,
 	}
+
 	err = app.store.SaveAnalista(r.Context(), analista)
 	if err != nil {
 		switch {
@@ -104,7 +105,7 @@ func (app *application) handleAnalistaDetail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	analista, err := app.store.GetAnalista(r.Context(), usuario.ID)
+	analista, err := app.fila.GetAnalista(r.Context(), usuario.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrNotFound):
@@ -116,4 +117,62 @@ func (app *application) handleAnalistaDetail(w http.ResponseWriter, r *http.Requ
 	}
 
 	app.writeJSON(w, http.StatusOK, analista)
+}
+
+func (app *application) handleAnalistaAfastar(w http.ResponseWriter, r *http.Request) {
+	usuario := app.getUsuario(r.Context())
+	if !usuario.HasPapel(database.PapelAnalista) {
+		app.writeJSON(w, http.StatusForbidden, ErrorResponse{
+			Message: "Apenas usuários com papel de analista podem ter dados complementares cadastrados.",
+		})
+		return
+	}
+
+	analista, err := app.fila.GetAnalista(r.Context(), usuario.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrNotFound):
+			app.notFound(w, r)
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	err = app.fila.AfastarAnalista(r.Context(), analista.UsuarioID)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (app *application) handleAnalistaRetornar(w http.ResponseWriter, r *http.Request) {
+	usuario := app.getUsuario(r.Context())
+	if !usuario.HasPapel(database.PapelAnalista) {
+		app.writeJSON(w, http.StatusForbidden, ErrorResponse{
+			Message: "Apenas usuários com papel de analista podem ter dados complementares cadastrados.",
+		})
+		return
+	}
+
+	analista, err := app.fila.GetAnalista(r.Context(), usuario.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrNotFound):
+			app.notFound(w, r)
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	err = app.fila.RetornarAnalista(r.Context(), analista.UsuarioID)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

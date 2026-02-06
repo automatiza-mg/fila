@@ -8,3 +8,13 @@ func Ptr[T any](n sql.Null[T]) *T {
 	}
 	return nil
 }
+
+func Null[T any](ptr *T) sql.Null[T] {
+	if ptr == nil {
+		return sql.Null[T]{}
+	}
+	return sql.Null[T]{
+		V:     *ptr,
+		Valid: true,
+	}
+}

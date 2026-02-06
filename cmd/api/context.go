@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/automatiza-mg/fila/internal/auth"
-	"github.com/automatiza-mg/fila/internal/database"
 )
 
 type contextKey int
@@ -15,15 +14,15 @@ const (
 )
 
 // Retorna o usuário autenticado. Não confundir com o método getUsuario.
-func (app *application) getAuth(ctx context.Context) *database.Usuario {
-	usuario, ok := ctx.Value(authContextKey).(*database.Usuario)
+func (app *application) getAuth(ctx context.Context) *auth.Usuario {
+	usuario, ok := ctx.Value(authContextKey).(*auth.Usuario)
 	if !ok {
 		panic("usuario not present in context")
 	}
 	return usuario
 }
 
-func (app *application) setAuth(ctx context.Context, usuario *database.Usuario) context.Context {
+func (app *application) setAuth(ctx context.Context, usuario *auth.Usuario) context.Context {
 	return context.WithValue(ctx, authContextKey, usuario)
 }
 

@@ -87,7 +87,7 @@ func (s *Store) GetUsuarioForToken(ctx context.Context, token string, escopo str
 	err := s.db.QueryRow(ctx, q, hashToken(token), escopo).Scan(&usuarioID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrInvalidToken
+			return nil, ErrNotFound
 		}
 		return nil, err
 	}

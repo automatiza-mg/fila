@@ -2,19 +2,20 @@ package auth
 
 import (
 	"context"
+	"log/slog"
+
+	"github.com/jackc/pgx/v5"
 )
 
+// PendingAction representam ações pendentes de um usuários, como
+// conclusão de cadastro, etc.
 type PendingAction struct {
 	Slug  string `json:"slug"`
 	Title string `json:"title"`
 }
 
-type ActionProvider interface {
-	GetActions(ctx context.Context, u *Usuario) ([]PendingAction, error)
-}
-
 // Retorna as pendências de cadastro de um usuário.
-func (s *Service) checkCoreActions(u *Usuario) []PendingAction {
+func checkCoreActions(u *Usuario) []PendingAction {
 	actions := make([]PendingAction, 0)
 
 	if !u.EmailVerificado {
@@ -27,20 +28,44 @@ func (s *Service) checkCoreActions(u *Usuario) []PendingAction {
 	return actions
 }
 
-// GetActions coleta as pendências de todos os [ActionProvider]'s registrados
-// no serviço.
-func (s *Service) GetActions(ctx context.Context, u *Usuario) ([]PendingAction, error) {
-	actions := s.checkCoreActions(u)
+// Coleta as pendências de todos os providers registrados.
+func (s *Service) getPendingActions(ctx context.Context, u *Usuario) []PendingAction {
+	seen := make(map[string]struct{})
+
+	actions := checkCoreActions(u)
+	for _, a := range actions {
+		seen[a.Slug] = struct{}{}
+	}
 
 	for _, p := range s.providers {
 		extraActions, err := p.GetActions(ctx, u)
 		if err != nil {
-			return nil, err
+			s.logger.Error(
+				"Falha ao coletar pendências",
+				slog.String("provider", p.Label()),
+				slog.Any("err", err),
+			)
+			continue
 		}
-		if len(extraActions) > 0 {
-			actions = append(actions, extraActions...)
+
+		for _, a := range extraActions {
+			if _, ok := seen[a.Slug]; ok {
+				continue
+			}
+			seen[a.Slug] = struct{}{}
+			actions = append(actions, a)
 		}
 	}
 
-	return actions, nil
+	return actions
+}
+
+// Executa a limpeza de todos os providers registrados.
+func (s *Service) cleanupAll(ctx context.Context, tx pgx.Tx, u *Usuario) error {
+	for _, p := range s.providers {
+		if err := p.Cleanup(ctx, tx, u); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"errors"
 	"testing"
 	"time"
@@ -35,8 +36,10 @@ func TestAnalistaLifecycle(t *testing.T) {
 
 	analista.Afastado = true
 
-	now := time.Now()
-	analista.UltimaAtribuicaoEm = &now
+	analista.UltimaAtribuicaoEm = sql.Null[time.Time]{
+		V:     time.Now(),
+		Valid: true,
+	}
 
 	err = store.UpdateAnalista(t.Context(), analista)
 	if err != nil {

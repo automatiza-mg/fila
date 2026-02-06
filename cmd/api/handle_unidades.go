@@ -4,19 +4,19 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/automatiza-mg/fila/internal/sei"
+	"github.com/automatiza-mg/fila/internal/fila"
 )
 
 // Retorna um mapa de unidades SEI onde o campo IdUnidade é a chave.
-func (app *application) getUnidadesMap(ctx context.Context) (map[string]sei.Unidade, error) {
+func (app *application) getUnidadesMap(ctx context.Context) (map[string]fila.UnidadeSei, error) {
 	unidades, err := app.fila.ListUnidadesAnalistas(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	unidadesMap := make(map[string]sei.Unidade, len(unidades))
+	unidadesMap := make(map[string]fila.UnidadeSei, len(unidades))
 	for _, unidade := range unidades {
-		unidadesMap[unidade.IdUnidade] = unidade
+		unidadesMap[unidade.ID] = unidade
 	}
 	return unidadesMap, nil
 }

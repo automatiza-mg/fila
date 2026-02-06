@@ -17,7 +17,9 @@ const (
 // NewLogger cria uma nova instância de [slog.Logger].
 func NewLogger(w io.Writer, dev bool) *slog.Logger {
 	if dev {
-		return slog.New(tint.NewHandler(w, nil))
+		return slog.New(tint.NewHandler(w, &tint.Options{
+			Level: slog.LevelDebug,
+		}))
 	}
 	return slog.New(slog.NewJSONHandler(w, nil))
 }

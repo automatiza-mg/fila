@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/validator"
 )
@@ -35,28 +36,16 @@ func (app *application) handleAuthEntrar(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	usuario, err := app.store.GetUsuarioByCPF(ctx, input.CPF)
+	usuario, err := app.auth.Authenticate(ctx, input.CPF, input.Senha)
 	if err != nil {
 		switch {
-		case errors.Is(err, database.ErrNotFound):
+		case errors.Is(err, auth.ErrInvalidCredentials):
 			app.writeJSON(w, http.StatusUnauthorized, ErrorResponse{
 				Message: "Credenciais inválidas",
 			})
 		default:
 			app.serverError(w, r, err)
 		}
-		return
-	}
-
-	ok, err := usuario.CheckSenha(input.Senha)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-	if !ok {
-		app.writeJSON(w, http.StatusUnauthorized, ErrorResponse{
-			Message: "Credenciais inválidas",
-		})
 		return
 	}
 

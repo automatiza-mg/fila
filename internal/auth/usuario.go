@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -41,6 +42,38 @@ type Usuario struct {
 	EmailVerificado bool            `json:"email_verificado"`
 	Papel           string          `json:"papel,omitempty"`
 	Pendencias      []PendingAction `json:"pendencias"`
+
+	hashSenha string
+}
+
+func mapUsuario(u *database.Usuario) *Usuario {
+	return &Usuario{
+		ID:              u.ID,
+		Nome:            u.Nome,
+		CPF:             u.CPF,
+		Email:           u.Email,
+		EmailVerificado: u.EmailVerificado,
+		Papel:           u.Papel.V,
+
+		hashSenha: u.HashSenha.V,
+	}
+}
+
+// CheckSenha verifica se a senha informada equivale ao campo HashSenha do usuário.
+// Caso o usuário não possua uma senha, retorna [ErrNoPassword].
+func (u *Usuario) CheckSenha(senha string) (bool, error) {
+	if !u.HasSenha() {
+		return false, ErrNoPassword
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(u.hashSenha), []byte(senha))
+	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // IsAnonymous reporta se o usuário é anônimo (não autenticado).
@@ -56,6 +89,11 @@ func (u *Usuario) HasPapel(papel string) bool {
 // IsAnalista verifica se o usuário é um analista.
 func (u *Usuario) IsAnalista() bool {
 	return u.Papel == PapelAnalista
+}
+
+// HasSenha reporta se o usuário possui uma senha cadastrada.
+func (u *Usuario) HasSenha() bool {
+	return u.hashSenha != ""
 }
 
 type CreateUsuarioParams struct {
@@ -107,15 +145,7 @@ func (s *Service) CreateUsuario(ctx context.Context, params CreateUsuarioParams)
 		return nil, err
 	}
 
-	// Mapeia registro no banco para um Usuario.
-	u := &Usuario{
-		ID:              r.ID,
-		Nome:            r.Nome,
-		CPF:             r.CPF,
-		Email:           r.Email,
-		EmailVerificado: r.EmailVerificado,
-		Papel:           r.Papel.V,
-	}
+	u := mapUsuario(r)
 
 	// Enviar email de confirmação.
 	if params.TokenURL != nil {
@@ -130,11 +160,8 @@ func (s *Service) CreateUsuario(ctx context.Context, params CreateUsuarioParams)
 		}()
 	}
 
-	// Carregar pendências.
-	u.Pendencias, err = s.GetActions(ctx, u)
-	if err != nil {
-		return nil, err
-	}
+	// Carrega pendências
+	u.Pendencias = s.getPendingActions(ctx, u)
 
 	return u, nil
 }
@@ -154,44 +181,51 @@ func (s *Service) ListUsuarios(ctx context.Context, params ListUsuariosParams) (
 
 	usuarios := make([]*Usuario, len(records))
 	for i, r := range records {
-		u := &Usuario{
-			ID:              r.ID,
-			Nome:            r.Nome,
-			CPF:             r.CPF,
-			Email:           r.Email,
-			EmailVerificado: r.EmailVerificado,
-			Papel:           r.Papel.V,
-		}
-
-		u.Pendencias, err = s.GetActions(ctx, u)
-		if err != nil {
-			return nil, err
-		}
+		u := mapUsuario(r)
+		u.Pendencias = s.getPendingActions(ctx, u)
 
 		usuarios[i] = u
 	}
 	return usuarios, nil
 }
 
+// GetUsuario retorna os dados de um usuário e carrega suas pendências, se houver.
 func (s *Service) GetUsuario(ctx context.Context, usuarioID int64) (*Usuario, error) {
 	r, err := s.store.GetUsuario(ctx, usuarioID)
 	if err != nil {
 		return nil, err
 	}
 
-	u := &Usuario{
-		ID:              r.ID,
-		Nome:            r.Nome,
-		CPF:             r.CPF,
-		Email:           r.Email,
-		EmailVerificado: r.EmailVerificado,
-		Papel:           r.Papel.V,
-	}
-
-	u.Pendencias, err = s.GetActions(ctx, u)
-	if err != nil {
-		return nil, err
-	}
+	u := mapUsuario(r)
+	u.Pendencias = s.getPendingActions(ctx, u)
 
 	return u, nil
+}
+
+// DeleteUsuario remove um usuário do banco de dados, executando as ações
+// dos [CleanupProvider] registrados no serviço.
+func (s *Service) DeleteUsuario(ctx context.Context, usuario *Usuario) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// Executa a limpeza de recursos conforme necessário.
+	if err := s.cleanupAll(ctx, tx, usuario); err != nil {
+		return err
+	}
+
+	store := s.store.WithTx(tx)
+
+	err = store.DeleteUsuario(ctx, usuario.ID)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	return nil
 }

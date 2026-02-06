@@ -119,11 +119,10 @@ func (app *application) handleUsuarioDetail(w http.ResponseWriter, r *http.Reque
 	app.writeJSON(w, http.StatusOK, usuario)
 }
 
-// TODO: Executar ações de limpeza de analista.
 func (app *application) handleUsuarioDelete(w http.ResponseWriter, r *http.Request) {
 	usuario := app.getUsuario(r.Context())
 
-	err := app.store.DeleteUsuario(r.Context(), usuario.ID)
+	err := app.auth.DeleteUsuario(r.Context(), usuario)
 	if err != nil {
 		app.serverError(w, r, err)
 		return

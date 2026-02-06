@@ -100,8 +100,12 @@ func run(ctx context.Context) error {
 
 	cache := cache.NewRedisCache(rdb)
 
-	fila := fila.New(pool, sei, cache)
-	auth := auth.New(pool, sender, fila)
+	auth := auth.New(pool, logger, sender)
+
+	fila := fila.New(pool, auth, sei, cache)
+	if err := auth.RegisterProvider(fila); err != nil {
+		return err
+	}
 
 	app := &application{
 		dev:      *dev,
