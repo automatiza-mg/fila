@@ -4,9 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 	"slices"
-	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
 	"golang.org/x/crypto/bcrypt"
@@ -122,10 +120,7 @@ func (s *Service) CreateUsuario(ctx context.Context, params CreateUsuarioParams)
 		Nome:  params.Nome,
 		CPF:   params.CPF,
 		Email: params.Email,
-		Papel: sql.Null[string]{
-			V:     params.Papel,
-			Valid: true,
-		},
+		Papel: sql.Null[string]{V: params.Papel, Valid: true},
 	}
 
 	tx, err := s.pool.Begin(ctx)
@@ -146,22 +141,14 @@ func (s *Service) CreateUsuario(ctx context.Context, params CreateUsuarioParams)
 	}
 
 	u := mapUsuario(r)
+	u.Pendencias = s.getPendingActions(ctx, u)
 
 	// Enviar email de confirmação.
 	if params.TokenURL != nil {
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			defer cancel()
-
-			err := s.SendSetup(ctx, u, params.TokenURL)
-			if err != nil {
-				log.Printf("Não foi possível enviar email de cadastro")
-			}
-		}()
+		if err := s.SendSetup(ctx, u, params.TokenURL); err != nil {
+			return nil, err
+		}
 	}
-
-	// Carrega pendências
-	u.Pendencias = s.getPendingActions(ctx, u)
 
 	return u, nil
 }

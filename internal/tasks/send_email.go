@@ -20,6 +20,12 @@ type SendEmailWorker struct {
 	river.WorkerDefaults[SendEmailArgs]
 }
 
+func NewSendEmailWorker(sender mail.Sender) *SendEmailWorker {
+	return &SendEmailWorker{
+		sender: sender,
+	}
+}
+
 func (w *SendEmailWorker) Work(ctx context.Context, job *river.Job[SendEmailArgs]) error {
 	return w.sender.Send(ctx, job.Args.Email)
 }

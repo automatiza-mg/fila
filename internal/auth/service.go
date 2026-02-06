@@ -2,14 +2,19 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"errors"
-	"log"
 	"log/slog"
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/mail"
+	"github.com/automatiza-mg/fila/internal/tasks"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/rivertype"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -27,21 +32,26 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
+type TaskInserter interface {
+	InsertTx(ctx context.Context, tx pgx.Tx, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error)
+}
+
 type Service struct {
 	pool   *pgxpool.Pool
 	store  *database.Store
 	logger *slog.Logger
-	sender mail.Sender
+	queue  TaskInserter
 
 	providers map[string]LifecycleProvider
 }
 
-func New(pool *pgxpool.Pool, logger *slog.Logger, sender mail.Sender) *Service {
+func New(pool *pgxpool.Pool, logger *slog.Logger, queue TaskInserter) *Service {
 	return &Service{
-		pool:      pool,
-		store:     database.New(pool),
-		logger:    logger.With(slog.String("service", "auth")),
-		sender:    sender,
+		pool:   pool,
+		store:  database.New(pool),
+		logger: logger.With(slog.String("service", "auth")),
+		queue:  queue,
+
 		providers: make(map[string]LifecycleProvider),
 	}
 }
@@ -71,18 +81,76 @@ func (s *Service) Authenticate(ctx context.Context, cpf, senha string) (*Usuario
 		return nil, err
 	}
 
-	ok, err := record.CheckSenha(senha)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, ErrInvalidCredentials
-	}
-
+	// Carrega os dados do usuário.
 	u := mapUsuario(record)
 	u.Pendencias = s.getPendingActions(ctx, u)
 
+	// Verifica se o usuário possui uma senha.
+	if !u.HasSenha() {
+		return nil, ErrNoPassword
+	}
+
+	// Compara o hash com a senha.
+	err = bcrypt.CompareHashAndPassword([]byte(u.hashSenha), []byte(senha))
+	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+		return nil, ErrInvalidCredentials
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	return u, nil
+}
+
+type SetupUsuarioParams struct {
+	Token string
+	Senha string
+}
+
+func (s *Service) SetupUsuario(ctx context.Context, params SetupUsuarioParams) error {
+	r, err := s.store.GetUsuarioForToken(ctx, params.Token, EscopoSetup.String())
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrNotFound):
+			return ErrInvalidToken
+		default:
+			return err
+		}
+	}
+
+	if r.EmailVerificado {
+		return ErrAlreadySetup
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(params.Senha), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	store := s.store.WithTx(tx)
+
+	r.EmailVerificado = true
+	r.HashSenha = sql.Null[string]{
+		V:     string(hash),
+		Valid: true,
+	}
+	err = store.UpdateUsuario(ctx, r)
+	if err != nil {
+		return err
+	}
+
+	err = store.DeleteTokensUsuario(ctx, r.ID, EscopoSetup.String())
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 // GetTokenOwner retorna o usuário dono de um token com o escopo especificado.
@@ -111,7 +179,15 @@ func (s *Service) SendSetup(ctx context.Context, usuario *Usuario, tokenFn func(
 		return ErrAlreadySetup
 	}
 
-	token, err := s.createToken(ctx, s.store, usuario.ID, EscopoSetup, 72*time.Hour)
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	store := s.store.WithTx(tx)
+
+	token, err := s.createToken(ctx, store, usuario.ID, EscopoSetup, 72*time.Hour)
 	if err != nil {
 		return err
 	}
@@ -120,15 +196,13 @@ func (s *Service) SendSetup(ctx context.Context, usuario *Usuario, tokenFn func(
 		SetupURL: tokenFn(token.Token),
 	})
 
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
+	_, err = s.queue.InsertTx(ctx, tx, tasks.SendEmailArgs{
+		Email: email,
+	}, nil)
 
-		err := s.sender.Send(ctx, email)
-		if err != nil {
-			log.Printf("Não foi possível enviar email: %v", err)
-		}
-	}()
+	if err != nil {
+		return err
+	}
 
-	return nil
+	return tx.Commit(ctx)
 }

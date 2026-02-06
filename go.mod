@@ -16,6 +16,7 @@ require (
 	github.com/redis/go-redis/v9 v9.17.3
 	github.com/riverqueue/river v0.30.2
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.30.2
+	github.com/riverqueue/river/rivertype v0.30.2
 	github.com/sclgo/impala-go v1.4.1
 	github.com/wneessen/go-mail v0.7.2
 	golang.org/x/crypto v0.44.0
@@ -57,7 +58,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/riverqueue/river/riverdriver v0.30.2 // indirect
 	github.com/riverqueue/river/rivershared v0.30.2 // indirect
-	github.com/riverqueue/river/rivertype v0.30.2 // indirect
 	github.com/samber/lo v1.52.0 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect

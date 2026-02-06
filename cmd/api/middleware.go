@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/automatiza-mg/fila/internal/auth"
-	"github.com/automatiza-mg/fila/internal/database"
 )
 
 func (app *application) authenticate(next http.Handler) http.Handler {
@@ -30,7 +29,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		usuario, err := app.auth.GetTokenOwner(r.Context(), token, auth.EscopoAuth)
 		if err != nil {
 			switch {
-			case errors.Is(err, database.ErrInvalidToken):
+			case errors.Is(err, auth.ErrInvalidToken):
 				app.writeJSON(w, http.StatusUnauthorized, ErrorResponse{
 					Message: "O token informado é inválido ou expirou",
 				})

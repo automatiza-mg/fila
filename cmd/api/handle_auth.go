@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/auth"
-	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/validator"
 )
 
@@ -49,7 +48,7 @@ func (app *application) handleAuthEntrar(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	token, err := app.store.CreateToken(ctx, usuario.ID, database.EscopoAuth, 24*time.Hour)
+	token, err := app.auth.CreateToken(r.Context(), usuario.ID, auth.EscopoAuth, 24*time.Hour)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -65,10 +64,10 @@ func (app *application) handleAuthCadastrarDetalhe(w http.ResponseWriter, r *htt
 		return
 	}
 
-	usuario, err := app.store.GetUsuarioForToken(r.Context(), token, database.EscopoSetup)
+	usuario, err := app.auth.GetTokenOwner(r.Context(), token, auth.EscopoSetup)
 	if err != nil {
 		switch {
-		case errors.Is(err, database.ErrInvalidToken):
+		case errors.Is(err, auth.ErrInvalidToken):
 			app.tokenError(w, r)
 		default:
 			app.serverError(w, r, err)
@@ -106,49 +105,17 @@ func (app *application) handleAuthCadastrar(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	usuario, err := app.store.GetUsuarioForToken(r.Context(), input.Token, database.EscopoSetup)
+	err = app.auth.SetupUsuario(r.Context(), auth.SetupUsuarioParams{
+		Token: input.Token,
+		Senha: input.Senha,
+	})
 	if err != nil {
 		switch {
-		case errors.Is(err, database.ErrInvalidToken):
+		case errors.Is(err, auth.ErrInvalidToken):
 			app.tokenError(w, r)
 		default:
 			app.serverError(w, r, err)
 		}
-		return
-	}
-
-	usuario.EmailVerificado = true
-	err = usuario.SetSenha(input.Senha)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	ctx := r.Context()
-
-	tx, err := app.pool.Begin(ctx)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-	defer tx.Rollback(ctx)
-
-	store := app.store.WithTx(tx)
-
-	err = store.UpdateUsuario(r.Context(), usuario)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	err = store.DeleteTokensUsuario(ctx, usuario.ID, database.EscopoSetup)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		app.serverError(w, r, err)
 		return
 	}
 

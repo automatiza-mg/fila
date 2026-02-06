@@ -14,7 +14,7 @@ func TestToken_Lifecycle(t *testing.T) {
 	store := newTestStore(t)
 	usuario := seedUsuario(t, store)
 
-	token, err := store.CreateToken(t.Context(), usuario.ID, EscopoSetup, time.Hour)
+	token, err := store.CreateToken(t.Context(), usuario.ID, "setup", time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,8 +36,8 @@ func TestToken_Lifecycle(t *testing.T) {
 	}
 
 	_, err = store.GetUsuarioForToken(t.Context(), token.Plaintext, token.Escopo)
-	if !errors.Is(err, ErrInvalidToken) {
-		t.Fatalf("expected ErrInvalidToken, got %v", err)
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 }
 
@@ -47,19 +47,19 @@ func TestToken_Invalid(t *testing.T) {
 	store := newTestStore(t)
 	usuario := seedUsuario(t, store)
 
-	_, err := store.GetUsuarioForToken(t.Context(), "foobar", EscopoResetSenha)
-	if !errors.Is(err, ErrInvalidToken) {
-		t.Fatalf("expected ErrInvalidToken, got %v", err)
+	_, err := store.GetUsuarioForToken(t.Context(), "foobar", "reset-senha")
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 
 	// Cria um token expirado
-	token, err := store.CreateToken(t.Context(), usuario.ID, EscopoResetSenha, -time.Hour)
+	token, err := store.CreateToken(t.Context(), usuario.ID, "reset-senha", -time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	_, err = store.GetUsuarioForToken(t.Context(), token.Plaintext, token.Escopo)
-	if !errors.Is(err, ErrInvalidToken) {
-		t.Fatalf("expected ErrInvalidToken, got %v", err)
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 }

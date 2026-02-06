@@ -11,20 +11,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var (
-	// ErrInvalidToken é o erro retornado para tokens que são inválidos ou expiraram (não encontrado).
-	ErrInvalidToken = errors.New("invalid or expired token")
-)
-
-const (
-	// EscopoSetup é o escopo usado para finalizar o cadastro de um usuário.
-	EscopoSetup = "setup"
-	// EscopoResetSenha é o escopo usado para redefinir a senha de um usuário.
-	EscopoResetSenha = "reset-senha"
-	// EscopoAuth é o escopo usado para autenticar um usuário.
-	EscopoAuth = "auth"
-)
-
 type Token struct {
 	Plaintext string    `json:"token"`
 	Hash      []byte    `json:"-"`

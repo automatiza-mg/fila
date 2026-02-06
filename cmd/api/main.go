@@ -24,10 +24,13 @@ import (
 	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/postgres"
 	"github.com/automatiza-mg/fila/internal/sei"
+	"github.com/automatiza-mg/fila/internal/tasks"
 	"github.com/go-playground/form/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
+	"github.com/riverqueue/river"
 )
 
 func main() {
@@ -52,6 +55,7 @@ type application struct {
 	cache    cache.Cache
 	datalake *datalake.DataLake
 	sei      *sei.Client
+	queue    *river.Client[pgx.Tx]
 
 	auth *auth.Service
 	fila *fila.Service
@@ -96,11 +100,22 @@ func run(ctx context.Context) error {
 	}
 	defer sender.Close()
 
+	workers := river.NewWorkers()
+	river.AddWorker(workers, tasks.NewSendEmailWorker(sender))
+
+	queue, err := tasks.NewRiverClient(ctx, pool, workers)
+	if err != nil {
+		return err
+	}
+	if err := queue.Start(ctx); err != nil {
+		return err
+	}
+
 	sei := sei.NewClient(&cfg.SEI)
 
 	cache := cache.NewRedisCache(rdb)
 
-	auth := auth.New(pool, logger, sender)
+	auth := auth.New(pool, logger, queue)
 
 	fila := fila.New(pool, auth, sei, cache)
 	if err := auth.RegisterProvider(fila); err != nil {
@@ -150,8 +165,9 @@ func run(ctx context.Context) error {
 	defer cancel()
 
 	logger.Info("Encerrando servidor HTTP", slog.String("addr", srv.Addr))
-	err = errors.Join(
+
+	return errors.Join(
 		srv.Shutdown(exitCtx),
+		queue.Stop(ctx),
 	)
-	return err
 }

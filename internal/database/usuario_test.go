@@ -42,33 +42,7 @@ func seedUsuario(t *testing.T, store *Store, opts ...seedUsuarioOpt) *Usuario {
 	return usuario
 }
 
-func TestUsuario_Senha(t *testing.T) {
-	t.Parallel()
-
-	var usuario Usuario
-	err := usuario.SetSenha("foobar")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	matches, err := usuario.CheckSenha("foobar")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !matches {
-		t.Fatal("want: true, got: false")
-	}
-
-	matches, err = usuario.CheckSenha("foobarx")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if matches {
-		t.Fatal("want: false, got: true")
-	}
-}
-
-func TTestUsuario_Lifecycle(t *testing.T) {
+func TestUsuario_Lifecycle(t *testing.T) {
 	t.Parallel()
 
 	store := newTestStore(t)
