@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/config"
 	"github.com/automatiza-mg/fila/internal/database"
@@ -48,9 +49,11 @@ type application struct {
 	pool   *pgxpool.Pool
 	store  *database.Store
 	mail   mail.Sender
-	fila   *fila.Service
 	cache  cache.Cache
 	dl     *datalake.DataLake
+
+	auth *auth.Service
+	fila *fila.Service
 
 	decoder *form.Decoder
 	views   fs.FS
@@ -96,7 +99,8 @@ func run(ctx context.Context) error {
 
 	redisCache := cache.NewRedisCache(rdb)
 
-	fila := fila.NewService(pool, sei, redisCache)
+	fila := fila.New(pool, sei, redisCache)
+	auth := auth.New(pool, sender)
 
 	app := &application{
 		dev:    *dev,
@@ -106,9 +110,11 @@ func run(ctx context.Context) error {
 		pool:   pool,
 		store:  database.New(pool),
 		mail:   sender,
-		fila:   fila,
 		cache:  redisCache,
 		dl:     dl,
+
+		fila: fila,
+		auth: auth,
 
 		decoder: form.NewDecoder(),
 		views:   os.DirFS("web/views"),

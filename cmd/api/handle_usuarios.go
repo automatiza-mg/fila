@@ -1,16 +1,13 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strings"
-	"time"
 
+	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/database"
-	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/validator"
 )
 
@@ -58,15 +55,15 @@ func (app *application) handleUsuarioList(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	analistaIDs := make([]int64, 0)
+	ids := make([]int64, 0)
 	for _, usuario := range usuarios {
 		if usuario.HasPapel(database.PapelAnalista) {
-			analistaIDs = append(analistaIDs, usuario.ID)
+			ids = append(ids, usuario.ID)
 		}
 	}
 
-	if len(analistaIDs) > 0 {
-		analistas, err := app.store.GetAnalistasByUsuarioIDs(r.Context(), analistaIDs)
+	if len(ids) > 0 {
+		analistas, err := app.store.GetAnalistasByUsuarioIDs(r.Context(), ids)
 		if err != nil {
 			app.serverError(w, r, err)
 			return
@@ -83,9 +80,9 @@ func (app *application) handleUsuarioList(w http.ResponseWriter, r *http.Request
 
 // Lista de papeis permitidos
 var papeisAllowed = []string{
-	database.PapelAnalista,
-	database.PapelGestor,
-	database.PapelSubsecretario,
+	auth.PapelAnalista,
+	auth.PapelGestor,
+	auth.PapelSubsecretario,
 }
 
 type usuarioCreateRequest struct {
@@ -118,25 +115,15 @@ func (app *application) handleUsuarioCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	usuario := &database.Usuario{
+	usuario, err := app.auth.CreateUsuario(r.Context(), auth.CreateUsuarioParams{
 		Nome:  input.Nome,
 		CPF:   input.CPF,
 		Email: input.Email,
-	}
-	usuario.SetPapel(input.Papel)
-
-	ctx := r.Context()
-
-	tx, err := app.pool.Begin(ctx)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-	defer tx.Rollback(ctx)
-
-	store := app.store.WithTx(tx)
-
-	err = store.SaveUsuario(ctx, usuario)
+		Papel: input.Papel,
+		TokenURL: func(token string) string {
+			return fmt.Sprintf("%s/cadastro?token=%s", app.cfg.BaseURL, token)
+		},
+	})
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrUsuarioCPFTaken):
@@ -148,36 +135,6 @@ func (app *application) handleUsuarioCreate(w http.ResponseWriter, r *http.Reque
 		default:
 			app.serverError(w, r, err)
 		}
-		return
-	}
-
-	token, err := store.CreateToken(ctx, usuario.ID, database.EscopoSetup, 72*time.Hour)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	// TODO: Criar uma tarefa em background.
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-
-		email, err := mail.NewSetupEmail(usuario.Email, mail.SetupEmailParams{
-			SetupURL: fmt.Sprintf("%s/cadastro?token=%s", app.cfg.BaseURL, token.Plaintext),
-		})
-		if err != nil {
-			app.logger.Error("Não foi possível criar email de cadastro", slog.String("err", err.Error()))
-			return
-		}
-
-		err = app.mail.Send(ctx, email)
-		if err != nil {
-			app.logger.Error("Não foi possível enviar email", slog.String("err", err.Error()))
-		}
-	}()
-
-	if err := tx.Commit(ctx); err != nil {
-		app.serverError(w, r, err)
 		return
 	}
 
@@ -204,4 +161,25 @@ func (app *application) handleUsuarioDelete(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (app *application) handleUsuarioEnviarCadastro(w http.ResponseWriter, r *http.Request) {
+	usuario := app.getUsuario(r.Context())
+
+	if usuario.EmailVerificado && usuario.HasSenha() {
+		app.writeJSON(w, http.StatusBadRequest, ErrorResponse{
+			Message: "Usuário possui um cadastro ativo.",
+		})
+		return
+	}
+
+	err := app.auth.SendSetup(r.Context(), usuario, func(token string) string {
+		return fmt.Sprintf("%s/cadastrar?token=%s", app.cfg.BaseURL, token)
+	})
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
 }

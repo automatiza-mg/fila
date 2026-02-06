@@ -16,22 +16,20 @@ var (
 	ErrInvalidToken = errors.New("invalid or expired token")
 )
 
-type Escopo string
-
 const (
 	// EscopoSetup é o escopo usado para finalizar o cadastro de um usuário.
-	EscopoSetup Escopo = "setup"
+	EscopoSetup = "setup"
 	// EscopoResetSenha é o escopo usado para redefinir a senha de um usuário.
-	EscopoResetSenha Escopo = "reset-senha"
+	EscopoResetSenha = "reset-senha"
 	// EscopoAuth é o escopo usado para autenticar um usuário.
-	EscopoAuth Escopo = "auth"
+	EscopoAuth = "auth"
 )
 
 type Token struct {
 	Plaintext string    `json:"token"`
 	Hash      []byte    `json:"-"`
 	UsuarioID int64     `json:"-"`
-	Escopo    Escopo    `json:"-"`
+	Escopo    string    `json:"-"`
 	ExpiraEm  time.Time `json:"expira_em"`
 }
 
@@ -41,7 +39,7 @@ func hashToken(token string) []byte {
 }
 
 // CreateToken gera um novo token com os dados informados e salva no banco de dados.
-func (s *Store) CreateToken(ctx context.Context, usuarioID int64, escopo Escopo, ttl time.Duration) (*Token, error) {
+func (s *Store) CreateToken(ctx context.Context, usuarioID int64, escopo string, ttl time.Duration) (*Token, error) {
 	b := make([]byte, 32)
 	_, _ = rand.Read(b)
 
@@ -65,9 +63,19 @@ func (s *Store) CreateToken(ctx context.Context, usuarioID int64, escopo Escopo,
 	return token, nil
 }
 
+func (s *Store) SaveToken(ctx context.Context, token *Token) error {
+	q := `INSERT INTO tokens (hash, usuario_id, escopo, expira_em) VALUES ($1, $2, $3, $4)`
+	args := []any{token.Hash, token.UsuarioID, token.Escopo, token.ExpiraEm}
+	_, err := s.db.Exec(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetUsuarioForToken retorna um usuário dono de um token válido. Caso o token não exista ou tenha expirado,
 // retorna [ErrInvalidToken].
-func (s *Store) GetUsuarioForToken(ctx context.Context, token string, escopo Escopo) (*Usuario, error) {
+func (s *Store) GetUsuarioForToken(ctx context.Context, token string, escopo string) (*Usuario, error) {
 	q := `
 	SELECT usuario_id
 	FROM tokens
@@ -92,7 +100,7 @@ func (s *Store) GetUsuarioForToken(ctx context.Context, token string, escopo Esc
 }
 
 // DeleteTokensUsuario exclui todos os tokens de um usuário com determinado escopo do banco de dados.
-func (s *Store) DeleteTokensUsuario(ctx context.Context, usuarioID int64, escopo Escopo) error {
+func (s *Store) DeleteTokensUsuario(ctx context.Context, usuarioID int64, escopo string) error {
 	q := `DELETE FROM tokens WHERE usuario_id = $1 AND escopo = $2`
 	_, err := s.db.Exec(ctx, q, usuarioID, escopo)
 	if err != nil {

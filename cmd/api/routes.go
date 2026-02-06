@@ -34,6 +34,8 @@ func (app *application) routes() http.Handler {
 				r.Get("/", app.handleUsuarioDetail)
 				r.Delete("/", app.handleUsuarioDelete)
 
+				r.Post("/enviar-cadastro", app.handleUsuarioEnviarCadastro)
+
 				r.Post("/analista", app.handleAnalistaCreate)
 			})
 		})

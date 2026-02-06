@@ -3,6 +3,7 @@ module github.com/automatiza-mg/fila
 go 1.25.4
 
 require (
+	github.com/PuerkitoBio/goquery v1.11.0
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/go-chi/chi/v5 v5.2.4
 	github.com/go-playground/form/v4 v4.3.0
@@ -17,7 +18,8 @@ require (
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.30.2
 	github.com/sclgo/impala-go v1.4.1
 	github.com/wneessen/go-mail v0.7.2
-	golang.org/x/crypto v0.40.0
+	golang.org/x/crypto v0.44.0
+	golang.org/x/text v0.33.0
 )
 
 require (
@@ -25,6 +27,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
+	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/apache/thrift v0.22.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -67,9 +70,9 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.uber.org/goleak v1.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/text v0.33.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -20,7 +20,7 @@ type Service struct {
 	cache cache.Cache
 }
 
-func NewService(pool *pgxpool.Pool, sei SeiService, cache cache.Cache) *Service {
+func New(pool *pgxpool.Pool, sei SeiService, cache cache.Cache) *Service {
 	return &Service{
 		pool:  pool,
 		store: database.New(pool),
