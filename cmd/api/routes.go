@@ -16,7 +16,6 @@ func (app *application) routes() http.Handler {
 
 		r.Use(app.authenticate)
 
-		// TODO: Adicionar verificação de admin.
 		r.Route("/datalake", func(r chi.Router) {
 			r.Get("/processos", app.handleDatalakeProcessos)
 			r.Get("/processos/unidades", app.handleDatalakeUnidadesProcessos)
@@ -36,8 +35,17 @@ func (app *application) routes() http.Handler {
 
 				r.Post("/enviar-cadastro", app.handleUsuarioEnviarCadastro)
 
+				r.Get("/analista", app.handleAnalistaDetail)
 				r.Post("/analista", app.handleAnalistaCreate)
 			})
+		})
+
+		r.Route("/analistas", func(r chi.Router) {
+			r.Get("/", app.handleAnalistaList)
+		})
+
+		r.Route("/processos", func(r chi.Router) {
+			r.Get("/_debug/prompt", app.handleProcessosDebugPrompt)
 		})
 
 		r.Route("/unidades", func(r chi.Router) {

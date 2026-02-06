@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/validator"
@@ -15,7 +16,16 @@ var orgaosAllowed = []string{
 	"SEE",
 }
 
-type analistaCreateRequest struct {
+type AnalistaResponse struct {
+	UsuarioID          int64      `json:"usuario_id"`
+	Orgao              string     `json:"orgao"`
+	SEIUnidadeID       string     `json:"sei_unidade_id"`
+	SEIUnidadeSigla    string     `json:"sei_unidade_sigla"`
+	Afastado           bool       `json:"afastado"`
+	UltimaAtribuicaoEm *time.Time `json:"ultima_atribuicao_em"`
+}
+
+type AnalistaCreateRequest struct {
 	UnidadeID string `json:"unidade_id"`
 	Orgao     string `json:"orgao"`
 
@@ -31,7 +41,7 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	var input analistaCreateRequest
+	var input AnalistaCreateRequest
 	err := app.decodeJSON(w, r, &input)
 	if err != nil {
 		app.decodeError(w, r, err)
@@ -71,6 +81,39 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	w.Header().Set("Location", fmt.Sprintf("/api/v1/usuarios/%d", usuario.ID))
+	w.Header().Set("Location", fmt.Sprintf("/api/v1/usuarios/%d/analista", usuario.ID))
 	app.writeJSON(w, http.StatusCreated, analista)
+}
+
+func (app *application) handleAnalistaList(w http.ResponseWriter, r *http.Request) {
+	analistas, err := app.store.ListAnalistas(r.Context())
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, analistas)
+}
+
+func (app *application) handleAnalistaDetail(w http.ResponseWriter, r *http.Request) {
+	usuario := app.getUsuario(r.Context())
+	if !usuario.HasPapel(database.PapelAnalista) {
+		app.writeJSON(w, http.StatusForbidden, ErrorResponse{
+			Message: "Apenas usuários com papel de analista podem ter dados complementares cadastrados.",
+		})
+		return
+	}
+
+	analista, err := app.store.GetAnalista(r.Context(), usuario.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrNotFound):
+			app.notFound(w, r)
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, analista)
 }

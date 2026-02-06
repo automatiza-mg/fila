@@ -24,20 +24,24 @@ type Service struct {
 	pool   *pgxpool.Pool
 	store  *database.Store
 	sender mail.Sender
+
+	providers []ActionProvider
 }
 
-func New(pool *pgxpool.Pool, sender mail.Sender) *Service {
+func New(pool *pgxpool.Pool, sender mail.Sender, providers ...ActionProvider) *Service {
 	return &Service{
 		pool:   pool,
 		store:  database.New(pool),
 		sender: sender,
+
+		providers: providers,
 	}
 }
 
 // SendSetup envia um novo email de verificação para o usuário. Caso o usuário
 // já esteja verificado, retorna [ErrAlreadySetup].
-func (s *Service) SendSetup(ctx context.Context, usuario *database.Usuario, tokenFn func(token string) string) error {
-	if usuario.EmailVerificado && usuario.HasSenha() {
+func (s *Service) SendSetup(ctx context.Context, usuario *Usuario, tokenFn func(token string) string) error {
+	if usuario.EmailVerificado {
 		return ErrAlreadySetup
 	}
 

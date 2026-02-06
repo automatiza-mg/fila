@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/database"
 )
 
@@ -27,14 +28,14 @@ func (app *application) setAuth(ctx context.Context, usuario *database.Usuario) 
 }
 
 // Retorna um usuário {usuarioID}. Não confundir com o método getAuth.
-func (app *application) getUsuario(ctx context.Context) *database.Usuario {
-	usuario, ok := ctx.Value(usuarioContextKey).(*database.Usuario)
+func (app *application) getUsuario(ctx context.Context) *auth.Usuario {
+	usuario, ok := ctx.Value(usuarioContextKey).(*auth.Usuario)
 	if !ok {
 		panic("usuario not present in context")
 	}
 	return usuario
 }
 
-func (app *application) setUsuario(ctx context.Context, usuario *database.Usuario) context.Context {
+func (app *application) setUsuario(ctx context.Context, usuario *auth.Usuario) context.Context {
 	return context.WithValue(ctx, usuarioContextKey, usuario)
 }

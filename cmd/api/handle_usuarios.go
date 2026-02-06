@@ -19,7 +19,7 @@ func (app *application) loadUsuario(next http.Handler) http.Handler {
 			return
 		}
 
-		usuario, err := app.store.GetUsuario(r.Context(), usuarioID)
+		usuario, err := app.auth.GetUsuario(r.Context(), usuarioID)
 		if err != nil {
 			switch {
 			case errors.Is(err, database.ErrNotFound):
@@ -30,49 +30,22 @@ func (app *application) loadUsuario(next http.Handler) http.Handler {
 			return
 		}
 
-		// Carrega dados de analista
-		if usuario.HasPapel(database.PapelAnalista) {
-			usuario.Analista, err = app.store.GetAnalista(r.Context(), usuario.ID)
-			if err != nil && !errors.Is(err, database.ErrNotFound) {
-				app.serverError(w, r, err)
-				return
-			}
-		}
-
 		ctx := app.setUsuario(r.Context(), usuario)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func (app *application) handleUsuarioList(w http.ResponseWriter, r *http.Request) {
-	papel := r.URL.Query().Get("papel")
+	q := r.URL.Query()
 
-	usuarios, _, err := app.store.ListUsuarios(r.Context(), database.ListUsuariosParams{
-		Papel: strings.ToUpper(papel),
+	papel := q.Get("papel")
+
+	usuarios, err := app.auth.ListUsuarios(r.Context(), auth.ListUsuariosParams{
+		Papel: papel,
 	})
 	if err != nil {
 		app.serverError(w, r, err)
 		return
-	}
-
-	ids := make([]int64, 0)
-	for _, usuario := range usuarios {
-		if usuario.HasPapel(database.PapelAnalista) {
-			ids = append(ids, usuario.ID)
-		}
-	}
-
-	if len(ids) > 0 {
-		analistas, err := app.store.GetAnalistasByUsuarioIDs(r.Context(), ids)
-		if err != nil {
-			app.serverError(w, r, err)
-			return
-		}
-		for _, u := range usuarios {
-			if a, ok := analistas[u.ID]; ok {
-				u.Analista = a
-			}
-		}
 	}
 
 	app.writeJSON(w, http.StatusOK, usuarios)
@@ -146,13 +119,9 @@ func (app *application) handleUsuarioDetail(w http.ResponseWriter, r *http.Reque
 	app.writeJSON(w, http.StatusOK, usuario)
 }
 
+// TODO: Executar ações de limpeza de analista.
 func (app *application) handleUsuarioDelete(w http.ResponseWriter, r *http.Request) {
 	usuario := app.getUsuario(r.Context())
-
-	// TODO: Executar ações de limpeza de analista.
-	if usuario.HasPapel(database.PapelAnalista) {
-
-	}
 
 	err := app.store.DeleteUsuario(r.Context(), usuario.ID)
 	if err != nil {
@@ -166,7 +135,7 @@ func (app *application) handleUsuarioDelete(w http.ResponseWriter, r *http.Reque
 func (app *application) handleUsuarioEnviarCadastro(w http.ResponseWriter, r *http.Request) {
 	usuario := app.getUsuario(r.Context())
 
-	if usuario.EmailVerificado && usuario.HasSenha() {
+	if usuario.EmailVerificado {
 		app.writeJSON(w, http.StatusBadRequest, ErrorResponse{
 			Message: "Usuário possui um cadastro ativo.",
 		})

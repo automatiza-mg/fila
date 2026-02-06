@@ -14,7 +14,7 @@ var (
 )
 
 type Analista struct {
-	UsuarioID          int64      `json:"-"`
+	UsuarioID          int64      `json:"usuario_id"`
 	Orgao              string     `json:"orgao"`
 	SEIUnidadeID       string     `json:"sei_unidade_id"`
 	SEIUnidadeSigla    string     `json:"sei_unidade_sigla"`
@@ -75,7 +75,44 @@ func (s *Store) GetAnalista(ctx context.Context, usuarioID int64) (*Analista, er
 	return &analista, nil
 }
 
-func (s *Store) GetAnalistasByUsuarioIDs(ctx context.Context, ids []int64) (map[int64]*Analista, error) {
+func (s *Store) ListAnalistas(ctx context.Context) ([]*Analista, error) {
+	q := `
+	SELECT
+		usuario_id, orgao, sei_unidade_id, sei_unidade_sigla,
+		afastado, ultima_atribuicao_em
+	FROM analistas`
+
+	rows, err := s.db.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	analistas := make([]*Analista, 0)
+	for rows.Next() {
+		var analista Analista
+		err := rows.Scan(
+			&analista.UsuarioID,
+			&analista.Orgao,
+			&analista.SEIUnidadeID,
+			&analista.SEIUnidadeSigla,
+			&analista.Afastado,
+			&analista.UltimaAtribuicaoEm,
+		)
+		if err != nil {
+			return nil, err
+		}
+		analistas = append(analistas, &analista)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return analistas, nil
+}
+
+// GetAnalistasMap retorna um map de analistas para os ids de usuários informados.
+func (s *Store) GetAnalistasMap(ctx context.Context, ids []int64) (map[int64]*Analista, error) {
 	q := `
 	SELECT
 		usuario_id, orgao, sei_unidade_id, sei_unidade_sigla,

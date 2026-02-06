@@ -2,6 +2,7 @@ package database
 
 import (
 	"crypto/rand"
+	"database/sql"
 	"errors"
 	"sync"
 	"testing"
@@ -13,7 +14,10 @@ type seedUsuarioOpt func(u *Usuario)
 
 func withPapel(papel string) seedUsuarioOpt {
 	return func(u *Usuario) {
-		u.SetPapel(papel)
+		u.Papel = sql.Null[string]{
+			V:     papel,
+			Valid: true,
+		}
 	}
 }
 

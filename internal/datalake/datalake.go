@@ -27,7 +27,7 @@ func New(ctx context.Context, cfg *Config) (*DataLake, error) {
 	}
 	db.SetMaxIdleConns(3)
 	db.SetMaxOpenConns(3)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	db.SetConnMaxLifetime(2 * time.Minute)
 
 	if err := db.PingContext(ctx); err != nil {
 		return nil, err
@@ -38,4 +38,8 @@ func New(ctx context.Context, cfg *Config) (*DataLake, error) {
 
 func (d *DataLake) Close() error {
 	return d.db.Close()
+}
+
+func (d *DataLake) Stats() sql.DBStats {
+	return d.db.Stats()
 }

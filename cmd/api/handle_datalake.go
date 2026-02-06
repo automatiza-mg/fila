@@ -22,7 +22,7 @@ func (app *application) handleDatalakeProcessos(w http.ResponseWriter, r *http.R
 
 	key := fmt.Sprintf("fila:datalake:processos:%s", unidade)
 	b, err := app.cache.Remember(r.Context(), key, 2*time.Hour, func() ([]byte, error) {
-		processos, _, err := app.dl.ListProcessosAbertos(r.Context(), unidade)
+		processos, _, err := app.datalake.ListProcessosAbertos(r.Context(), unidade)
 		if err != nil {
 			return nil, err
 		}
@@ -45,7 +45,7 @@ func (app *application) handleDatalakeProcessos(w http.ResponseWriter, r *http.R
 }
 
 func (app *application) handleDatalakeUnidadesProcessos(w http.ResponseWriter, r *http.Request) {
-	unidades, err := app.dl.ListUnidadesDisponiveis(r.Context())
+	unidades, err := app.datalake.ListUnidadesDisponiveis(r.Context())
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -59,7 +59,7 @@ func (app *application) handleDatalakeServidor(w http.ResponseWriter, r *http.Re
 
 	key := fmt.Sprintf("fila:datalake:servidores:%s", cpf)
 	b, err := app.cache.Remember(r.Context(), key, 24*time.Hour, func() ([]byte, error) {
-		servidor, err := app.dl.GetServidorByCPF(r.Context(), cpf)
+		servidor, err := app.datalake.GetServidorByCPF(r.Context(), cpf)
 		if err != nil {
 			return nil, err
 		}

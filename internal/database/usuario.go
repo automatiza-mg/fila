@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strings"
 	"time"
@@ -30,16 +31,15 @@ const (
 var Anonymous = &Usuario{}
 
 type Usuario struct {
-	ID              int64     `json:"id"`
-	Nome            string    `json:"nome"`
-	CPF             string    `json:"cpf"`
-	Email           string    `json:"email"`
-	EmailVerificado bool      `json:"email_verificado"`
-	HashSenha       *string   `json:"-"`
-	Papel           *string   `json:"papel"`
-	Analista        *Analista `json:"analista,omitempty"`
-	CriadoEm        time.Time `json:"criado_em"`
-	AtualizadoEm    time.Time `json:"atualizado_em"`
+	ID              int64
+	Nome            string
+	CPF             string
+	Email           string
+	EmailVerificado bool
+	HashSenha       *string
+	Papel           sql.Null[string]
+	CriadoEm        time.Time
+	AtualizadoEm    time.Time
 }
 
 // IsAnonymous reporta se o usuário é anônimo (não autenticado).
@@ -62,19 +62,6 @@ func (u *Usuario) SetSenha(senha string) error {
 	hashSenha := string(hash)
 	u.HashSenha = &hashSenha
 	return nil
-}
-
-// HasPapel reporta se o usuário possui determinado papel.
-func (u *Usuario) HasPapel(papel string) bool {
-	if u.Papel == nil {
-		return false
-	}
-	return *u.Papel == papel
-}
-
-// SetPapel define o papel do usuário.
-func (u *Usuario) SetPapel(papel string) {
-	u.Papel = &papel
 }
 
 // CheckSenha verifica se a senha informada equivale ao campo HashSenha do usuário.
@@ -185,7 +172,8 @@ func (s *Store) GetUsuarioByCPF(ctx context.Context, cpf string) (*Usuario, erro
 }
 
 type ListUsuariosParams struct {
-	Papel string
+	Papel           string
+	EmailVerificado sql.Null[bool]
 }
 
 // ListUsuarios retorna a lista de usuários e o total de resultados com os filtros aplicados.
@@ -196,9 +184,10 @@ func (s *Store) ListUsuarios(ctx context.Context, params ListUsuariosParams) ([]
 		hash_senha, papel, criado_em, atualizado_em,
 		COUNT(*) OVER()
 	FROM usuarios
-	WHERE (papel = $1 OR $1 = '')`
+	WHERE (papel = $1 OR $1 = '')
+	AND (email_verificado = $2 OR $2 IS NULL)`
 
-	rows, err := s.db.Query(ctx, query, params.Papel)
+	rows, err := s.db.Query(ctx, query, params.Papel, params.EmailVerificado)
 	if err != nil {
 		return nil, 0, err
 	}

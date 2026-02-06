@@ -42,15 +42,16 @@ func main() {
 }
 
 type application struct {
-	dev    bool
-	cfg    *config.Config
-	logger *slog.Logger
-	rdb    *redis.Client
-	pool   *pgxpool.Pool
-	store  *database.Store
-	mail   mail.Sender
-	cache  cache.Cache
-	dl     *datalake.DataLake
+	dev      bool
+	cfg      *config.Config
+	logger   *slog.Logger
+	rdb      *redis.Client
+	pool     *pgxpool.Pool
+	store    *database.Store
+	mail     mail.Sender
+	cache    cache.Cache
+	datalake *datalake.DataLake
+	sei      *sei.Client
 
 	auth *auth.Service
 	fila *fila.Service
@@ -97,21 +98,22 @@ func run(ctx context.Context) error {
 
 	sei := sei.NewClient(&cfg.SEI)
 
-	redisCache := cache.NewRedisCache(rdb)
+	cache := cache.NewRedisCache(rdb)
 
-	fila := fila.New(pool, sei, redisCache)
-	auth := auth.New(pool, sender)
+	fila := fila.New(pool, sei, cache)
+	auth := auth.New(pool, sender, fila)
 
 	app := &application{
-		dev:    *dev,
-		cfg:    cfg,
-		logger: logger,
-		rdb:    rdb,
-		pool:   pool,
-		store:  database.New(pool),
-		mail:   sender,
-		cache:  redisCache,
-		dl:     dl,
+		dev:      *dev,
+		cfg:      cfg,
+		logger:   logger,
+		rdb:      rdb,
+		pool:     pool,
+		store:    database.New(pool),
+		mail:     sender,
+		cache:    cache,
+		datalake: dl,
+		sei:      sei,
 
 		fila: fila,
 		auth: auth,

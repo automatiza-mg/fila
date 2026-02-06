@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 	"slices"
@@ -33,14 +34,13 @@ var (
 )
 
 type Usuario struct {
-	ID              int64     `json:"id"`
-	Nome            string    `json:"nome"`
-	CPF             string    `json:"cpf"`
-	Email           string    `json:"email"`
-	EmailVerificado bool      `json:"email_verificado"`
-	Papel           *string   `json:"papel"`
-	CriadoEm        time.Time `json:"criado_em"`
-	AtualizadoEm    time.Time `json:"atualizado_em"`
+	ID              int64           `json:"id"`
+	Nome            string          `json:"nome"`
+	CPF             string          `json:"cpf"`
+	Email           string          `json:"email"`
+	EmailVerificado bool            `json:"email_verificado"`
+	Papel           string          `json:"papel,omitempty"`
+	Pendencias      []PendingAction `json:"pendencias"`
 }
 
 // IsAnonymous reporta se o usuário é anônimo (não autenticado).
@@ -50,15 +50,12 @@ func (u *Usuario) IsAnonymous() bool {
 
 // HasPapel reporta se o usuário possui determinado papel.
 func (u *Usuario) HasPapel(papel string) bool {
-	if u.Papel == nil {
-		return false
-	}
-	return *u.Papel == papel
+	return u.Papel == papel
 }
 
-// SetPapel define o papel do usuário.
-func (u *Usuario) SetPapel(papel string) {
-	u.Papel = &papel
+// IsAnalista verifica se o usuário é um analista.
+func (u *Usuario) IsAnalista() bool {
+	return u.Papel == PapelAnalista
 }
 
 type CreateUsuarioParams struct {
@@ -77,18 +74,21 @@ type CreateUsuarioParams struct {
 
 // CreateUsuario cria um novo usuário no sistema para os dados informados. A criação de usuários admin
 // não é permitida por esse método.
-func (s *Service) CreateUsuario(ctx context.Context, params CreateUsuarioParams) (*database.Usuario, error) {
+func (s *Service) CreateUsuario(ctx context.Context, params CreateUsuarioParams) (*Usuario, error) {
 	if !slices.Contains(AllowedPapeis, params.Papel) {
 		return nil, ErrInvalidPapel
 	}
 
 	// Salva usuário no banco de dados.
-	record := &database.Usuario{
+	r := &database.Usuario{
 		Nome:  params.Nome,
 		CPF:   params.CPF,
 		Email: params.Email,
+		Papel: sql.Null[string]{
+			V:     params.Papel,
+			Valid: true,
+		},
 	}
-	record.SetPapel(params.Papel)
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -98,9 +98,23 @@ func (s *Service) CreateUsuario(ctx context.Context, params CreateUsuarioParams)
 
 	store := s.store.WithTx(tx)
 
-	err = store.SaveUsuario(ctx, record)
+	err = store.SaveUsuario(ctx, r)
 	if err != nil {
 		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	// Mapeia registro no banco para um Usuario.
+	u := &Usuario{
+		ID:              r.ID,
+		Nome:            r.Nome,
+		CPF:             r.CPF,
+		Email:           r.Email,
+		EmailVerificado: r.EmailVerificado,
+		Papel:           r.Papel.V,
 	}
 
 	// Enviar email de confirmação.
@@ -109,16 +123,75 @@ func (s *Service) CreateUsuario(ctx context.Context, params CreateUsuarioParams)
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
 
-			err := s.SendSetup(ctx, record, params.TokenURL)
+			err := s.SendSetup(ctx, u, params.TokenURL)
 			if err != nil {
 				log.Printf("Não foi possível enviar email de cadastro")
 			}
 		}()
 	}
 
-	if err := tx.Commit(ctx); err != nil {
+	// Carregar pendências.
+	u.Pendencias, err = s.GetActions(ctx, u)
+	if err != nil {
 		return nil, err
 	}
 
-	return record, nil
+	return u, nil
+}
+
+type ListUsuariosParams struct {
+	Papel string
+}
+
+// ListUsuarios retorna a lista de usuários com os dados de pendências carregados.
+func (s *Service) ListUsuarios(ctx context.Context, params ListUsuariosParams) ([]*Usuario, error) {
+	records, _, err := s.store.ListUsuarios(ctx, database.ListUsuariosParams{
+		Papel: params.Papel,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	usuarios := make([]*Usuario, len(records))
+	for i, r := range records {
+		u := &Usuario{
+			ID:              r.ID,
+			Nome:            r.Nome,
+			CPF:             r.CPF,
+			Email:           r.Email,
+			EmailVerificado: r.EmailVerificado,
+			Papel:           r.Papel.V,
+		}
+
+		u.Pendencias, err = s.GetActions(ctx, u)
+		if err != nil {
+			return nil, err
+		}
+
+		usuarios[i] = u
+	}
+	return usuarios, nil
+}
+
+func (s *Service) GetUsuario(ctx context.Context, usuarioID int64) (*Usuario, error) {
+	r, err := s.store.GetUsuario(ctx, usuarioID)
+	if err != nil {
+		return nil, err
+	}
+
+	u := &Usuario{
+		ID:              r.ID,
+		Nome:            r.Nome,
+		CPF:             r.CPF,
+		Email:           r.Email,
+		EmailVerificado: r.EmailVerificado,
+		Papel:           r.Papel.V,
+	}
+
+	u.Pendencias, err = s.GetActions(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }
