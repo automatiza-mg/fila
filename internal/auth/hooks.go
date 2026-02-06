@@ -7,11 +7,41 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+const (
+	CleanupTriggerDelete CleanupTrigger = iota
+	CleanupTriggerPapelUpdate
+)
+
+// CleanupTrigger é a ação que causou o método Cleanup de um LifecycleProvider
+// ser chamado.
+type CleanupTrigger int
+
+func (t CleanupTrigger) String() string {
+	switch t {
+	case CleanupTriggerDelete:
+		return "delete"
+	case CleanupTriggerPapelUpdate:
+		return "papel:update"
+	default:
+		return "unknown"
+	}
+}
+
 // PendingAction representam ações pendentes de um usuários, como
 // conclusão de cadastro, etc.
 type PendingAction struct {
 	Slug  string `json:"slug"`
 	Title string `json:"title"`
+}
+
+type LifecycleProvider interface {
+	// Label retorna um ID do provider registrado.
+	Label() string
+	// GetActions retorna pendenciais específicas de um usuário.
+	GetActions(ctx context.Context, u *Usuario) ([]PendingAction, error)
+	// Cleanup executa ações de limpeza durante a exclusão ou alteração de papel
+	// de um usuário. O campo Pendencias pode ou não estar carregado.
+	Cleanup(ctx context.Context, tx pgx.Tx, trigger CleanupTrigger, usuario *Usuario) error
 }
 
 // Retorna as pendências de cadastro de um usuário.
@@ -61,9 +91,15 @@ func (s *Service) getPendingActions(ctx context.Context, u *Usuario) []PendingAc
 }
 
 // Executa a limpeza de todos os providers registrados.
-func (s *Service) cleanupAll(ctx context.Context, tx pgx.Tx, u *Usuario) error {
+func (s *Service) cleanupAll(ctx context.Context, tx pgx.Tx, trigger CleanupTrigger, u *Usuario) error {
+	s.logger.Debug(
+		"Executando limpeza",
+		slog.Int64("usuario_id", u.ID),
+		slog.String("trigger", trigger.String()),
+	)
+
 	for _, p := range s.providers {
-		if err := p.Cleanup(ctx, tx, u); err != nil {
+		if err := p.Cleanup(ctx, tx, trigger, u); err != nil {
 			return err
 		}
 	}

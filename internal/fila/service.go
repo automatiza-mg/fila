@@ -73,7 +73,7 @@ func (s *Service) GetActions(ctx context.Context, u *auth.Usuario) ([]auth.Pendi
 //
 // Cleanup executa as ações de limpeza da fila quando um usuário é removido
 // da aplicação ou tem seu papel alterado.
-func (s *Service) Cleanup(ctx context.Context, tx pgx.Tx, usuario *auth.Usuario) error {
+func (s *Service) Cleanup(ctx context.Context, tx pgx.Tx, _ auth.CleanupTrigger, usuario *auth.Usuario) error {
 	if !usuario.IsAnalista() {
 		return nil
 	}

@@ -202,6 +202,58 @@ func (s *Service) GetUsuario(ctx context.Context, usuarioID int64) (*Usuario, er
 	return u, nil
 }
 
+type UpdateUsuarioParams struct {
+	// O identificador do usuário.
+	UsuarioID int64
+	// Nome completo do usuário.
+	Nome string
+	// O papel (role) do usuário. Deve ser um dos valores definidos em [AllowedPapeis].
+	Papel string
+}
+
+// UpdateUsuario aplica as atualizações ao usuário. Caso ocorra mudança de papel,
+// os métodos Cleanup dos providers registrados são chamados.
+func (s *Service) UpdateUsuario(ctx context.Context, params UpdateUsuarioParams) error {
+	if !slices.Contains(AllowedPapeis, params.Papel) {
+		return ErrInvalidPapel
+	}
+
+	r, err := s.store.GetUsuario(ctx, params.UsuarioID)
+	if err != nil {
+		return err
+	}
+
+	u := mapUsuario(r)
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	store := s.store.WithTx(tx)
+
+	// Verifica se houve mudança de papel para limpeza em potencial de recursos.
+	if r.Papel.Valid && r.Papel.V != params.Papel {
+		if err := s.cleanupAll(ctx, tx, CleanupTriggerPapelUpdate, u); err != nil {
+			return err
+		}
+	}
+
+	// Atualiza dados do usuário.
+	r.Nome = params.Nome
+	r.Papel = sql.Null[string]{
+		V:     params.Papel,
+		Valid: true,
+	}
+
+	if err := store.UpdateUsuario(ctx, r); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
 // DeleteUsuario remove um usuário do banco de dados, executando as ações
 // dos [CleanupProvider] registrados no serviço.
 func (s *Service) DeleteUsuario(ctx context.Context, usuario *Usuario) error {
@@ -212,7 +264,7 @@ func (s *Service) DeleteUsuario(ctx context.Context, usuario *Usuario) error {
 	defer tx.Rollback(ctx)
 
 	// Executa a limpeza de recursos conforme necessário.
-	if err := s.cleanupAll(ctx, tx, usuario); err != nil {
+	if err := s.cleanupAll(ctx, tx, CleanupTriggerDelete, usuario); err != nil {
 		return err
 	}
 

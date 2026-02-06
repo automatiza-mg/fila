@@ -9,7 +9,6 @@ import (
 
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/mail"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -27,16 +26,6 @@ var (
 	// de login com credenciais inválidas
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
-
-type LifecycleProvider interface {
-	// Label retorna um ID do provider registrado.
-	Label() string
-	// GetActions retorna pendenciais específicas de um usuário.
-	GetActions(ctx context.Context, u *Usuario) ([]PendingAction, error)
-	// Cleanup executa ações de limpeza durante a exclusão ou alteração de papel
-	// de um usuário.
-	Cleanup(ctx context.Context, tx pgx.Tx, usuario *Usuario) error
-}
 
 type Service struct {
 	pool   *pgxpool.Pool
