@@ -31,7 +31,7 @@ func (t CleanupTrigger) String() string {
 // conclusão de cadastro, etc.
 type PendingAction struct {
 	Slug  string `json:"slug"`
-	Title string `json:"title"`
+	Title string `json:"titulo"`
 }
 
 type UserHook interface {

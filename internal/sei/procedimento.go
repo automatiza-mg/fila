@@ -126,6 +126,8 @@ type LinhaDocumento struct {
 	Unidade string `json:"unidade"`
 }
 
+// ListarDocumentos retorna a lista de documentos através de um WebScraping da página de acesso externo de um processo
+// (link externo).
 func (c *Client) ListarDocumentos(ctx context.Context, linkAcesso string) ([]LinhaDocumento, error) {
 	res, err := c.http.Get(linkAcesso)
 	if err != nil {

@@ -55,3 +55,17 @@ func (s *Service) ListUnidadesAnalistas(ctx context.Context) ([]UnidadeSei, erro
 	}
 	return unidades, nil
 }
+
+func (s *Service) GetUnidadesMap(ctx context.Context) (map[string]UnidadeSei, error) {
+	unidades, err := s.ListUnidadesAnalistas(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	unidadesMap := make(map[string]UnidadeSei, len(unidades))
+	for _, unidade := range unidades {
+		unidadesMap[unidade.ID] = unidade
+	}
+
+	return unidadesMap, nil
+}

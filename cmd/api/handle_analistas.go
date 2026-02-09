@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/fila"
 	"github.com/automatiza-mg/fila/internal/validator"
 )
 
@@ -16,18 +16,9 @@ var orgaosAllowed = []string{
 	"SEE",
 }
 
-type AnalistaResponse struct {
-	UsuarioID          int64      `json:"usuario_id"`
-	Orgao              string     `json:"orgao"`
-	SEIUnidadeID       string     `json:"sei_unidade_id"`
-	SEIUnidadeSigla    string     `json:"sei_unidade_sigla"`
-	Afastado           bool       `json:"afastado"`
-	UltimaAtribuicaoEm *time.Time `json:"ultima_atribuicao_em"`
-}
-
 type AnalistaCreateRequest struct {
-	UnidadeID string `json:"unidade_id"`
-	Orgao     string `json:"orgao"`
+	SEIUnidadeID string `json:"sei_unidade_id"`
+	Orgao        string `json:"orgao"`
 
 	validator.Validator `json:"-"`
 }
@@ -48,12 +39,12 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	unidadesMap, err := app.getUnidadesMap(r.Context())
+	unidadesMap, err := app.fila.GetUnidadesMap(r.Context())
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
-	unidade, unidadeOk := unidadesMap[input.UnidadeID]
+	unidade, unidadeOk := unidadesMap[input.SEIUnidadeID]
 
 	input.Check(validator.PermittedValue(input.Orgao, orgaosAllowed...), "orgao", fmt.Sprintf("Deve ser um dos valores: %s", strings.Join(orgaosAllowed, ", ")))
 	input.Check(unidadeOk, "unidade_id", "A unidade informada deve ser válida")
@@ -62,14 +53,11 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	analista := &database.Analista{
-		UsuarioID:       usuario.ID,
-		Orgao:           input.Orgao,
-		SEIUnidadeID:    unidade.ID,
-		SEIUnidadeSigla: unidade.Sigla,
-	}
-
-	err = app.store.SaveAnalista(r.Context(), analista)
+	a, err := app.fila.CreateAnalista(r.Context(), fila.CreateAnalistaParams{
+		UsuarioID:    usuario.ID,
+		SeiUnidadeID: unidade.ID,
+		Orgao:        input.Orgao,
+	})
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrAnalistaExists):
@@ -83,7 +71,7 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Header().Set("Location", fmt.Sprintf("/api/v1/usuarios/%d/analista", usuario.ID))
-	app.writeJSON(w, http.StatusCreated, analista)
+	app.writeJSON(w, http.StatusCreated, a)
 }
 
 func (app *application) handleAnalistaList(w http.ResponseWriter, r *http.Request) {
