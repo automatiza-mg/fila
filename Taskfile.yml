@@ -5,18 +5,13 @@ version: '3'
 dotenv: ['.env']
 
 vars:
-  BINARY_NAME: server
-  MAIN_PATH: cmd/server/*.go
+  BINARY_NAME: api
+  MAIN_PATH: cmd/api/*.go
   BUILD_DIR: bin
   DB_URL: postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_HOST}}:{{.POSTGRES_PORT}}/{{.POSTGRES_DB}}
   MIGRATIONS_DIR: migrations
 
 tasks:
-  dev:
-    desc: Executa o servidor HTTP / TailwindCSS
-    cmds:
-      - npx concurrently -c yellow,blue "task server:watch" "npm run tw:watch"
-
   migrate:up:
     desc: Aplica as migrações do banco de dados (Up)
     cmds:

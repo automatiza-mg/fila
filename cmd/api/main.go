@@ -168,6 +168,6 @@ func run(ctx context.Context) error {
 
 	return errors.Join(
 		srv.Shutdown(exitCtx),
-		queue.Stop(ctx),
+		queue.Stop(exitCtx),
 	)
 }

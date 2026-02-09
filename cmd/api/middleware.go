@@ -2,11 +2,47 @@ package main
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/automatiza-mg/fila/internal/auth"
 )
+
+type loggerWriter struct {
+	status int
+	http.ResponseWriter
+}
+
+func (w *loggerWriter) WriteHeader(status int) {
+	w.status = status
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *loggerWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
+func (app *application) reqLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		lw := &loggerWriter{ResponseWriter: w, status: http.StatusOK}
+
+		t := time.Now()
+		defer func() {
+			app.logger.Info(
+				"Requisição HTTP",
+				slog.Int("status", lw.status),
+				slog.String("proto", r.Proto),
+				slog.String("method", r.Method),
+				slog.String("uri", r.URL.RequestURI()),
+				slog.Duration("duration", time.Since(t)),
+			)
+		}()
+
+		next.ServeHTTP(lw, r)
+	})
+}
 
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

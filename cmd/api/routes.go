@@ -14,7 +14,7 @@ func (app *application) routes() http.Handler {
 		r.NotFound(app.notFound)
 		r.MethodNotAllowed(app.methodNotAllowed)
 
-		r.Use(app.authenticate)
+		r.Use(app.authenticate, app.reqLogger)
 
 		r.Route("/datalake", func(r chi.Router) {
 			r.Get("/processos", app.handleDatalakeProcessos)
