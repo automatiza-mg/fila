@@ -22,10 +22,13 @@ func NewRiverClient(ctx context.Context, pool *pgxpool.Pool, workers *river.Work
 		return nil, err
 	}
 
-	return river.NewClient(driver, &river.Config{
-		Workers: workers,
-		Queues: map[string]river.QueueConfig{
+	cfg := &river.Config{}
+	if workers != nil {
+		cfg.Workers = workers
+		cfg.Queues = map[string]river.QueueConfig{
 			river.QueueDefault: {MaxWorkers: 100},
-		},
-	})
+		}
+	}
+
+	return river.NewClient(driver, cfg)
 }

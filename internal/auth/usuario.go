@@ -268,3 +268,39 @@ func (s *Service) DeleteUsuario(ctx context.Context, usuario *Usuario) error {
 
 	return nil
 }
+
+type CreateAdminParams struct {
+	Nome  string
+	CPF   string
+	Email string
+	Senha string
+}
+
+// CreateAdmin adiciona um novo administrador no banco de dados.
+func (s *Service) CreateAdmin(ctx context.Context, params CreateAdminParams) (*Usuario, error) {
+	hashSenha, err := bcrypt.GenerateFromPassword([]byte(params.Senha), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	r := &database.Usuario{
+		Nome:            params.Nome,
+		CPF:             params.CPF,
+		Email:           params.Email,
+		EmailVerificado: true,
+		HashSenha: sql.Null[string]{
+			V:     string(hashSenha),
+			Valid: true,
+		},
+		Papel: sql.Null[string]{
+			V:     PapelAdmin,
+			Valid: true,
+		},
+	}
+	err = s.store.SaveUsuario(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return MapUsuario(r), nil
+}
