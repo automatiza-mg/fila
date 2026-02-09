@@ -7,6 +7,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+var _ UsuarioHook = (*counterHook)(nil)
+
 type counterHook struct {
 	mu       sync.Mutex
 	actions  int

@@ -12,7 +12,7 @@ const (
 	CleanupTriggerPapelUpdate
 )
 
-// CleanupTrigger é a ação que causou o método Cleanup de um UserHook
+// CleanupTrigger é a ação que causou o método Cleanup de um UsuarioHook
 // ser chamado.
 type CleanupTrigger int
 
@@ -34,7 +34,9 @@ type PendingAction struct {
 	Title string `json:"titulo"`
 }
 
-type UserHook interface {
+// TODO: Alterar API de GetActions para enviar uma lista de usuários para carregar dados de forma
+// mais eficiente.
+type UsuarioHook interface {
 	// Label retorna um ID do provider registrado.
 	Label() string
 	// GetActions retorna pendenciais específicas de um usuário.

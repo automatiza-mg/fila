@@ -42,7 +42,7 @@ type Service struct {
 	logger *slog.Logger
 	queue  TaskInserter
 
-	hooks map[string]UserHook
+	hooks map[string]UsuarioHook
 }
 
 func New(pool *pgxpool.Pool, logger *slog.Logger, queue TaskInserter) *Service {
@@ -52,13 +52,13 @@ func New(pool *pgxpool.Pool, logger *slog.Logger, queue TaskInserter) *Service {
 		logger: logger.With(slog.String("service", "auth")),
 		queue:  queue,
 
-		hooks: make(map[string]UserHook),
+		hooks: make(map[string]UsuarioHook),
 	}
 }
 
-// RegisterProvider registra um novo [UserHook] no serviço.
+// RegisterProvider registra um novo [UsuarioHook] no serviço.
 // Tentativa de registro de providers com o mesmo Label serão ignoradas.
-func (s *Service) RegisterHook(h UserHook) error {
+func (s *Service) RegisterHook(h UsuarioHook) error {
 	label := h.Label()
 
 	if _, ok := s.hooks[label]; ok {

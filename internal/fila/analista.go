@@ -60,33 +60,28 @@ func (s *Service) CreateAnalista(ctx context.Context, params CreateAnalistaParam
 		return nil, fmt.Errorf("invalid papel: %s", u.Papel)
 	}
 
-	unidades, err := s.ListUnidadesAnalistas(ctx)
+	unidadesMap, err := s.GetUnidadesMap(ctx)
 	if err != nil {
 		return nil, err
 	}
-	ok := slices.ContainsFunc(unidades, func(unidade UnidadeSei) bool {
-		return unidade.ID == params.SeiUnidadeID
-	})
+
+	unidade, ok := unidadesMap[params.SeiUnidadeID]
 	if !ok {
 		return nil, ErrInvalidUnidade
 	}
 
 	record := &database.Analista{
-		UsuarioID:    params.UsuarioID,
-		Orgao:        params.Orgao,
-		SEIUnidadeID: params.SeiUnidadeID,
+		UsuarioID:       params.UsuarioID,
+		Orgao:           params.Orgao,
+		SEIUnidadeID:    unidade.ID,
+		SEIUnidadeSigla: unidade.Sigla,
 	}
 	err = s.store.SaveAnalista(ctx, record)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Analista{
-		UsuarioID:       record.UsuarioID,
-		Orgao:           record.Orgao,
-		SeiUnidadeID:    record.SEIUnidadeID,
-		SeiUnidadeSigla: record.SEIUnidadeSigla,
-	}, nil
+	return mapAnalista(record), nil
 }
 
 // GetAnalista retorna os dados básicos de Analista para o ID de usuário informado.

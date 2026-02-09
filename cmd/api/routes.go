@@ -47,10 +47,6 @@ func (app *application) routes() http.Handler {
 			r.Get("/", app.handleAnalistaList)
 		})
 
-		r.Route("/processos", func(r chi.Router) {
-			r.Get("/_debug/prompt", app.handleProcessosDebugPrompt)
-		})
-
 		r.Route("/unidades", func(r chi.Router) {
 			r.Get("/", app.handleUnidadeList)
 		})

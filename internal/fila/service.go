@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var _ auth.UserHook = (*Service)(nil)
+var _ auth.UsuarioHook = (*Service)(nil)
 
 type SeiService interface {
 	ListarUnidades(ctx context.Context) (*sei.ListarUnidadesResponse, error)
@@ -40,7 +40,7 @@ func New(pool *pgxpool.Pool, auth AuthService, sei SeiService, cache cache.Cache
 	}
 }
 
-// Label retorna o nome para [auth.UserHook].
+// Label retorna o nome para [auth.UsuarioHook].
 func (s *Service) Label() string {
 	return "fila"
 }
