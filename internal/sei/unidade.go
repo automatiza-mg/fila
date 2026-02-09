@@ -26,7 +26,7 @@ type ListarUnidadesResponse struct {
 }
 
 func (c *Client) ListarUnidades(ctx context.Context) (*ListarUnidadesResponse, error) {
-	return doReq[ListarUnidadesRequest, ListarUnidadesResponse](ctx, c.http, c.cfg.URL, ListarUnidadesRequest{
+	return doReq[ListarUnidadesRequest, ListarUnidadesResponse](ctx, c, ListarUnidadesRequest{
 		SiglaSistema:         c.cfg.SiglaSistema,
 		IdentificacaoServico: c.cfg.IdentificacaoServico,
 	})

@@ -45,7 +45,7 @@ type RetornoConsultaDocumento struct {
 }
 
 func (c *Client) ConsultarDocumento(ctx context.Context, protocolo string) (*ConsultarDocumentoResponse, error) {
-	return doReq[ConsultarDocumentoRequest, ConsultarDocumentoResponse](ctx, c.http, c.cfg.URL, ConsultarDocumentoRequest{
+	return doReq[ConsultarDocumentoRequest, ConsultarDocumentoResponse](ctx, c, ConsultarDocumentoRequest{
 		SiglaSistema:           c.cfg.SiglaSistema,
 		IdentificacaoServico:   c.cfg.IdentificacaoServico,
 		ProtocoloDocumento:     protocolo,

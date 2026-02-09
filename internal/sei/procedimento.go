@@ -55,7 +55,7 @@ type ConsultarProcedimentoResponse struct {
 }
 
 func (c *Client) ConsultarProcedimento(ctx context.Context, protocolo string) (*ConsultarProcedimentoResponse, error) {
-	return doReq[ConsultarProcedimentoRequest, ConsultarProcedimentoResponse](ctx, c.http, c.cfg.URL, ConsultarProcedimentoRequest{
+	return doReq[ConsultarProcedimentoRequest, ConsultarProcedimentoResponse](ctx, c, ConsultarProcedimentoRequest{
 		SiglaSistema:                          c.cfg.SiglaSistema,
 		IdentificacaoServico:                  c.cfg.IdentificacaoServico,
 		ProtocoloProcedimento:                 protocolo,
@@ -88,7 +88,7 @@ type EnviarProcessoResponse struct {
 }
 
 func (c *Client) EnviarProcesso(ctx context.Context, protocolo string, unidadeOrigem string, unidadesDestino []string) (*EnviarProcessoResponse, error) {
-	return doReq[EnviarProcessoRequest, EnviarProcessoResponse](ctx, c.http, c.cfg.URL, EnviarProcessoRequest{
+	return doReq[EnviarProcessoRequest, EnviarProcessoResponse](ctx, c, EnviarProcessoRequest{
 		SiglaSistema:          c.cfg.SiglaSistema,
 		IdentificacaoServico:  c.cfg.IdentificacaoServico,
 		IdUnidade:             unidadeOrigem,

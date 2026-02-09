@@ -1,6 +1,7 @@
 package sei
 
 import (
+	"bytes"
 	"context"
 	"encoding/xml"
 	"io"
@@ -39,7 +40,7 @@ func makeSoapError(status int, r io.Reader) error {
 	return soap.NewError(status, fault)
 }
 
-func doReq[Req any, Res any](ctx context.Context, client *http.Client, url string, req Req) (*Res, error) {
+func doReq[Req any, Res any](ctx context.Context, c *Client, req Req) (*Res, error) {
 	body, err := xml.Marshal(soap.Envelope[Req]{
 		Body: soap.Body[Req]{
 			Content: req,
@@ -49,17 +50,24 @@ func doReq[Req any, Res any](ctx context.Context, client *http.Client, url strin
 		return nil, err
 	}
 
-	r, err := http.NewRequestWithContext(ctx, http.MethodPost, url, strings.NewReader(xml.Header+string(body)))
+	reqBody := xml.Header + string(body)
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, c.cfg.URL, strings.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := client.Do(r)
+	res, err := c.http.Do(r)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
 
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Body = io.NopCloser(bytes.NewReader(b))
 	if res.StatusCode != http.StatusOK {
 		return nil, makeSoapError(res.StatusCode, res.Body)
 	}
