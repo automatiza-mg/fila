@@ -11,6 +11,11 @@ import (
 	"github.com/automatiza-mg/fila/internal/datalake"
 )
 
+func (app *application) handleDatalakeStats(w http.ResponseWriter, r *http.Request) {
+	stats := app.datalake.Stats()
+	app.writeJSON(w, http.StatusOK, stats)
+}
+
 func (app *application) handleDatalakeProcessos(w http.ResponseWriter, r *http.Request) {
 	unidade := r.URL.Query().Get("unidade")
 	if unidade == "" {

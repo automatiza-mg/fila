@@ -7,8 +7,8 @@ import (
 
 type ListarUnidadesRequest struct {
 	XMLName              xml.Name `xml:"Sei listarUnidades"`
-	SiglaSistema         string
-	IdentificacaoServico string
+	SiglaSistema         string   `xml:"SiglaSistema"`
+	IdentificacaoServico string   `xml:"IdentificacaoServico"`
 }
 
 type Unidade struct {

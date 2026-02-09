@@ -1,7 +1,9 @@
 package config
 
 import (
+	"github.com/automatiza-mg/fila/internal/blob"
 	"github.com/automatiza-mg/fila/internal/datalake"
+	"github.com/automatiza-mg/fila/internal/docintel"
 	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/postgres"
 	"github.com/automatiza-mg/fila/internal/sei"
@@ -16,6 +18,8 @@ type Config struct {
 	Postgres postgres.Config
 	SEI      sei.Config
 	DataLake datalake.Config
+	Blob     blob.Config
+	DocIntel docintel.Config
 }
 
 func NewFromEnv() (*Config, error) {

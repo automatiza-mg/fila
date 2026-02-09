@@ -20,7 +20,7 @@ type ConsultarProcedimentoRequest struct {
 	XMLName                               xml.Name `xml:"Sei consultarProcedimento"`
 	SiglaSistema                          string
 	IdentificacaoServico                  string
-	IdUnidade                             int `xml:",omitempty"`
+	IdUnidade                             string `xml:",omitempty"`
 	ProtocoloProcedimento                 string
 	SinRetornarAssuntos                   string
 	SinRetornarInteressados               string
@@ -32,24 +32,26 @@ type ConsultarProcedimentoRequest struct {
 	SinRetornarProcedimentosRelacionados  string
 }
 
-type Procedimento struct {
-	IdProcedimento        int    `json:"id_procedimento"`
-	ProcedimentoFormatado string `json:"procedimento_formatado"`
-	Especificacao         string `json:"especificacao"`
-	DataAutuacao          string `json:"data_autuacao"`
-	LinkAcesso            string `json:"link_acesso"`
+type RetornoConsultaProcedimento struct {
+	IdProcedimento        string    `xml:"IdProcedimento" json:"id_procedimento"`
+	ProcedimentoFormatado string    `xml:"ProcedimentoFormatado" json:"procedimento_formatado"`
+	Especificacao         string    `xml:"Especificacao" json:"especificacao"`
+	DataAutuacao          string    `xml:"DataAutuacao" json:"data_autuacao"`
+	LinkAcesso            string    `xml:"LinkAcesso" json:"link_acesso"`
+	AndamentoGeracao      Andamento `xml:"AndamentoGeracao" json:"andamento_geracao"`
 }
 
 type ConsultarProcedimentoResponse struct {
-	XMLName    xml.Name     `xml:"Sei consultarProcedimentoResponse"`
-	Parametros Procedimento `xml:"parametros"`
+	XMLName    xml.Name                    `xml:"Sei consultarProcedimentoResponse"`
+	Parametros RetornoConsultaProcedimento `xml:"parametros"`
 }
 
 func (c *Client) ConsultarProcedimento(ctx context.Context, protocolo string) (*ConsultarProcedimentoResponse, error) {
 	return doReq[ConsultarProcedimentoRequest, ConsultarProcedimentoResponse](ctx, c.http, c.cfg.URL, ConsultarProcedimentoRequest{
-		SiglaSistema:          c.cfg.SiglaSistema,
-		IdentificacaoServico:  c.cfg.IdentificacaoServico,
-		ProtocoloProcedimento: protocolo,
+		SiglaSistema:                c.cfg.SiglaSistema,
+		IdentificacaoServico:        c.cfg.IdentificacaoServico,
+		ProtocoloProcedimento:       protocolo,
+		SinRetornarAndamentoGeracao: "S",
 	})
 }
 

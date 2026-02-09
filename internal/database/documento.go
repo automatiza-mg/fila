@@ -114,3 +114,47 @@ func (s *Store) GetDocumentoByNumero(ctx context.Context, numero string) (*Docum
 
 	return &d, nil
 }
+
+func (s *Store) ListDocumentos(ctx context.Context, processoID uuid.UUID) ([]*Documento, error) {
+	q := `
+	SELECT
+		id, numero, processo_id, tipo, unidade,
+		link_acesso, content_type, chave_storage, ocr, metadados_api,
+		criado_em, atualizado_em
+	FROM documentos
+	WHERE processo_id = $1`
+
+	rows, err := s.db.Query(ctx, q, processoID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	dd := make([]*Documento, 0)
+	for rows.Next() {
+		var d Documento
+		err := rows.Scan(
+			&d.ID,
+			&d.Numero,
+			&d.ProcessoID,
+			&d.Tipo,
+			&d.Unidade,
+			&d.LinkAcesso,
+			&d.ContentType,
+			&d.ChaveStorage,
+			&d.OCR,
+			&d.MetadadosAPI,
+			&d.CriadoEm,
+			&d.AtualizadoEm,
+		)
+		if err != nil {
+			return nil, err
+		}
+		dd = append(dd, &d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return dd, nil
+}

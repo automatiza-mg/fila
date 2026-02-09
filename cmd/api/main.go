@@ -14,10 +14,12 @@ import (
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/auth"
+	"github.com/automatiza-mg/fila/internal/blob"
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/config"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/datalake"
+	"github.com/automatiza-mg/fila/internal/docintel"
 	"github.com/automatiza-mg/fila/internal/fila"
 	"github.com/automatiza-mg/fila/internal/infra"
 	"github.com/automatiza-mg/fila/internal/logging"
@@ -53,7 +55,9 @@ type application struct {
 	store    *database.Store
 	mail     mail.Sender
 	cache    cache.Cache
+	storage  blob.Storage
 	datalake *datalake.DataLake
+	di       *docintel.AzureDocIntel
 	sei      *sei.Client
 	queue    *river.Client[pgx.Tx]
 
@@ -88,6 +92,12 @@ func run(ctx context.Context) error {
 	}
 	defer pool.Close()
 
+	storage, err := blob.New(ctx, &cfg.Blob)
+	if err != nil {
+		return err
+	}
+	defer storage.Close()
+
 	dl, err := datalake.New(ctx, &cfg.DataLake)
 	if err != nil {
 		return err
@@ -115,6 +125,8 @@ func run(ctx context.Context) error {
 
 	cache := cache.NewRedisCache(rdb)
 
+	di := docintel.NewAzureDocIntel(&cfg.DocIntel)
+
 	auth := auth.New(pool, logger, queue)
 
 	fila := fila.New(pool, auth, sei, cache)
@@ -131,8 +143,10 @@ func run(ctx context.Context) error {
 		store:    database.New(pool),
 		mail:     sender,
 		cache:    cache,
+		storage:  storage,
 		datalake: dl,
 		sei:      sei,
+		di:       di,
 
 		fila: fila,
 		auth: auth,

@@ -25,9 +25,10 @@ func New(ctx context.Context, cfg *Config) (*DataLake, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxIdleConns(3)
-	db.SetMaxOpenConns(3)
-	db.SetConnMaxLifetime(2 * time.Minute)
+	db.SetMaxOpenConns(5)
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	db.SetConnMaxIdleTime(30 * time.Second)
 
 	if err := db.PingContext(ctx); err != nil {
 		return nil, err
