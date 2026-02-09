@@ -46,6 +46,8 @@ func (app *application) reqLogger(next http.Handler) http.Handler {
 
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Authorization")
+
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			ctx := app.setAuth(r.Context(), auth.Anonymous)
@@ -54,21 +56,22 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		}
 
 		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-			app.writeJSON(w, http.StatusBadRequest, ErrorResponse{
-				Message: "Header 'Authorization' é inválido",
-			})
+		if len(parts) != 2 || !strings.EqualFold(parts[0], "bearer") {
+			app.writeError(w, http.StatusUnauthorized, "Header 'Authorization' é inválido")
 			return
 		}
 
-		token := parts[1]
+		token := strings.TrimSpace(parts[1])
+		if token == "" {
+			app.writeError(w, http.StatusUnauthorized, "Token ausente")
+			return
+		}
+
 		usuario, err := app.auth.GetTokenOwner(r.Context(), token, auth.EscopoAuth)
 		if err != nil {
 			switch {
 			case errors.Is(err, auth.ErrInvalidToken):
-				app.writeJSON(w, http.StatusUnauthorized, ErrorResponse{
-					Message: "O token informado é inválido ou expirou",
-				})
+				app.tokenError(w, r)
 			default:
 				app.serverError(w, r, err)
 			}
@@ -84,12 +87,15 @@ func (app *application) requireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		usuario := app.getAuth(r.Context())
 		if usuario.IsAnonymous() {
-			app.writeJSON(w, http.StatusUnauthorized, ErrorResponse{
-				Message: "Você deve estar autenticado para acessar esse recurso",
-			})
+			w.Header().Set("WWW-Authenticate", "Bearer")
+			app.writeError(w, http.StatusUnauthorized, "Você deve estar autenticado para acessar esse recurso")
 			return
 		}
 
+		// Remove a possibilidade de caching dos dados servidos pela API.
+		// Rotas protegidas tem alta probabilidade de retornas dados sensíveis (PII, Processos SEI, etc).
+		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
 		next.ServeHTTP(w, r)
 	})
 }

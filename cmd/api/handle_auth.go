@@ -38,10 +38,10 @@ func (app *application) handleAuthEntrar(w http.ResponseWriter, r *http.Request)
 	usuario, err := app.auth.Authenticate(ctx, input.CPF, input.Senha)
 	if err != nil {
 		switch {
+		case errors.Is(err, auth.ErrNoPassword):
+			app.writeError(w, http.StatusBadRequest, "O usuário não possui uma senha cadastrada")
 		case errors.Is(err, auth.ErrInvalidCredentials):
-			app.writeJSON(w, http.StatusUnauthorized, ErrorResponse{
-				Message: "Credenciais inválidas",
-			})
+			app.writeError(w, http.StatusUnauthorized, "Credenciais inválidas")
 		default:
 			app.serverError(w, r, err)
 		}

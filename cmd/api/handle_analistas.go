@@ -26,9 +26,7 @@ type AnalistaCreateRequest struct {
 func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Request) {
 	usuario := app.getUsuario(r.Context())
 	if !usuario.HasPapel(database.PapelAnalista) {
-		app.writeJSON(w, http.StatusForbidden, ErrorResponse{
-			Message: "Apenas usuários com papel de analista podem ter dados complementares cadastrados.",
-		})
+		app.writeError(w, http.StatusForbidden, "Apenas usuários com papel de analista podem ter dados complementares cadastrados")
 		return
 	}
 
@@ -87,9 +85,7 @@ func (app *application) handleAnalistaList(w http.ResponseWriter, r *http.Reques
 func (app *application) handleAnalistaDetail(w http.ResponseWriter, r *http.Request) {
 	usuario := app.getUsuario(r.Context())
 	if !usuario.HasPapel(database.PapelAnalista) {
-		app.writeJSON(w, http.StatusForbidden, ErrorResponse{
-			Message: "Apenas usuários com papel de analista podem ter dados complementares cadastrados.",
-		})
+		app.writeError(w, http.StatusForbidden, "Apenas usuários com papel de analista podem ter dados complementares cadastrados")
 		return
 	}
 
@@ -110,9 +106,7 @@ func (app *application) handleAnalistaDetail(w http.ResponseWriter, r *http.Requ
 func (app *application) handleAnalistaAfastar(w http.ResponseWriter, r *http.Request) {
 	usuario := app.getUsuario(r.Context())
 	if !usuario.HasPapel(database.PapelAnalista) {
-		app.writeJSON(w, http.StatusForbidden, ErrorResponse{
-			Message: "Apenas usuários com papel de analista podem ter dados complementares cadastrados.",
-		})
+		app.writeError(w, http.StatusForbidden, "Apenas usuários com papel de analista podem ter dados complementares cadastrados")
 		return
 	}
 
@@ -139,9 +133,7 @@ func (app *application) handleAnalistaAfastar(w http.ResponseWriter, r *http.Req
 func (app *application) handleAnalistaRetornar(w http.ResponseWriter, r *http.Request) {
 	usuario := app.getUsuario(r.Context())
 	if !usuario.HasPapel(database.PapelAnalista) {
-		app.writeJSON(w, http.StatusForbidden, ErrorResponse{
-			Message: "Apenas usuários com papel de analista podem ter dados complementares cadastrados.",
-		})
+		app.writeError(w, http.StatusForbidden, "Apenas usuários com papel de analista podem ter dados complementares cadastrados")
 		return
 	}
 

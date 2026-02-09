@@ -14,9 +14,7 @@ import (
 func (app *application) handleDatalakeProcessos(w http.ResponseWriter, r *http.Request) {
 	unidade := r.URL.Query().Get("unidade")
 	if unidade == "" {
-		app.writeJSON(w, http.StatusBadRequest, ErrorResponse{
-			Message: "O parâmetro 'unidade' deve ser informado",
-		})
+		app.writeError(w, http.StatusBadRequest, "O parâmetro 'unidade' deve ser informado")
 		return
 	}
 

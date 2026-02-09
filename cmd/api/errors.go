@@ -15,6 +15,12 @@ type ErrorResponse struct {
 	Errors  map[string]string `json:"errors,omitempty"`
 }
 
+func (app *application) writeError(w http.ResponseWriter, status int, msg string) {
+	app.writeJSON(w, status, ErrorResponse{
+		Message: msg,
+	})
+}
+
 func (app *application) serverError(w http.ResponseWriter, r *http.Request, err error) {
 	app.logger.Error("Erro interno do servidor", slog.String("err", err.Error()), slog.String("uri", r.URL.RequestURI()))
 	app.writeJSON(w, http.StatusInternalServerError, ErrorResponse{
@@ -78,7 +84,7 @@ func (app *application) decodeError(w http.ResponseWriter, _ *http.Request, err 
 	})
 }
 
-func (app *application) tokenError(w http.ResponseWriter, r *http.Request) {
+func (app *application) tokenError(w http.ResponseWriter, _ *http.Request) {
 	app.writeJSON(w, http.StatusUnauthorized, ErrorResponse{
 		Message: "O token informado é inválido ou expirou.",
 	})
