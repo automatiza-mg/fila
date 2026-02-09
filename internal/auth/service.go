@@ -42,7 +42,7 @@ type Service struct {
 	logger *slog.Logger
 	queue  TaskInserter
 
-	providers map[string]LifecycleProvider
+	hooks map[string]UserHook
 }
 
 func New(pool *pgxpool.Pool, logger *slog.Logger, queue TaskInserter) *Service {
@@ -52,20 +52,20 @@ func New(pool *pgxpool.Pool, logger *slog.Logger, queue TaskInserter) *Service {
 		logger: logger.With(slog.String("service", "auth")),
 		queue:  queue,
 
-		providers: make(map[string]LifecycleProvider),
+		hooks: make(map[string]UserHook),
 	}
 }
 
-// RegisterProvider registra um novo [LifecycleProvider] no serviço.
+// RegisterProvider registra um novo [UserHook] no serviço.
 // Tentativa de registro de providers com o mesmo Label serão ignoradas.
-func (s *Service) RegisterProvider(p LifecycleProvider) error {
-	label := p.Label()
+func (s *Service) RegisterHook(h UserHook) error {
+	label := h.Label()
 
-	if _, ok := s.providers[label]; ok {
+	if _, ok := s.hooks[label]; ok {
 		return ErrDuplicateProvider
 	}
 
-	s.providers[label] = p
+	s.hooks[label] = h
 	s.logger.Debug("Provider registrado", slog.String("provider", label))
 	return nil
 }
@@ -82,7 +82,7 @@ func (s *Service) Authenticate(ctx context.Context, cpf, senha string) (*Usuario
 	}
 
 	// Carrega os dados do usuário.
-	u := mapUsuario(record)
+	u := MapUsuario(record)
 	u.Pendencias = s.getPendingActions(ctx, u)
 
 	// Verifica se o usuário possui uma senha.
@@ -166,7 +166,7 @@ func (s *Service) GetTokenOwner(ctx context.Context, token string, escopo Escopo
 		}
 	}
 
-	u := mapUsuario(r)
+	u := MapUsuario(r)
 	u.Pendencias = s.getPendingActions(ctx, u)
 
 	return u, nil

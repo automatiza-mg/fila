@@ -44,7 +44,7 @@ type Usuario struct {
 	hashSenha string
 }
 
-func mapUsuario(u *database.Usuario) *Usuario {
+func MapUsuario(u *database.Usuario) *Usuario {
 	return &Usuario{
 		ID:              u.ID,
 		Nome:            u.Nome,
@@ -140,7 +140,7 @@ func (s *Service) CreateUsuario(ctx context.Context, params CreateUsuarioParams)
 		return nil, err
 	}
 
-	u := mapUsuario(r)
+	u := MapUsuario(r)
 	u.Pendencias = s.getPendingActions(ctx, u)
 
 	// Enviar email de confirmação.
@@ -168,7 +168,7 @@ func (s *Service) ListUsuarios(ctx context.Context, params ListUsuariosParams) (
 
 	usuarios := make([]*Usuario, len(records))
 	for i, r := range records {
-		u := mapUsuario(r)
+		u := MapUsuario(r)
 		u.Pendencias = s.getPendingActions(ctx, u)
 
 		usuarios[i] = u
@@ -183,7 +183,7 @@ func (s *Service) GetUsuario(ctx context.Context, usuarioID int64) (*Usuario, er
 		return nil, err
 	}
 
-	u := mapUsuario(r)
+	u := MapUsuario(r)
 	u.Pendencias = s.getPendingActions(ctx, u)
 
 	return u, nil
@@ -210,7 +210,7 @@ func (s *Service) UpdateUsuario(ctx context.Context, params UpdateUsuarioParams)
 		return err
 	}
 
-	u := mapUsuario(r)
+	u := MapUsuario(r)
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {

@@ -30,7 +30,7 @@ func TestToken_Lifecycle(t *testing.T) {
 		t.Fatalf("mismatch:\n%s", diff)
 	}
 
-	err = store.DeleteTokensUsuario(t.Context(), usuario.ID, token.Escopo)
+	err = store.DeleteToken(t.Context(), token.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,25 +12,25 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var _ auth.LifecycleProvider = (*Service)(nil)
+var _ auth.UserHook = (*Service)(nil)
 
 type SeiService interface {
 	ListarUnidades(ctx context.Context) (*sei.ListarUnidadesResponse, error)
 }
 
-type IdentityService interface {
+type AuthService interface {
 	GetUsuario(ctx context.Context, id int64) (*auth.Usuario, error)
 }
 
 type Service struct {
 	pool  *pgxpool.Pool
 	store *database.Store
-	auth  IdentityService
+	auth  AuthService
 	sei   SeiService
 	cache cache.Cache
 }
 
-func New(pool *pgxpool.Pool, auth IdentityService, sei SeiService, cache cache.Cache) *Service {
+func New(pool *pgxpool.Pool, auth AuthService, sei SeiService, cache cache.Cache) *Service {
 	return &Service{
 		pool:  pool,
 		store: database.New(pool),
@@ -40,7 +40,7 @@ func New(pool *pgxpool.Pool, auth IdentityService, sei SeiService, cache cache.C
 	}
 }
 
-// Label retorna o nome para [auth.LifecycleProvider].
+// Label retorna o nome para [auth.UserHook].
 func (s *Service) Label() string {
 	return "fila"
 }

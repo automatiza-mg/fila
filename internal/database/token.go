@@ -94,3 +94,13 @@ func (s *Store) DeleteTokensUsuario(ctx context.Context, usuarioID int64, escopo
 	}
 	return nil
 }
+
+// DeleteToken remove um token pelo hash informado.
+func (s *Store) DeleteToken(ctx context.Context, hash []byte) error {
+	q := `DELETE FROM tokens WHERE hash = $1`
+	_, err := s.db.Exec(ctx, q, hash)
+	if err != nil {
+		return err
+	}
+	return nil
+}

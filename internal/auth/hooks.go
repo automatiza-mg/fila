@@ -12,7 +12,7 @@ const (
 	CleanupTriggerPapelUpdate
 )
 
-// CleanupTrigger é a ação que causou o método Cleanup de um LifecycleProvider
+// CleanupTrigger é a ação que causou o método Cleanup de um UserHook
 // ser chamado.
 type CleanupTrigger int
 
@@ -34,7 +34,7 @@ type PendingAction struct {
 	Title string `json:"title"`
 }
 
-type LifecycleProvider interface {
+type UserHook interface {
 	// Label retorna um ID do provider registrado.
 	Label() string
 	// GetActions retorna pendenciais específicas de um usuário.
@@ -67,12 +67,12 @@ func (s *Service) getPendingActions(ctx context.Context, u *Usuario) []PendingAc
 		seen[a.Slug] = struct{}{}
 	}
 
-	for _, p := range s.providers {
-		extraActions, err := p.GetActions(ctx, u)
+	for _, h := range s.hooks {
+		extraActions, err := h.GetActions(ctx, u)
 		if err != nil {
 			s.logger.Error(
 				"Falha ao coletar pendências",
-				slog.String("provider", p.Label()),
+				slog.String("provider", h.Label()),
 				slog.Any("err", err),
 			)
 			continue
@@ -98,10 +98,11 @@ func (s *Service) cleanupAll(ctx context.Context, tx pgx.Tx, trigger CleanupTrig
 		slog.String("trigger", trigger.String()),
 	)
 
-	for _, p := range s.providers {
-		if err := p.Cleanup(ctx, tx, trigger, u); err != nil {
+	for _, h := range s.hooks {
+		if err := h.Cleanup(ctx, tx, trigger, u); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

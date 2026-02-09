@@ -2,6 +2,7 @@ package fila
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -10,6 +11,8 @@ import (
 )
 
 var (
+	ErrInvalidUnidade = errors.New("invalid unidade id")
+
 	// AllowedOrgaos são os órgãos permitidos para o cadastro de analistas.
 	AllowedOrgaos = []string{
 		"SEPLAG",
@@ -55,6 +58,17 @@ func (s *Service) CreateAnalista(ctx context.Context, params CreateAnalistaParam
 	}
 	if !u.IsAnalista() {
 		return nil, fmt.Errorf("invalid papel: %s", u.Papel)
+	}
+
+	unidades, err := s.ListUnidadesAnalistas(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ok := slices.ContainsFunc(unidades, func(unidade UnidadeSei) bool {
+		return unidade.ID == params.SeiUnidadeID
+	})
+	if !ok {
+		return nil, ErrInvalidUnidade
 	}
 
 	record := &database.Analista{
@@ -109,7 +123,7 @@ func (s *Service) RetornarAnalista(ctx context.Context, usuarioID int64) error {
 		return err
 	}
 
-	r.Afastado = true
+	r.Afastado = false
 	err = s.store.UpdateAnalista(ctx, r)
 	if err != nil {
 		return err

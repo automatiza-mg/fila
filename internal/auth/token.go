@@ -74,3 +74,8 @@ func (s *Service) createToken(ctx context.Context, store *database.Store, usuari
 func (s *Service) CreateToken(ctx context.Context, usuarioID int64, escopo Escopo, ttl time.Duration) (*Token, error) {
 	return s.createToken(ctx, s.store, usuarioID, escopo, ttl)
 }
+
+// DeleteToken remove um único token do banco de dados.
+func (s *Service) DeleteToken(ctx context.Context, token string) error {
+	return s.store.DeleteToken(ctx, hashToken(token))
+}
