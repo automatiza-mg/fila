@@ -16,6 +16,11 @@ import (
 
 var ErrProcessoVazio = errors.New("processo vazio")
 
+type UnidadeProcedimentoAberto struct {
+	Unidade Unidade `xml:"Unidade" json:"unidade"`
+	Usuario Usuario `xml:"Usuario" json:"usuario"`
+}
+
 type ConsultarProcedimentoRequest struct {
 	XMLName                               xml.Name `xml:"Sei consultarProcedimento"`
 	SiglaSistema                          string
@@ -33,12 +38,15 @@ type ConsultarProcedimentoRequest struct {
 }
 
 type RetornoConsultaProcedimento struct {
-	IdProcedimento        string    `xml:"IdProcedimento" json:"id_procedimento"`
-	ProcedimentoFormatado string    `xml:"ProcedimentoFormatado" json:"procedimento_formatado"`
-	Especificacao         string    `xml:"Especificacao" json:"especificacao"`
-	DataAutuacao          string    `xml:"DataAutuacao" json:"data_autuacao"`
-	LinkAcesso            string    `xml:"LinkAcesso" json:"link_acesso"`
-	AndamentoGeracao      Andamento `xml:"AndamentoGeracao" json:"andamento_geracao"`
+	IdProcedimento             string                           `xml:"IdProcedimento" json:"id_procedimento"`
+	ProcedimentoFormatado      string                           `xml:"ProcedimentoFormatado" json:"procedimento_formatado"`
+	Especificacao              string                           `xml:"Especificacao" json:"especificacao"`
+	DataAutuacao               string                           `xml:"DataAutuacao" json:"data_autuacao"`
+	NivelAcessoLocal           int                              `xml:"NivelAcessoLocal" json:"nivel_acesso_local"`
+	NivelAcessoGlobal          int                              `xml:"NivelAcessoGlobal" json:"nivel_acesso_global"`
+	LinkAcesso                 string                           `xml:"LinkAcesso" json:"link_acesso"`
+	AndamentoGeracao           Andamento                        `xml:"AndamentoGeracao" json:"andamento_geracao"`
+	UnidadesProcedimentoAberto Items[UnidadeProcedimentoAberto] `xml:"UnidadesProcedimentoAberto" json:"unidades_procedimento_aberto"`
 }
 
 type ConsultarProcedimentoResponse struct {
@@ -48,10 +56,11 @@ type ConsultarProcedimentoResponse struct {
 
 func (c *Client) ConsultarProcedimento(ctx context.Context, protocolo string) (*ConsultarProcedimentoResponse, error) {
 	return doReq[ConsultarProcedimentoRequest, ConsultarProcedimentoResponse](ctx, c.http, c.cfg.URL, ConsultarProcedimentoRequest{
-		SiglaSistema:                c.cfg.SiglaSistema,
-		IdentificacaoServico:        c.cfg.IdentificacaoServico,
-		ProtocoloProcedimento:       protocolo,
-		SinRetornarAndamentoGeracao: "S",
+		SiglaSistema:                          c.cfg.SiglaSistema,
+		IdentificacaoServico:                  c.cfg.IdentificacaoServico,
+		ProtocoloProcedimento:                 protocolo,
+		SinRetornarAndamentoGeracao:           "S",
+		SinRetornarUnidadesProcedimentoAberto: "S",
 	})
 }
 

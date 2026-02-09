@@ -28,6 +28,7 @@ func (app *application) routes() http.Handler {
 
 			r.Route("/sei", func(r chi.Router) {
 				r.Get("/unidades", app.handleSeiListarUnidades)
+				r.Get("/procedimentos", app.handleSeiConsultarProcedimento)
 			})
 		}
 

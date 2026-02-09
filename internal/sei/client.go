@@ -3,6 +3,7 @@ package sei
 import (
 	"context"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -12,6 +13,10 @@ import (
 
 type Parametros[T any] struct {
 	Items []T `xml:"item"`
+}
+
+type Items[T any] struct {
+	Items []T `xml:"item" json:"items"`
 }
 
 type Client struct {
@@ -60,7 +65,14 @@ func doReq[Req any, Res any](ctx context.Context, client *http.Client, url strin
 		return nil, makeSoapError(res.StatusCode, res.Body)
 	}
 
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(string(b))
+
 	var resp soap.Envelope[Res]
-	err = xml.NewDecoder(res.Body).Decode(&resp)
+	err = xml.NewDecoder(strings.NewReader(string(b))).Decode(&resp)
 	return &resp.Body.Content, err
 }
