@@ -75,7 +75,7 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) handleAnalistaList(w http.ResponseWriter, r *http.Request) {
-	analistas, err := app.store.ListAnalistas(r.Context())
+	analistas, err := app.fila.ListAnalistas(r.Context())
 	if err != nil {
 		app.serverError(w, r, err)
 		return

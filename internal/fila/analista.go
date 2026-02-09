@@ -126,3 +126,17 @@ func (s *Service) RetornarAnalista(ctx context.Context, usuarioID int64) error {
 
 	return nil
 }
+
+// ListAnalistas retorna os dados dos analistas da aplicação.
+func (s *Service) ListAnalistas(ctx context.Context) ([]*Analista, error) {
+	rr, err := s.store.ListAnalistas(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	aa := make([]*Analista, len(rr))
+	for i, r := range rr {
+		aa[i] = mapAnalista(r)
+	}
+	return aa, nil
+}
