@@ -40,6 +40,6 @@ CREATE TABLE "historico_status_processo" (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE "historico_status_processoss";
+DROP TABLE "historico_status_processo";
 DROP TABLE "processos_aposentadoria";
 -- +goose StatementEnd
