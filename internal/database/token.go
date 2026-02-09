@@ -59,8 +59,7 @@ func (s *Store) SaveToken(ctx context.Context, token *Token) error {
 	return nil
 }
 
-// GetUsuarioForToken retorna um usuário dono de um token válido. Caso o token não exista ou tenha expirado,
-// retorna [ErrInvalidToken].
+// GetUsuarioForToken retorna um usuário dono de um token válido
 func (s *Store) GetUsuarioForToken(ctx context.Context, token string, escopo string) (*Usuario, error) {
 	q := `
 	SELECT usuario_id

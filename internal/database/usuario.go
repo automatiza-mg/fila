@@ -15,8 +15,6 @@ var (
 	ErrUsuarioCPFTaken = errors.New("duplicate user cpf")
 	// ErrUsuarioEmailTaken é o erro retornado ao tentar salvar um usuário com Email duplicado.
 	ErrUsuarioEmailTaken = errors.New("duplicate user email")
-	// ErrNoPassword é o erro retornado quando não é possível verificar a senha de um usuário que não possui uma.
-	ErrNoPassword = errors.New("user has no password")
 )
 
 const (

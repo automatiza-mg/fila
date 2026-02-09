@@ -81,6 +81,16 @@ func TestUsuario_Lifecycle(t *testing.T) {
 	if diff := cmp.Diff(usuario, read); diff != "" {
 		t.Fatalf("mismatch:\n%s", diff)
 	}
+
+	err = store.DeleteUsuario(t.Context(), usuario.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = store.GetUsuarioByCPF(t.Context(), usuario.CPF)
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got: %v", err)
+	}
 }
 
 func TestUsuario_EmailTaken(t *testing.T) {
