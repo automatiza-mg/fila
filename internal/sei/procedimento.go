@@ -55,6 +55,46 @@ func (c *Client) ConsultarProcedimento(ctx context.Context, protocolo string) (*
 	})
 }
 
+type UnidadeDestino struct {
+	IdUnidade []string `xml:"IdUnidade"`
+}
+
+type EnviarProcessoRequest struct {
+	XMLName                       xml.Name `xml:"Sei enviarProcesso"`
+	SiglaSistema                  string
+	IdentificacaoServico          string
+	IdUnidade                     string
+	ProtocoloProcedimento         string
+	UnidadesDestino               UnidadeDestino
+	SinManterAbertoUnidade        string
+	SinRemoverAnotacao            string
+	SinEnviarEmailNotificacao     string
+	SinDiasUteisRetornoProgramado string
+	SinReabrir                    string
+}
+
+type EnviarProcessoResponse struct {
+	XMLName    xml.Name `xml:"Sei enviarProcessoResponse"`
+	Parametros string   `xml:"parametros"`
+}
+
+func (c *Client) EnviarProcesso(ctx context.Context, protocolo string, unidadeOrigem string, unidadesDestino []string) (*EnviarProcessoResponse, error) {
+	return doReq[EnviarProcessoRequest, EnviarProcessoResponse](ctx, c.http, c.cfg.URL, EnviarProcessoRequest{
+		SiglaSistema:          c.cfg.SiglaSistema,
+		IdentificacaoServico:  c.cfg.IdentificacaoServico,
+		IdUnidade:             unidadeOrigem,
+		ProtocoloProcedimento: protocolo,
+		UnidadesDestino: UnidadeDestino{
+			IdUnidade: unidadesDestino,
+		},
+		SinManterAbertoUnidade:        "N",
+		SinRemoverAnotacao:            "N",
+		SinEnviarEmailNotificacao:     "N",
+		SinDiasUteisRetornoProgramado: "N",
+		SinReabrir:                    "N",
+	})
+}
+
 // DownloadProcedimento é uma extensão da API do SEI que permite o download do PDF de um processo.
 func (c *Client) DownloadProcedimento(ctx context.Context, linkAcesso string) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, linkAcesso, nil)
