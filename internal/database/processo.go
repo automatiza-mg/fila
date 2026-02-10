@@ -14,7 +14,6 @@ import (
 type Processo struct {
 	ID                  uuid.UUID
 	Numero              string
-	Gatilho             string
 	StatusProcessamento string
 	LinkAcesso          string
 	SeiUnidadeID        string
@@ -27,12 +26,11 @@ type Processo struct {
 
 func (s *Store) SaveProcesso(ctx context.Context, p *Processo) error {
 	q := `
-	INSERT INTO processos (numero, gatilho, status_processamento, link_acesso, sei_unidade_id, sei_unidade_sigla)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO processos (numero, status_processamento, link_acesso, sei_unidade_id, sei_unidade_sigla)
+	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id, metadados_ia, criado_em, atualizado_em`
 	args := []any{
 		p.Numero,
-		p.Gatilho,
 		p.StatusProcessamento,
 		p.LinkAcesso,
 		p.SeiUnidadeID,
@@ -54,9 +52,8 @@ func (s *Store) SaveProcesso(ctx context.Context, p *Processo) error {
 func (s *Store) GetProcesso(ctx context.Context, id uuid.UUID) (*Processo, error) {
 	q := `
 	SELECT 
-		id, numero, gatilho, status_processamento, link_acesso,
-		sei_unidade_id, sei_unidade_sigla, metadados_ia, analisado_em, criado_em,
-		atualizado_em
+		id, numero, status_processamento, link_acesso, sei_unidade_id,
+		sei_unidade_sigla, metadados_ia, analisado_em, criado_em, atualizado_em
 	FROM processos
 	WHERE id = $1`
 
@@ -64,7 +61,6 @@ func (s *Store) GetProcesso(ctx context.Context, id uuid.UUID) (*Processo, error
 	err := s.db.QueryRow(ctx, q, id).Scan(
 		&p.ID,
 		&p.Numero,
-		&p.Gatilho,
 		&p.StatusProcessamento,
 		&p.LinkAcesso,
 		&p.SeiUnidadeID,
@@ -86,9 +82,8 @@ func (s *Store) GetProcesso(ctx context.Context, id uuid.UUID) (*Processo, error
 func (s *Store) GetProcessoByNumero(ctx context.Context, numero string) (*Processo, error) {
 	q := `
 	SELECT 
-		id, numero, gatilho, status_processamento, link_acesso,
-		sei_unidade_id, sei_unidade_sigla, metadados_ia, analisado_em, criado_em,
-		atualizado_em
+		id, numero, status_processamento, link_acesso, sei_unidade_id,
+		sei_unidade_sigla, metadados_ia, analisado_em, criado_em, atualizado_em
 	FROM processos
 	WHERE numero = $1`
 
@@ -96,7 +91,6 @@ func (s *Store) GetProcessoByNumero(ctx context.Context, numero string) (*Proces
 	err := s.db.QueryRow(ctx, q, numero).Scan(
 		&p.ID,
 		&p.Numero,
-		&p.Gatilho,
 		&p.StatusProcessamento,
 		&p.LinkAcesso,
 		&p.SeiUnidadeID,

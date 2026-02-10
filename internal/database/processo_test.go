@@ -16,7 +16,6 @@ func TestProcessoLifecycle(t *testing.T) {
 
 	p := &Processo{
 		Numero:              "123456",
-		Gatilho:             "datalake",
 		StatusProcessamento: "PENDENTE",
 		SeiUnidadeID:        "12124214",
 		SeiUnidadeSigla:     "TESTE/TESTE",

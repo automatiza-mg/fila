@@ -42,4 +42,5 @@ CREATE TABLE "historico_status_processo" (
 -- +goose StatementBegin
 DROP TABLE "historico_status_processo";
 DROP TABLE "processos_aposentadoria";
+DROP TYPE "status_processo";
 -- +goose StatementEnd

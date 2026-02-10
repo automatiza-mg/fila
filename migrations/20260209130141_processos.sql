@@ -3,11 +3,12 @@
 CREATE TABLE "processos" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "numero" TEXT NOT NULL UNIQUE,
-    "gatilho" TEXT NOT NULL DEFAULT 'datalake', -- datalake, manual
     "status_processamento" TEXT NOT NULL DEFAULT 'PENDENTE',
     "link_acesso" TEXT NOT NULL,
     "sei_unidade_id" TEXT NOT NULL,
     "sei_unidade_sigla" TEXT NOT NULL,
+    "metadados_ia" JSONB NOT NULL DEFAULT '{}'::jsonb,
+    "analisado_em" TIMESTAMPTZ,
     "criado_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "atualizado_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

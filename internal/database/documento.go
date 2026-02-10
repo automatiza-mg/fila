@@ -30,14 +30,20 @@ func (s *Store) SaveDocumento(ctx context.Context, d *Documento) error {
 	INSERT INTO documentos (
 		numero, processo_id, tipo, unidade,
 		link_acesso, content_type, chave_storage, ocr,
-		metadados_api, criado_em, atualizado_em
+		metadados_api
 	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	RETURNING id, criado_em, atualizado_em`
 	args := []any{
-		d.Numero, d.ProcessoID, d.Tipo, d.Unidade,
-		d.LinkAcesso, d.ContentType, d.ChaveStorage, d.OCR,
-		d.MetadadosAPI, d.CriadoEm, d.AtualizadoEm,
+		d.Numero,
+		d.ProcessoID,
+		d.Tipo,
+		d.Unidade,
+		d.LinkAcesso,
+		d.ContentType,
+		d.ChaveStorage,
+		d.OCR,
+		d.MetadadosAPI,
 	}
 
 	err := s.db.QueryRow(ctx, q, args...).Scan(&d.ID, &d.CriadoEm, &d.AtualizadoEm)
@@ -157,4 +163,53 @@ func (s *Store) ListDocumentos(ctx context.Context, processoID uuid.UUID) ([]*Do
 	}
 
 	return dd, nil
+}
+
+func (s *Store) GetDocumentosMap(ctx context.Context, processoIDs []uuid.UUID) (map[uuid.UUID][]*Documento, error) {
+	if len(processoIDs) == 0 {
+		return make(map[uuid.UUID][]*Documento), nil
+	}
+
+	q := `
+	SELECT
+		id, numero, processo_id, tipo, unidade,
+		link_acesso, content_type, chave_storage, ocr, metadados_api,
+		criado_em, atualizado_em
+	FROM documentos
+	WHERE processo_id = ANY($1)`
+
+	rows, err := s.db.Query(ctx, q, processoIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	docMap := make(map[uuid.UUID][]*Documento, len(processoIDs))
+	for rows.Next() {
+		var d Documento
+		err := rows.Scan(
+			&d.ID,
+			&d.Numero,
+			&d.ProcessoID,
+			&d.Tipo,
+			&d.Unidade,
+			&d.LinkAcesso,
+			&d.ContentType,
+			&d.ChaveStorage,
+			&d.OCR,
+			&d.MetadadosAPI,
+			&d.CriadoEm,
+			&d.AtualizadoEm,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		docMap[d.ProcessoID] = append(docMap[d.ProcessoID], &d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return docMap, nil
 }

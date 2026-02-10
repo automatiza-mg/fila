@@ -25,6 +25,7 @@ import (
 	"github.com/automatiza-mg/fila/internal/logging"
 	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/postgres"
+	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/automatiza-mg/fila/internal/tasks"
 	"github.com/go-playground/form/v4"
@@ -61,8 +62,9 @@ type application struct {
 	sei      *sei.Client
 	queue    *river.Client[pgx.Tx]
 
-	auth *auth.Service
-	fila *fila.Service
+	auth      *auth.Service
+	fila      *fila.Service
+	processos *processos.Service
 
 	decoder *form.Decoder
 	views   fs.FS
@@ -134,6 +136,13 @@ func run(ctx context.Context) error {
 		return err
 	}
 
+	proc := processos.New(&processos.ServiceOpts{
+		Pool:  pool,
+		Sei:   sei,
+		Cache: cache,
+		OCR:   di,
+	})
+
 	app := &application{
 		dev:      *dev,
 		cfg:      cfg,
@@ -148,8 +157,9 @@ func run(ctx context.Context) error {
 		sei:      sei,
 		di:       di,
 
-		fila: fila,
-		auth: auth,
+		fila:      fila,
+		auth:      auth,
+		processos: proc,
 
 		decoder: form.NewDecoder(),
 		views:   os.DirFS("web/views"),
@@ -159,8 +169,8 @@ func run(ctx context.Context) error {
 	srv := &http.Server{
 		Addr:         ":4000",
 		Handler:      app.routes(),
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 25 * time.Second,
 		IdleTimeout:  time.Minute,
 		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
