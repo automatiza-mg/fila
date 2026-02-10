@@ -8,35 +8,23 @@ import (
 )
 
 type Processo struct {
-	ID     uuid.UUID `json:"id"`
-	Numero string    `json:"numero"`
-	Status string    `json:"status"`
-
-	Documentos []*Documento `json:"documentos"`
+	ID              uuid.UUID `json:"id"`
+	Numero          string    `json:"numero"`
+	Status          string    `json:"status"`
+	LinkAcesso      string    `json:"link_acesso"`
+	SeiUnidadeID    string    `json:"sei_unidade_id"`
+	SeiUnidadeSigla string    `json:"sei_unidade_sigla"`
 }
 
-func (s *Service) buildProcesso(ctx context.Context, p *database.Processo) (*Processo, error) {
-	proc := &Processo{
-		ID:     p.ID,
-		Numero: p.Numero,
-		Status: p.StatusProcessamento,
+func mapProcesso(p *database.Processo) *Processo {
+	return &Processo{
+		ID:              p.ID,
+		Numero:          p.Numero,
+		Status:          p.StatusProcessamento,
+		LinkAcesso:      p.LinkAcesso,
+		SeiUnidadeID:    p.SeiUnidadeID,
+		SeiUnidadeSigla: p.SeiUnidadeSigla,
 	}
-
-	dd, err := s.store.ListDocumentos(ctx, p.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	proc.Documentos = make([]*Documento, len(dd))
-	for i, d := range dd {
-		doc, err := mapDocumento(d)
-		if err != nil {
-			return nil, err
-		}
-		proc.Documentos[i] = doc
-	}
-
-	return proc, nil
 }
 
 func (s *Service) CreateProcesso(ctx context.Context, numeroProcesso string) (*Processo, error) {
@@ -60,7 +48,7 @@ func (s *Service) CreateProcesso(ctx context.Context, numeroProcesso string) (*P
 		return nil, err
 	}
 
-	return s.buildProcesso(ctx, p)
+	return mapProcesso(p), nil
 }
 
 // GetProcessoByNumero retorna os dados de um processo pelo numero (protocolo).
@@ -69,7 +57,7 @@ func (s *Service) GetProcessoByNumero(ctx context.Context, numeroProcesso string
 	if err != nil {
 		return nil, err
 	}
-	return s.buildProcesso(ctx, p)
+	return mapProcesso(p), nil
 }
 
 // GetProcesso retorna os dados de um processo pelo ID.
@@ -78,5 +66,5 @@ func (s *Service) GetProcesso(ctx context.Context, processoID uuid.UUID) (*Proce
 	if err != nil {
 		return nil, err
 	}
-	return s.buildProcesso(ctx, p)
+	return mapProcesso(p), nil
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/sei"
+	"github.com/google/uuid"
 )
 
 type Assinatura struct {
@@ -50,10 +51,21 @@ func mapDocumento(d *database.Documento) (*Documento, error) {
 	return &doc, nil
 }
 
-func (s *Service) GetDocumentoByNumero(ctx context.Context, numero string) (*Documento, error) {
-	d, err := s.store.GetDocumentoByNumero(ctx, numero)
+// ListDocumentos retorna a lista de documentos de um processo SEI.
+func (s *Service) ListDocumentos(ctx context.Context, processoID uuid.UUID) ([]*Documento, error) {
+	dd, err := s.store.ListDocumentos(ctx, processoID)
 	if err != nil {
 		return nil, err
 	}
-	return mapDocumento(d)
+
+	docs := make([]*Documento, len(dd))
+	for i, d := range dd {
+		doc, err := mapDocumento(d)
+		if err != nil {
+			return nil, err
+		}
+		docs[i] = doc
+	}
+
+	return docs, nil
 }

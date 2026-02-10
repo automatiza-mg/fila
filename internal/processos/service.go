@@ -65,7 +65,8 @@ func (s *Service) Analyze(ctx context.Context, procID uuid.UUID) error {
 		return err
 	}
 
-	if err := s.processDocs(ctx, p, docs); err != nil {
+	err = s.processDocs(ctx, p, docs)
+	if err != nil {
 		return fmt.Errorf("failed to process docs: %w", err)
 	}
 
@@ -163,5 +164,8 @@ func (s *Service) processDocs(ctx context.Context, p *database.Processo, docs []
 		}
 	}
 
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
