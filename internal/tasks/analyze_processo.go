@@ -3,7 +3,7 @@ package tasks
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
@@ -49,20 +49,33 @@ func (args AnalyzeProcessoArgs) InsertOpts() river.InsertOpts {
 }
 
 type AnalyzeProcessoWorker struct {
+	logger    *slog.Logger
 	processos *processos.Service
 	river.WorkerDefaults[AnalyzeProcessoArgs]
 }
 
-func NewAnalyzeProcessoWorker(service *processos.Service) *AnalyzeProcessoWorker {
+func NewAnalyzeProcessoWorker(logger *slog.Logger, service *processos.Service) *AnalyzeProcessoWorker {
 	return &AnalyzeProcessoWorker{
+		logger:    logger.With(slog.String("worker", "processos")),
 		processos: service,
 	}
 }
 
 func (w *AnalyzeProcessoWorker) Work(ctx context.Context, job *river.Job[AnalyzeProcessoArgs]) error {
-	log.Printf("Iniciando análise do processo %s", job.Args.ProcessoID)
+	t := time.Now()
+
+	processoID := job.Args.ProcessoID
+	w.logger.Info("Iniciando análise de processo", slog.String("processo_id", processoID.String()))
+
 	err := w.processos.Analyze(ctx, job.Args.ProcessoID)
 	if err != nil {
+		w.logger.Error(
+			"Análise de processo falhou",
+			slog.String("processo_id", processoID.String()),
+			slog.Any("err", err),
+			slog.Duration("duration", time.Since(t)),
+		)
+
 		switch {
 		case errors.Is(err, database.ErrNotFound):
 			return river.JobCancel(err)
@@ -72,5 +85,12 @@ func (w *AnalyzeProcessoWorker) Work(ctx context.Context, job *river.Job[Analyze
 			return err
 		}
 	}
+
+	w.logger.Info(
+		"Análise de processo concluída",
+		slog.String("processo_id", processoID.String()),
+		slog.Duration("duration", time.Since(t)),
+	)
+
 	return nil
 }

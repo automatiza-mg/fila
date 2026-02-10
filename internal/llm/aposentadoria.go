@@ -69,7 +69,7 @@ func (c *Client) AnalisarAposentadoria(ctx context.Context, docs []*processos.Do
 		return nil, err
 	}
 
-	schema, err := GenerateMapSchema[processos.AnaliseAposentadoria]()
+	schema, err := GenerateMapSchema[aposentadoria.Analise]()
 	if err != nil {
 		return nil, err
 	}

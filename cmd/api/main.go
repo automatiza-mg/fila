@@ -114,21 +114,28 @@ func run(ctx context.Context) error {
 	}
 	defer sender.Close()
 
+	// River
 	queue, err := tasks.NewQueue(ctx, pool)
 	if err != nil {
 		return err
 	}
 
+	// Sei Client
 	sei := sei.NewClient(&cfg.SEI)
 
+	// Cache
 	cache := cache.NewRedisCache(rdb)
 
+	// Azure Document Intelligence
 	di := docintel.NewAzureDocIntel(&cfg.DocIntel)
 
+	// OpenAI
 	ai := llm.New(&cfg.LLM)
 
+	// Processos
 	proc := processos.New(&processos.ServiceOpts{
 		Pool:     pool,
+		DataLake: dl,
 		Sei:      sei,
 		Cache:    cache,
 		OCR:      di,
@@ -138,8 +145,10 @@ func run(ctx context.Context) error {
 		},
 	})
 
+	// Auth
 	auth := auth.New(pool, logger, queue)
 
+	// Fila
 	fila := fila.New(pool, auth, sei, cache)
 	if err := auth.RegisterHook(fila); err != nil {
 		return err
@@ -147,7 +156,7 @@ func run(ctx context.Context) error {
 
 	workers := river.NewWorkers()
 	river.AddWorker(workers, tasks.NewSendEmailWorker(sender))
-	river.AddWorker(workers, tasks.NewAnalyzeProcessoWorker(proc))
+	river.AddWorker(workers, tasks.NewAnalyzeProcessoWorker(logger, proc))
 	worker, err := tasks.NewWorker(ctx, pool, workers)
 	if err != nil {
 		return err

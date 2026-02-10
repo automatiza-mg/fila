@@ -13,6 +13,7 @@ import (
 	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/datalake"
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/automatiza-mg/fila/internal/soap"
 	"github.com/google/uuid"
@@ -36,6 +37,7 @@ type AnalyzeEnqueuer interface {
 type Service struct {
 	pool     *pgxpool.Pool
 	store    *database.Store
+	datalake *datalake.DataLake
 	sei      *sei.Client
 	cache    cache.Cache
 	ocr      TextExtractor
@@ -45,6 +47,7 @@ type Service struct {
 
 type ServiceOpts struct {
 	Pool     *pgxpool.Pool
+	DataLake *datalake.DataLake
 	Sei      *sei.Client
 	Cache    cache.Cache
 	OCR      TextExtractor
@@ -56,6 +59,7 @@ func New(opts *ServiceOpts) *Service {
 	return &Service{
 		pool:     opts.Pool,
 		store:    database.New(opts.Pool),
+		datalake: opts.DataLake,
 		sei:      opts.Sei,
 		cache:    opts.Cache,
 		ocr:      opts.OCR,
@@ -116,12 +120,12 @@ func (s *Service) Analyze(ctx context.Context, procID uuid.UUID) error {
 	if apos.Aposentadoria {
 		p.Aposentadoria.V = true
 
-		nasc, err := time.Parse(time.DateOnly, apos.DataNascimento)
+		dataNascimento, err := time.Parse(time.DateOnly, apos.DataNascimento)
 		if err != nil {
 			return err
 		}
 
-		requeri, err := time.Parse(time.DateOnly, apos.DataRequerimento)
+		dataRequerimento, err := time.Parse(time.DateOnly, apos.DataRequerimento)
 		if err != nil {
 			return err
 		}
@@ -131,8 +135,8 @@ func (s *Service) Analyze(ctx context.Context, procID uuid.UUID) error {
 			CPFRequerente:            apos.CPF,
 			Invalidez:                apos.Invalidez,
 			Judicial:                 apos.Judicial,
-			DataNascimentoRequerente: nasc,
-			DataRequerimento:         requeri,
+			DataNascimentoRequerente: dataNascimento,
+			DataRequerimento:         dataRequerimento,
 			Status:                   database.StatusProcessoAnalisePendente,
 		})
 		if err != nil {
