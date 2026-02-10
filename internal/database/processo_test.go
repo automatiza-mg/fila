@@ -1,8 +1,10 @@
 package database
 
 import (
+	"database/sql"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -41,6 +43,10 @@ func TestProcessoLifecycle(t *testing.T) {
 	}
 
 	p.StatusProcessamento = "CONCLUIDO"
+	p.AnalisadoEm = sql.Null[time.Time]{
+		V:     time.Now(),
+		Valid: true,
+	}
 	err = store.UpdateProcesso(t.Context(), p)
 	if err != nil {
 		t.Fatal(err)

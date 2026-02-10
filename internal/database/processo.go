@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -17,6 +19,8 @@ type Processo struct {
 	LinkAcesso          string
 	SeiUnidadeID        string
 	SeiUnidadeSigla     string
+	MetadadosIA         json.RawMessage
+	AnalisadoEm         sql.Null[time.Time]
 	CriadoEm            time.Time
 	AtualizadoEm        time.Time
 }
@@ -25,10 +29,22 @@ func (s *Store) SaveProcesso(ctx context.Context, p *Processo) error {
 	q := `
 	INSERT INTO processos (numero, gatilho, status_processamento, link_acesso, sei_unidade_id, sei_unidade_sigla)
 	VALUES ($1, $2, $3, $4, $5, $6)
-	RETURNING id, criado_em, atualizado_em`
-	args := []any{p.Numero, p.Gatilho, p.StatusProcessamento, p.LinkAcesso, p.SeiUnidadeID, p.SeiUnidadeSigla}
+	RETURNING id, metadados_ia, criado_em, atualizado_em`
+	args := []any{
+		p.Numero,
+		p.Gatilho,
+		p.StatusProcessamento,
+		p.LinkAcesso,
+		p.SeiUnidadeID,
+		p.SeiUnidadeSigla,
+	}
 
-	err := s.db.QueryRow(ctx, q, args...).Scan(&p.ID, &p.CriadoEm, &p.AtualizadoEm)
+	err := s.db.QueryRow(ctx, q, args...).Scan(
+		&p.ID,
+		&p.MetadadosIA,
+		&p.CriadoEm,
+		&p.AtualizadoEm,
+	)
 	if err != nil {
 		return err
 	}
@@ -39,7 +55,8 @@ func (s *Store) GetProcesso(ctx context.Context, id uuid.UUID) (*Processo, error
 	q := `
 	SELECT 
 		id, numero, gatilho, status_processamento, link_acesso,
-		sei_unidade_id, sei_unidade_sigla, criado_em, atualizado_em
+		sei_unidade_id, sei_unidade_sigla, metadados_ia, analisado_em, criado_em,
+		atualizado_em
 	FROM processos
 	WHERE id = $1`
 
@@ -52,6 +69,8 @@ func (s *Store) GetProcesso(ctx context.Context, id uuid.UUID) (*Processo, error
 		&p.LinkAcesso,
 		&p.SeiUnidadeID,
 		&p.SeiUnidadeSigla,
+		&p.MetadadosIA,
+		&p.AnalisadoEm,
 		&p.CriadoEm,
 		&p.AtualizadoEm,
 	)
@@ -68,7 +87,8 @@ func (s *Store) GetProcessoByNumero(ctx context.Context, numero string) (*Proces
 	q := `
 	SELECT 
 		id, numero, gatilho, status_processamento, link_acesso,
-		sei_unidade_id, sei_unidade_sigla, criado_em, atualizado_em
+		sei_unidade_id, sei_unidade_sigla, metadados_ia, analisado_em, criado_em,
+		atualizado_em
 	FROM processos
 	WHERE numero = $1`
 
@@ -81,6 +101,8 @@ func (s *Store) GetProcessoByNumero(ctx context.Context, numero string) (*Proces
 		&p.LinkAcesso,
 		&p.SeiUnidadeID,
 		&p.SeiUnidadeSigla,
+		&p.MetadadosIA,
+		&p.AnalisadoEm,
 		&p.CriadoEm,
 		&p.AtualizadoEm,
 	)
@@ -97,12 +119,17 @@ func (s *Store) UpdateProcesso(ctx context.Context, p *Processo) error {
 	q := `
 	UPDATE processos SET
 		status_processamento = $2,
+		metadados_ia = $3,
+		analisado_em = $4,
 		atualizado_em = CURRENT_TIMESTAMP
 	WHERE id = $1
-	RETURNING atualizado_em`
-	args := []any{p.ID, p.StatusProcessamento}
+	RETURNING analisado_em, atualizado_em`
+	args := []any{p.ID, p.StatusProcessamento, p.MetadadosIA, p.AnalisadoEm}
 
-	err := s.db.QueryRow(ctx, q, args...).Scan(&p.AtualizadoEm)
+	err := s.db.QueryRow(ctx, q, args...).Scan(
+		&p.AnalisadoEm,
+		&p.AtualizadoEm,
+	)
 	if err != nil {
 		return err
 	}
