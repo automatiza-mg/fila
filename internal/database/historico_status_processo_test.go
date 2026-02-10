@@ -44,4 +44,15 @@ func TestHistoricoStatusProcessoLifecycle(t *testing.T) {
 	if diff := cmp.Diff(h, h2); diff != "" {
 		t.Fatalf("mismatch:\n%s", diff)
 	}
+
+	hh, err := store.ListHistoricoStatusProcesso(t.Context(), pa.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hh) != 1 {
+		t.Fatalf("expected len=1, got len=%d", len(hh))
+	}
+	if diff := cmp.Diff(h, hh[0]); diff != "" {
+		t.Fatalf("mismatch:\n%s", diff)
+	}
 }

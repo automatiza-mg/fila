@@ -22,7 +22,11 @@ type HistoricoStatusProcesso struct {
 func (s *Store) SaveHistoricoStatusProcesso(ctx context.Context, h *HistoricoStatusProcesso) error {
 	q := `
 	INSERT INTO historico_status_processo (
-		processo_aposentadoria_id, status_anterior, status_novo, usuario_id, observacao
+		processo_aposentadoria_id,
+		status_anterior,
+		status_novo,
+		usuario_id,
+		observacao
 	)
 	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id, alterado_em`
@@ -45,8 +49,13 @@ func (s *Store) GetHistoricoStatusProcesso(ctx context.Context, id int64) (*Hist
 
 	var h HistoricoStatusProcesso
 	err := s.db.QueryRow(ctx, q, id).Scan(
-		&h.ID, &h.ProcessoAposentadoriaID, &h.StatusAnterior, &h.StatusNovo, &h.UsuarioID,
-		&h.Observacao, &h.AlteradoEm,
+		&h.ID,
+		&h.ProcessoAposentadoriaID,
+		&h.StatusAnterior,
+		&h.StatusNovo,
+		&h.UsuarioID,
+		&h.Observacao,
+		&h.AlteradoEm,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -56,4 +65,42 @@ func (s *Store) GetHistoricoStatusProcesso(ctx context.Context, id int64) (*Hist
 	}
 
 	return &h, nil
+}
+
+func (s *Store) ListHistoricoStatusProcesso(ctx context.Context, paID int64) ([]*HistoricoStatusProcesso, error) {
+	q := `
+	SELECT
+		id, processo_aposentadoria_id, status_anterior, status_novo, usuario_id,
+		observacao, alterado_em
+	FROM historico_status_processo
+	WHERE processo_aposentadoria_id = $1`
+
+	rows, err := s.db.Query(ctx, q, paID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	hh := make([]*HistoricoStatusProcesso, 0)
+	for rows.Next() {
+		var h HistoricoStatusProcesso
+		err := rows.Scan(
+			&h.ID,
+			&h.ProcessoAposentadoriaID,
+			&h.StatusAnterior,
+			&h.StatusNovo,
+			&h.UsuarioID,
+			&h.Observacao,
+			&h.AlteradoEm,
+		)
+		if err != nil {
+			return nil, err
+		}
+		hh = append(hh, &h)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return hh, nil
 }
