@@ -132,3 +132,22 @@ func (s *Store) GetProcessoAposentadoriaByNumero(ctx context.Context, numero str
 
 	return &pa, nil
 }
+
+func (s *Store) UpdateProcessoAposentadoria(ctx context.Context, pa *ProcessoAposentadoria) error {
+	q := `
+	UPDATE processos_aposentadoria SET
+		analista_id = $2,
+		ultimo_analista_id = $3,
+		score = $4,
+		status = $5,
+		atualizado_em = CURRENT_TIMESTAMP
+	WHERE id = $1
+	RETURNING atualizado_em`
+	args := []any{pa.ID, pa.AnalistaID, pa.UltimoAnalistaID, pa.Score, pa.Status}
+
+	err := s.db.QueryRow(ctx, q, args...).Scan(&pa.AtualizadoEm)
+	if err != nil {
+		return err
+	}
+	return nil
+}

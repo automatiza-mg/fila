@@ -47,4 +47,19 @@ func TestProcessoAposentadoriaLifecycle(t *testing.T) {
 	if diff := cmp.Diff(pa, pa2); diff != "" {
 		t.Fatalf("mismatch:\n%s", diff)
 	}
+
+	pa.Status = StatusProcessoEmAnalise
+	pa.Score = 10
+	err = store.UpdateProcessoAposentadoria(t.Context(), pa)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pa2, err = store.GetProcessoAposentadoria(t.Context(), pa.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(pa, pa2); diff != "" {
+		t.Fatalf("mismatch:\n%s", diff)
+	}
 }
