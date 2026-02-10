@@ -54,6 +54,7 @@ func (s *Store) SaveProcessoAposentadoria(ctx context.Context, pa *ProcessoApose
 		ultimo_analista_id
 	)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	ON CONFLICT DO NOTHING
 	RETURNING id, data_requerimento, data_nascimento_requerente, criado_em, atualizado_em`
 	args := []any{
 		pa.ProcessoID,

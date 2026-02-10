@@ -10,8 +10,21 @@ import (
 	"github.com/riverqueue/river/rivermigrate"
 )
 
-// NewRiverClient cria um novo client do River e aplica as migrações necessárias.
-func NewRiverClient(ctx context.Context, pool *pgxpool.Pool, workers *river.Workers) (*river.Client[pgx.Tx], error) {
+func NewQueue(ctx context.Context, pool *pgxpool.Pool) (*river.Client[pgx.Tx], error) {
+	driver := riverpgxv5.New(pool)
+
+	migrator, err := rivermigrate.New(driver, nil)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := migrator.Migrate(ctx, rivermigrate.DirectionUp, nil); err != nil {
+		return nil, err
+	}
+
+	return river.NewClient(driver, &river.Config{})
+}
+
+func NewWorker(ctx context.Context, pool *pgxpool.Pool, workers *river.Workers) (*river.Client[pgx.Tx], error) {
 	driver := riverpgxv5.New(pool)
 
 	migrator, err := rivermigrate.New(driver, nil)

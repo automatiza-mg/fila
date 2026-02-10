@@ -8,6 +8,7 @@ CREATE TABLE "processos" (
     "sei_unidade_id" TEXT NOT NULL,
     "sei_unidade_sigla" TEXT NOT NULL,
     "metadados_ia" JSONB NOT NULL DEFAULT '{}'::jsonb,
+    "aposentadoria" BOOLEAN,
     "analisado_em" TIMESTAMPTZ,
     "criado_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "atualizado_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -15,7 +16,7 @@ CREATE TABLE "processos" (
 
 CREATE TABLE "documentos" (
     "id" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    "numero" TEXT NOT NULL UNIQUE,
+    "numero" TEXT NOT NULL,
     "processo_id" UUID NOT NULL REFERENCES "processos"("id") ON DELETE CASCADE,
     "tipo" TEXT NOT NULL,
     "unidade" TEXT NOT NULL,

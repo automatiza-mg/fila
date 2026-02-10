@@ -42,6 +42,10 @@ func TestProcessoLifecycle(t *testing.T) {
 	}
 
 	p.StatusProcessamento = "CONCLUIDO"
+	p.Aposentadoria = sql.Null[bool]{
+		V:     true,
+		Valid: true,
+	}
 	p.AnalisadoEm = sql.Null[time.Time]{
 		V:     time.Now(),
 		Valid: true,

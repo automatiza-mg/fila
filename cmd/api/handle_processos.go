@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/google/uuid"
 )
 
@@ -25,11 +26,30 @@ func (app *application) handleProcessoCreate(w http.ResponseWriter, r *http.Requ
 
 	p, err := app.processos.CreateProcesso(r.Context(), input.Numero)
 	if err != nil {
-		app.serverError(w, r, err)
+		switch {
+		case errors.Is(err, processos.ErrProcessoExists):
+			app.writeError(w, http.StatusConflict, "O processo informado já existe")
+		default:
+			app.serverError(w, r, err)
+		}
 		return
 	}
 
 	app.writeJSON(w, http.StatusCreated, p)
+}
+
+func (app *application) handleProcessoList(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+
+	pp, err := app.processos.ListProcessos(r.Context(), processos.ListProcessosParams{
+		Numero: q.Get("numero"),
+	})
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, pp)
 }
 
 func (app *application) handleProcessoDetail(w http.ResponseWriter, r *http.Request) {

@@ -37,7 +37,7 @@ func run() error {
 
 	logger := logging.NewLogger(os.Stdout, false)
 
-	queue, err := tasks.NewRiverClient(context.Background(), pool, nil)
+	queue, err := tasks.NewQueue(context.Background(), pool)
 	if err != nil {
 		return err
 	}

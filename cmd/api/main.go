@@ -22,6 +22,7 @@ import (
 	"github.com/automatiza-mg/fila/internal/docintel"
 	"github.com/automatiza-mg/fila/internal/fila"
 	"github.com/automatiza-mg/fila/internal/infra"
+	"github.com/automatiza-mg/fila/internal/llm"
 	"github.com/automatiza-mg/fila/internal/logging"
 	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/postgres"
@@ -59,6 +60,7 @@ type application struct {
 	storage  blob.Storage
 	datalake *datalake.DataLake
 	di       *docintel.AzureDocIntel
+	ai       *llm.Client
 	sei      *sei.Client
 	queue    *river.Client[pgx.Tx]
 
@@ -112,14 +114,8 @@ func run(ctx context.Context) error {
 	}
 	defer sender.Close()
 
-	workers := river.NewWorkers()
-	river.AddWorker(workers, tasks.NewSendEmailWorker(sender))
-
-	queue, err := tasks.NewRiverClient(ctx, pool, workers)
+	queue, err := tasks.NewQueue(ctx, pool)
 	if err != nil {
-		return err
-	}
-	if err := queue.Start(ctx); err != nil {
 		return err
 	}
 
@@ -129,6 +125,19 @@ func run(ctx context.Context) error {
 
 	di := docintel.NewAzureDocIntel(&cfg.DocIntel)
 
+	ai := llm.New(&cfg.LLM)
+
+	proc := processos.New(&processos.ServiceOpts{
+		Pool:     pool,
+		Sei:      sei,
+		Cache:    cache,
+		OCR:      di,
+		Analyzer: ai,
+		Queue: &tasks.ProcessoEnqueuer{
+			Client: queue,
+		},
+	})
+
 	auth := auth.New(pool, logger, queue)
 
 	fila := fila.New(pool, auth, sei, cache)
@@ -136,12 +145,16 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	proc := processos.New(&processos.ServiceOpts{
-		Pool:  pool,
-		Sei:   sei,
-		Cache: cache,
-		OCR:   di,
-	})
+	workers := river.NewWorkers()
+	river.AddWorker(workers, tasks.NewSendEmailWorker(sender))
+	river.AddWorker(workers, tasks.NewAnalyzeProcessoWorker(proc))
+	worker, err := tasks.NewWorker(ctx, pool, workers)
+	if err != nil {
+		return err
+	}
+	if err := worker.Start(ctx); err != nil {
+		return err
+	}
 
 	app := &application{
 		dev:      *dev,
@@ -156,6 +169,7 @@ func run(ctx context.Context) error {
 		datalake: dl,
 		sei:      sei,
 		di:       di,
+		ai:       ai,
 
 		fila:      fila,
 		auth:      auth,
@@ -192,6 +206,6 @@ func run(ctx context.Context) error {
 
 	return errors.Join(
 		srv.Shutdown(exitCtx),
-		queue.Stop(exitCtx),
+		worker.Stop(exitCtx),
 	)
 }

@@ -20,6 +20,7 @@ type Documento struct {
 	Tipo            string       `json:"tipo"`
 	Conteudo        string       `json:"conteudo"`
 	LinkAcesso      string       `json:"link_acesso"`
+	Data            string       `json:"data"`
 	UnidadeGeradora string       `json:"unidade_geradora"`
 	Assinaturas     []Assinatura `json:"assinaturas"`
 }
@@ -40,6 +41,7 @@ func mapDocumento(d *database.Documento) (*Documento, error) {
 		return nil, err
 	}
 
+	doc.Data = resp.Data
 	doc.Assinaturas = make([]Assinatura, len(resp.Assinaturas.Itens))
 	for i, a := range resp.Assinaturas.Itens {
 		doc.Assinaturas[i] = Assinatura{
