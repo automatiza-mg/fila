@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/aposentadoria"
@@ -21,8 +22,23 @@ type DocumentAnalyzer interface {
 // OnAnalyzeComplete implementa [processos.AnalyzeHook].
 // Executa a análise de IA sobre os documentos e atualiza o processo com o resultado.
 func (s *Service) OnAnalyzeComplete(ctx context.Context, proc *processos.Processo, dd []*processos.Documento) error {
+	return s.AnalyzeAposentadoria(ctx, proc, dd)
+}
+
+// AnalyzeAposentadoria processa o resultado da análise de IA para um processo
+// de aposentadoria, criando o registro em processos_aposentadoria.
+func (s *Service) AnalyzeAposentadoria(ctx context.Context, proc *processos.Processo, dd []*processos.Documento) error {
 	p, err := s.store.GetProcesso(ctx, proc.ID)
 	if err != nil {
+		return err
+	}
+
+	_, err = s.store.GetProcessoAposentadoriaByNumero(ctx, proc.Numero)
+	if err == nil {
+		// TODO: Verificar se está EM_DILIGENCIA e tomar as devidas providências.
+		return nil
+	}
+	if !errors.Is(err, database.ErrNotFound) {
 		return err
 	}
 
@@ -36,18 +52,17 @@ func (s *Service) OnAnalyzeComplete(ctx context.Context, proc *processos.Process
 		return err
 	}
 
-	p.MetadadosIA = metadados
-	p.AnalisadoEm = sql.Null[time.Time]{
-		V:     time.Now(),
-		Valid: true,
-	}
 	p.Aposentadoria = sql.Null[bool]{
 		Valid: true,
 	}
+	p.AnalisadoEm = sql.Null[time.Time]{
+		Valid: true,
+	}
+	p.MetadadosIA = metadados
 
-	// Processo é de aposentadoria
 	if apos.Aposentadoria {
 		p.Aposentadoria.V = true
+		p.AnalisadoEm.V = time.Now()
 
 		dataNascimento, err := time.Parse(time.DateOnly, apos.DataNascimento)
 		if err != nil {
@@ -67,12 +82,17 @@ func (s *Service) OnAnalyzeComplete(ctx context.Context, proc *processos.Process
 			DataNascimentoRequerente: dataNascimento,
 			DataRequerimento:         dataRequerimento,
 			Status:                   database.StatusProcessoAnalisePendente,
+			MetadadosIA:              metadados,
 		})
 		if err != nil {
 			return err
 		}
 	}
 
-	p.StatusProcessamento = "SUCESSO"
-	return s.store.UpdateProcesso(ctx, p)
+	err = s.store.UpdateProcesso(ctx, p)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

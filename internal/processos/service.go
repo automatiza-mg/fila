@@ -84,6 +84,12 @@ func (s *Service) Analyze(ctx context.Context, procID uuid.UUID) error {
 		return fmt.Errorf("failed to process docs: %w", err)
 	}
 
+	p.StatusProcessamento = "SUCESSO"
+	err = s.store.UpdateProcesso(ctx, p)
+	if err != nil {
+		return err
+	}
+
 	dd, err := s.ListDocumentos(ctx, p.ID)
 	if err != nil {
 		return err

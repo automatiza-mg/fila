@@ -73,7 +73,7 @@ func (app *application) handleProcessoDetail(w http.ResponseWriter, r *http.Requ
 	app.writeJSON(w, http.StatusOK, p)
 }
 
-func (app *application) handleProcessoDocumentos(w http.ResponseWriter, r *http.Request) {
+func (app *application) handleProcessoDetailDocumentos(w http.ResponseWriter, r *http.Request) {
 	processoID, err := uuid.Parse(r.PathValue("processoID"))
 	if err != nil {
 		app.notFound(w, r)

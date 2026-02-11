@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -34,6 +35,7 @@ type ProcessoAposentadoria struct {
 	Status                   StatusProcesso
 	AnalistaID               sql.Null[int64]
 	UltimoAnalistaID         sql.Null[int64]
+	MetadadosIA              json.RawMessage
 	CriadoEm                 time.Time
 	AtualizadoEm             time.Time
 }
@@ -53,8 +55,7 @@ func (s *Store) SaveProcessoAposentadoria(ctx context.Context, pa *ProcessoApose
 		analista_id,
 		ultimo_analista_id
 	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-	ON CONFLICT DO NOTHING
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	RETURNING id, data_requerimento, data_nascimento_requerente, criado_em, atualizado_em`
 	args := []any{
 		pa.ProcessoID,
