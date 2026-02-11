@@ -27,10 +27,15 @@ type DocumentoFetcher interface {
 	FetchDocumentos(ctx context.Context, nums []string) ([]DocumentoSei, error)
 }
 
+type SeiClient interface {
+	ConsultarProcedimento(ctx context.Context, protocolo string) (*sei.ConsultarProcedimentoResponse, error)
+	ListarDocumentos(ctx context.Context, linkAcesso string) ([]sei.LinhaDocumento, error)
+}
+
 type Service struct {
 	pool    *pgxpool.Pool
 	store   *database.Store
-	sei     *sei.Client
+	sei     SeiClient
 	cache   cache.Cache
 	queue   AnalyzeEnqueuer
 	fetcher DocumentoFetcher
@@ -39,7 +44,7 @@ type Service struct {
 
 type ServiceOpts struct {
 	Pool    *pgxpool.Pool
-	Sei     *sei.Client
+	Sei     SeiClient
 	Cache   cache.Cache
 	Queue   AnalyzeEnqueuer
 	Fetcher DocumentoFetcher
