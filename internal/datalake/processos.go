@@ -42,7 +42,7 @@ func (d *DataLake) ListProcessosAbertos(ctx context.Context, unidade string) ([]
 	) AS t1
 	WHERE t1.rn = 1;`
 
-	rows, err := d.db.QueryContext(ctx, q, unidade)
+	rows, err := d.db.Query(q, unidade)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -78,7 +78,7 @@ func (d *DataLake) ListUnidadesDisponiveis(ctx context.Context) ([]string, error
 	SELECT DISTINCT sigla_unidade_andamento_processo
 	FROM db_dlseplag_prod_dlsei_reporting.vw_sei_017_andamento_processo_aberto_automatiza`
 
-	rows, err := d.db.QueryContext(ctx, q)
+	rows, err := d.db.Query(q)
 	if err != nil {
 		return nil, err
 	}

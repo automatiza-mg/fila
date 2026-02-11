@@ -135,11 +135,10 @@ func run(ctx context.Context) error {
 	// Processos
 	proc := processos.New(&processos.ServiceOpts{
 		Pool:     pool,
-		DataLake: dl,
-		Sei:      sei,
 		Cache:    cache,
-		OCR:      di,
 		Analyzer: ai,
+		Sei:      sei,
+		Fetcher:  processos.NewSeiFetcher(sei, di),
 		Queue: &tasks.ProcessoEnqueuer{
 			Client: queue,
 		},

@@ -30,7 +30,12 @@ func New(ctx context.Context, cfg *Config) (*DataLake, error) {
 	db.SetConnMaxLifetime(5 * time.Minute)
 	db.SetConnMaxIdleTime(30 * time.Second)
 
-	if err := db.PingContext(ctx); err != nil {
+	if err := db.Ping(); err != nil {
+		return nil, err
+	}
+
+	var now time.Time
+	if err := db.QueryRow("SELECT NOW()").Scan(&now); err != nil {
 		return nil, err
 	}
 

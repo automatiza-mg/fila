@@ -40,7 +40,7 @@ func (d *DataLake) GetServidorByCPF(ctx context.Context, cpf string) (*Servidor,
 	WHERE TRIM(doc.ddnrdocumento) = ? AND doc.ddcdtipodocumento = 8`
 
 	var servidor Servidor
-	err := d.db.QueryRowContext(ctx, q, cpf).Scan(
+	err := d.db.QueryRow(q, cpf).Scan(
 		&servidor.IDPessoa,
 		&servidor.Nome,
 		&servidor.Masp,
