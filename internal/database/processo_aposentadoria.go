@@ -53,7 +53,7 @@ func (s *Store) SaveProcessoAposentadoria(ctx context.Context, pa *ProcessoApose
 		analista_id,
 		ultimo_analista_id
 	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	RETURNING id, data_requerimento, data_nascimento_requerente, criado_em, atualizado_em`
 	args := []any{
 		pa.ProcessoID,
