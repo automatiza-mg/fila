@@ -2,14 +2,11 @@ package processos
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"time"
 
-	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/sei"
@@ -17,10 +14,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type DocumentAnalyzer interface {
-	AnalisarAposentadoria(ctx context.Context, docs []*Documento) (*aposentadoria.Analise, error)
-}
 
 type TextExtractor interface {
 	ExtractText(ctx context.Context, r io.Reader, contentType string) (string, error)
@@ -35,33 +28,31 @@ type DocumentoFetcher interface {
 }
 
 type Service struct {
-	pool     *pgxpool.Pool
-	store    *database.Store
-	sei      *sei.Client
-	cache    cache.Cache
-	analyzer DocumentAnalyzer
-	queue    AnalyzeEnqueuer
-	fetcher  DocumentoFetcher
+	pool    *pgxpool.Pool
+	store   *database.Store
+	sei     *sei.Client
+	cache   cache.Cache
+	queue   AnalyzeEnqueuer
+	fetcher DocumentoFetcher
+	hooks   []AnalyzeHook
 }
 
 type ServiceOpts struct {
-	Pool     *pgxpool.Pool
-	Sei      *sei.Client
-	Cache    cache.Cache
-	Analyzer DocumentAnalyzer
-	Queue    AnalyzeEnqueuer
-	Fetcher  DocumentoFetcher
+	Pool    *pgxpool.Pool
+	Sei     *sei.Client
+	Cache   cache.Cache
+	Queue   AnalyzeEnqueuer
+	Fetcher DocumentoFetcher
 }
 
 func New(opts *ServiceOpts) *Service {
 	return &Service{
-		pool:     opts.Pool,
-		sei:      opts.Sei,
-		store:    database.New(opts.Pool),
-		cache:    opts.Cache,
-		analyzer: opts.Analyzer,
-		queue:    opts.Queue,
-		fetcher:  opts.Fetcher,
+		pool:    opts.Pool,
+		sei:     opts.Sei,
+		store:   database.New(opts.Pool),
+		cache:   opts.Cache,
+		queue:   opts.Queue,
+		fetcher: opts.Fetcher,
 	}
 }
 
@@ -93,61 +84,7 @@ func (s *Service) Analyze(ctx context.Context, procID uuid.UUID) error {
 		return err
 	}
 
-	// Analise de IA
-	apos, err := s.analyzer.AnalisarAposentadoria(ctx, dd)
-	if err != nil {
-		return err
-	}
-
-	metadados, err := json.Marshal(apos)
-	if err != nil {
-		return err
-	}
-
-	p.MetadadosIA = metadados
-	p.AnalisadoEm = sql.Null[time.Time]{
-		V:     time.Now(),
-		Valid: true,
-	}
-	p.Aposentadoria = sql.Null[bool]{
-		Valid: true,
-	}
-
-	// Processo é de aposentadoria
-	if apos.Aposentadoria {
-		p.Aposentadoria.V = true
-
-		dataNascimento, err := time.Parse(time.DateOnly, apos.DataNascimento)
-		if err != nil {
-			return err
-		}
-
-		dataRequerimento, err := time.Parse(time.DateOnly, apos.DataRequerimento)
-		if err != nil {
-			return err
-		}
-
-		err = s.store.SaveProcessoAposentadoria(ctx, &database.ProcessoAposentadoria{
-			ProcessoID:               p.ID,
-			CPFRequerente:            apos.CPF,
-			Invalidez:                apos.Invalidez,
-			Judicial:                 apos.Judicial,
-			DataNascimentoRequerente: dataNascimento,
-			DataRequerimento:         dataRequerimento,
-			Status:                   database.StatusProcessoAnalisePendente,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	p.StatusProcessamento = "SUCESSO"
-	err = s.store.UpdateProcesso(ctx, p)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.notifyAnalyzeComplete(ctx, mapProcesso(p), dd)
 }
 
 func (s *Service) processDocs(ctx context.Context, p *database.Processo, docs []sei.LinhaDocumento) error {

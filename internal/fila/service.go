@@ -23,20 +23,22 @@ type AuthService interface {
 }
 
 type Service struct {
-	pool  *pgxpool.Pool
-	store *database.Store
-	auth  AuthService
-	sei   SeiService
-	cache cache.Cache
+	pool     *pgxpool.Pool
+	store    *database.Store
+	auth     AuthService
+	sei      SeiService
+	cache    cache.Cache
+	analyzer DocumentAnalyzer
 }
 
-func New(pool *pgxpool.Pool, auth AuthService, sei SeiService, cache cache.Cache) *Service {
+func New(pool *pgxpool.Pool, auth AuthService, sei SeiService, cache cache.Cache, analyzer DocumentAnalyzer) *Service {
 	return &Service{
-		pool:  pool,
-		store: database.New(pool),
-		auth:  auth,
-		sei:   sei,
-		cache: cache,
+		pool:     pool,
+		store:    database.New(pool),
+		auth:     auth,
+		sei:      sei,
+		cache:    cache,
+		analyzer: analyzer,
 	}
 }
 

@@ -134,11 +134,10 @@ func run(ctx context.Context) error {
 
 	// Processos
 	proc := processos.New(&processos.ServiceOpts{
-		Pool:     pool,
-		Cache:    cache,
-		Analyzer: ai,
-		Sei:      sei,
-		Fetcher:  processos.NewSeiFetcher(sei, di),
+		Pool:    pool,
+		Cache:   cache,
+		Sei:     sei,
+		Fetcher: processos.NewSeiFetcher(sei, di),
 		Queue: &tasks.ProcessoEnqueuer{
 			Client: queue,
 		},
@@ -148,10 +147,11 @@ func run(ctx context.Context) error {
 	auth := auth.New(pool, logger, queue)
 
 	// Fila
-	fila := fila.New(pool, auth, sei, cache)
+	fila := fila.New(pool, auth, sei, cache, ai)
 	if err := auth.RegisterHook(fila); err != nil {
 		return err
 	}
+	proc.RegisterHook(fila)
 
 	workers := river.NewWorkers()
 	river.AddWorker(workers, tasks.NewSendEmailWorker(sender))

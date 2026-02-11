@@ -66,7 +66,7 @@ func newTestService(tb testing.TB) *Service {
 	a := &authService{
 		usuarios: make(map[int64]*auth.Usuario),
 	}
-	fila := New(pool, a, s, cache.NewMemoryCache())
+	fila := New(pool, a, s, cache.NewMemoryCache(), nil)
 
 	u := &database.Usuario{
 		Nome:            "Fulano da Silva",
