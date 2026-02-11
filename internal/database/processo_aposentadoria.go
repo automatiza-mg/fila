@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -35,7 +34,6 @@ type ProcessoAposentadoria struct {
 	Status                   StatusProcesso
 	AnalistaID               sql.Null[int64]
 	UltimoAnalistaID         sql.Null[int64]
-	MetadadosIA              json.RawMessage
 	CriadoEm                 time.Time
 	AtualizadoEm             time.Time
 }

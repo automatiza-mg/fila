@@ -2,43 +2,31 @@ package fila
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
-	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/google/uuid"
 )
 
 // Processo é um processo de aposentadoria processado pelo sistema.
 type Processo struct {
-	ID                       int64                  `json:"id"`
-	ProcessoID               uuid.UUID              `json:"processo_id"`
-	Numero                   string                 `json:"numero"`
-	DataRequerimento         time.Time              `json:"data_requerimento"`
-	CPFRequerente            string                 `json:"cpf_requerente"`
-	DataNascimentoRequerente time.Time              `json:"data_nascimento_requerente"`
-	Invalidez                bool                   `json:"invalidez"`
-	Judicial                 bool                   `json:"judicial"`
-	Prioridade               bool                   `json:"prioridade"`
-	Score                    int                    `json:"score"`
-	Status                   string                 `json:"status"`
-	AnalistaID               *int64                 `json:"analista_id"`
-	AnaliseIA                *aposentadoria.Analise `json:"analise_ia"`
-	CriadoEm                 time.Time              `json:"criado_em"`
-	AtualizadoEm             time.Time              `json:"atualizado_em"`
+	ID                       int64     `json:"id"`
+	ProcessoID               uuid.UUID `json:"processo_id"`
+	Numero                   string    `json:"numero"`
+	DataRequerimento         time.Time `json:"data_requerimento"`
+	CPFRequerente            string    `json:"cpf_requerente"`
+	DataNascimentoRequerente time.Time `json:"data_nascimento_requerente"`
+	Invalidez                bool      `json:"invalidez"`
+	Judicial                 bool      `json:"judicial"`
+	Prioridade               bool      `json:"prioridade"`
+	Score                    int       `json:"score"`
+	Status                   string    `json:"status"`
+	AnalistaID               *int64    `json:"analista_id"`
+	CriadoEm                 time.Time `json:"criado_em"`
+	AtualizadoEm             time.Time `json:"atualizado_em"`
 }
 
-func mapProcesso(pa *database.ProcessoAposentadoria, numero string) (*Processo, error) {
-	var analiseIA *aposentadoria.Analise
-	if pa.MetadadosIA != nil {
-		analiseIA = &aposentadoria.Analise{}
-		err := json.Unmarshal(pa.MetadadosIA, &analiseIA)
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func mapProcesso(pa *database.ProcessoAposentadoria, numero string) *Processo {
 	return &Processo{
 		ID:                       pa.ID,
 		ProcessoID:               pa.ProcessoID,
@@ -52,10 +40,9 @@ func mapProcesso(pa *database.ProcessoAposentadoria, numero string) (*Processo, 
 		Score:                    pa.Score,
 		Status:                   string(pa.Status),
 		AnalistaID:               database.Ptr(pa.AnalistaID),
-		AnaliseIA:                analiseIA,
 		CriadoEm:                 pa.CriadoEm,
 		AtualizadoEm:             pa.AtualizadoEm,
-	}, nil
+	}
 }
 
 // GetProcesso retorna um processo de aposentadoria pelo ID.
@@ -70,7 +57,7 @@ func (s *Service) GetProcesso(ctx context.Context, id int64) (*Processo, error) 
 		return nil, err
 	}
 
-	return mapProcesso(pa, p.Numero)
+	return mapProcesso(pa, p.Numero), nil
 }
 
 // GetProcessoByNumero retorna um processo de aposentadoria pelo
@@ -81,5 +68,5 @@ func (s *Service) GetProcessoByNumero(ctx context.Context, numero string) (*Proc
 		return nil, err
 	}
 
-	return mapProcesso(pa, numero)
+	return mapProcesso(pa, numero), nil
 }

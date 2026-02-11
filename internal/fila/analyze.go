@@ -82,7 +82,6 @@ func (s *Service) AnalyzeAposentadoria(ctx context.Context, proc *processos.Proc
 			DataNascimentoRequerente: dataNascimento,
 			DataRequerimento:         dataRequerimento,
 			Status:                   database.StatusProcessoAnalisePendente,
-			MetadadosIA:              metadados,
 		})
 		if err != nil {
 			return err
