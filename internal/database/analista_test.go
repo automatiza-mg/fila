@@ -117,7 +117,6 @@ func TestAnalista_ListAnalistas(t *testing.T) {
 
 	store := newTestStore(t)
 
-	// Empty list initially
 	analistas, err := store.ListAnalistas(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -126,7 +125,6 @@ func TestAnalista_ListAnalistas(t *testing.T) {
 		t.Fatalf("expected empty list, got %d", len(analistas))
 	}
 
-	// Seed 3 analistas
 	_, a1 := seedAnalista(t, store)
 	_, a2 := seedAnalista(t, store)
 	_, a3 := seedAnalista(t, store)
@@ -139,7 +137,6 @@ func TestAnalista_ListAnalistas(t *testing.T) {
 		t.Fatalf("expected 3 analistas, got %d", len(analistas))
 	}
 
-	// Build map for order-independent comparison
 	got := make(map[int64]*Analista)
 	for _, a := range analistas {
 		got[a.UsuarioID] = a
@@ -163,7 +160,6 @@ func TestAnalista_GetAnalistasMap(t *testing.T) {
 	_, a1 := seedAnalista(t, store)
 	_, a2 := seedAnalista(t, store)
 
-	// Valid IDs
 	analistaMap, err := store.GetAnalistasMap(t.Context(), []int64{a1.UsuarioID, a2.UsuarioID})
 	if err != nil {
 		t.Fatal(err)
@@ -178,7 +174,6 @@ func TestAnalista_GetAnalistasMap(t *testing.T) {
 		t.Fatalf("a2 mismatch:\n%s", diff)
 	}
 
-	// Empty input returns empty map
 	analistaMap, err = store.GetAnalistasMap(t.Context(), []int64{})
 	if err != nil {
 		t.Fatal(err)
@@ -187,7 +182,6 @@ func TestAnalista_GetAnalistasMap(t *testing.T) {
 		t.Fatalf("expected empty map, got %d keys", len(analistaMap))
 	}
 
-	// Non-existent IDs return empty map
 	analistaMap, err = store.GetAnalistasMap(t.Context(), []int64{999998, 999999})
 	if err != nil {
 		t.Fatal(err)

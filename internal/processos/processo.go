@@ -2,6 +2,7 @@ package processos
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -15,16 +16,17 @@ var (
 )
 
 type Processo struct {
-	ID              uuid.UUID  `json:"id"`
-	Numero          string     `json:"numero"`
-	Status          string     `json:"status"`
-	LinkAcesso      string     `json:"link_acesso"`
-	SeiUnidadeID    string     `json:"sei_unidade_id"`
-	SeiUnidadeSigla string     `json:"sei_unidade_sigla"`
-	Aposentadoria   *bool      `json:"aposentadoria"`
-	AnalisadoEm     *time.Time `json:"analisado_em"`
-	CriadoEm        time.Time  `json:"criado_em"`
-	AtualizadoEm    time.Time  `json:"atualizado_em"`
+	ID              uuid.UUID       `json:"id"`
+	Numero          string          `json:"numero"`
+	Status          string          `json:"status"`
+	LinkAcesso      string          `json:"link_acesso"`
+	SeiUnidadeID    string          `json:"sei_unidade_id"`
+	SeiUnidadeSigla string          `json:"sei_unidade_sigla"`
+	Aposentadoria   *bool           `json:"aposentadoria"`
+	AnalisadoEm     *time.Time      `json:"analisado_em"`
+	MetadadosIA     json.RawMessage `json:"metadados_ia"`
+	CriadoEm        time.Time       `json:"criado_em"`
+	AtualizadoEm    time.Time       `json:"atualizado_em"`
 }
 
 func mapProcesso(p *database.Processo) *Processo {
@@ -37,6 +39,7 @@ func mapProcesso(p *database.Processo) *Processo {
 		SeiUnidadeSigla: p.SeiUnidadeSigla,
 		Aposentadoria:   database.Ptr(p.Aposentadoria),
 		AnalisadoEm:     database.Ptr(p.AnalisadoEm),
+		MetadadosIA:     p.MetadadosIA,
 		CriadoEm:        p.CriadoEm,
 		AtualizadoEm:    p.AtualizadoEm,
 	}
