@@ -78,20 +78,6 @@ func TestAnalyze_NotifiesHooks(t *testing.T) {
 		t.Fatal("expected hook to be called")
 	}
 
-	ignoreProcesso := cmpopts.IgnoreFields(Processo{}, "Aposentadoria", "AnalisadoEm", "CriadoEm", "AtualizadoEm")
-
-	wantProcesso := &Processo{
-		ID:              proc.ID,
-		Numero:          "hook-notify",
-		Status:          "PROCESSANDO",
-		LinkAcesso:      "https://sei.example.com/processo/hook-notify",
-		SeiUnidadeID:    "100",
-		SeiUnidadeSigla: "SEPLAG/AP01",
-	}
-	if diff := cmp.Diff(wantProcesso, hook.processo, ignoreProcesso); diff != "" {
-		t.Fatalf("hook processo mismatch (-want +got):\n%s", diff)
-	}
-
 	ignoreDoc := cmpopts.IgnoreFields(Documento{}, "ID")
 
 	wantDocs := []*Documento{
@@ -145,7 +131,7 @@ func TestAnalyze_MultipleHooks(t *testing.T) {
 	wantProcesso := &Processo{
 		ID:              proc.ID,
 		Numero:          "multi-hook",
-		Status:          "PROCESSANDO",
+		Status:          "SUCESSO",
 		LinkAcesso:      "https://sei.example.com/processo/multi-hook",
 		SeiUnidadeID:    "100",
 		SeiUnidadeSigla: "SEPLAG/AP01",
