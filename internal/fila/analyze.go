@@ -57,12 +57,12 @@ func (s *Service) AnalyzeAposentadoria(ctx context.Context, proc *processos.Proc
 	}
 	p.AnalisadoEm = sql.Null[time.Time]{
 		Valid: true,
+		V:     time.Now(),
 	}
 	p.MetadadosIA = metadados
 
 	if apos.Aposentadoria {
 		p.Aposentadoria.V = true
-		p.AnalisadoEm.V = time.Now()
 
 		dataNascimento, err := time.Parse(time.DateOnly, apos.DataNascimento)
 		if err != nil {
