@@ -30,12 +30,7 @@ func New(ctx context.Context, cfg *Config) (*DataLake, error) {
 	db.SetConnMaxLifetime(5 * time.Minute)
 	db.SetConnMaxIdleTime(30 * time.Second)
 
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-
-	var now time.Time
-	if err := db.QueryRow("SELECT NOW()").Scan(&now); err != nil {
+	if err := db.PingContext(ctx); err != nil {
 		return nil, err
 	}
 
@@ -48,4 +43,11 @@ func (d *DataLake) Close() error {
 
 func (d *DataLake) Stats() sql.DBStats {
 	return d.db.Stats()
+}
+
+// Ping faz uma query para pegar a hora atual do data lake e verificar se a
+// conexão está saudável.
+func (d *DataLake) Ping() error {
+	var now time.Time
+	return d.db.QueryRow("SELECT NOW()").Scan(&now)
 }

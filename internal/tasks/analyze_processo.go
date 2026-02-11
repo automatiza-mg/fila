@@ -41,6 +41,7 @@ func (args AnalyzeProcessoArgs) Kind() string {
 
 func (args AnalyzeProcessoArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{
+		Queue: QueueProcessos,
 		UniqueOpts: river.UniqueOpts{
 			ByArgs:   true,
 			ByPeriod: time.Hour,
@@ -63,34 +64,34 @@ func NewAnalyzeProcessoWorker(logger *slog.Logger, service *processos.Service) *
 
 func (w *AnalyzeProcessoWorker) Work(ctx context.Context, job *river.Job[AnalyzeProcessoArgs]) error {
 	t := time.Now()
-
 	processoID := job.Args.ProcessoID
-	w.logger.Info("Iniciando análise de processo", slog.String("processo_id", processoID.String()))
+	logger := w.logger.With(
+		slog.String("processo_id", processoID.String()),
+		slog.Int64("job_id", job.ID),
+		slog.String("queue", job.Queue),
+	)
+
+	logger.Info("Iniciando análise de processo")
 
 	err := w.processos.Analyze(ctx, job.Args.ProcessoID)
 	if err != nil {
-		w.logger.Error(
+		logger.Error(
 			"Análise de processo falhou",
-			slog.String("processo_id", processoID.String()),
 			slog.Any("err", err),
 			slog.Duration("duration", time.Since(t)),
 		)
 
 		switch {
-		case errors.Is(err, database.ErrNotFound):
-			return river.JobCancel(err)
-		case errors.Is(err, pgx.ErrNoRows):
+		case errors.Is(err, database.ErrNotFound), errors.Is(err, pgx.ErrNoRows):
 			return river.JobCancel(err)
 		default:
 			return err
 		}
 	}
 
-	w.logger.Info(
+	logger.Info(
 		"Análise de processo concluída",
-		slog.String("processo_id", processoID.String()),
 		slog.Duration("duration", time.Since(t)),
 	)
-
 	return nil
 }

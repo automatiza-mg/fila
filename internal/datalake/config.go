@@ -17,6 +17,7 @@ func (c *Config) connString() string {
 	q := make(url.Values)
 	q.Set("auth", "ldap")
 	q.Set("tls", "true")
+	q.Set("query-timeout", "180")
 
 	u := &url.URL{
 		Scheme:   "impala",

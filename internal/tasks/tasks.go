@@ -10,6 +10,8 @@ import (
 	"github.com/riverqueue/river/rivermigrate"
 )
 
+const QueueProcessos = "processos"
+
 func NewQueue(ctx context.Context, pool *pgxpool.Pool) (*river.Client[pgx.Tx], error) {
 	driver := riverpgxv5.New(pool)
 
@@ -35,13 +37,11 @@ func NewWorker(ctx context.Context, pool *pgxpool.Pool, workers *river.Workers) 
 		return nil, err
 	}
 
-	cfg := &river.Config{}
-	if workers != nil {
-		cfg.Workers = workers
-		cfg.Queues = map[string]river.QueueConfig{
+	return river.NewClient(driver, &river.Config{
+		Workers: workers,
+		Queues: map[string]river.QueueConfig{
 			river.QueueDefault: {MaxWorkers: 100},
-		}
-	}
-
-	return river.NewClient(driver, cfg)
+			QueueProcessos:     {MaxWorkers: 2},
+		},
+	})
 }
