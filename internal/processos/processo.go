@@ -48,8 +48,8 @@ func mapProcesso(p *database.Processo) *Processo {
 
 // CreateProcesso cria um novo processo no banco de dados, colocando a análise
 // na fila de processamento automaticamente.
-func (s *Service) CreateProcesso(ctx context.Context, numeroProcesso string) (*Processo, error) {
-	resp, err := s.sei.ConsultarProcedimento(ctx, numeroProcesso)
+func (s *Service) CreateProcesso(ctx context.Context, num string) (*Processo, error) {
+	resp, err := s.sei.ConsultarProcedimento(ctx, num)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (s *Service) CreateProcesso(ctx context.Context, numeroProcesso string) (*P
 	store := s.store.WithTx(tx)
 
 	p := &database.Processo{
-		Numero:              numeroProcesso,
+		Numero:              num,
 		StatusProcessamento: "PENDENTE",
 		LinkAcesso:          linkAcesso,
 		SeiUnidadeID:        unidade.IdUnidade,

@@ -11,7 +11,7 @@ import (
 )
 
 // Processo é um processo de aposentadoria processado pelo sistema.
-type Processo struct {
+type ProcessoAposentadoria struct {
 	ID                       int64     `json:"id"`
 	ProcessoID               uuid.UUID `json:"processo_id"`
 	Numero                   string    `json:"numero"`
@@ -28,8 +28,8 @@ type Processo struct {
 	AtualizadoEm             time.Time `json:"atualizado_em"`
 }
 
-func mapProcesso(pa *database.ProcessoAposentadoria, numero string) *Processo {
-	return &Processo{
+func mapProcesso(pa *database.ProcessoAposentadoria, numero string) *ProcessoAposentadoria {
+	return &ProcessoAposentadoria{
 		ID:                       pa.ID,
 		ProcessoID:               pa.ProcessoID,
 		Numero:                   numero,
@@ -47,8 +47,8 @@ func mapProcesso(pa *database.ProcessoAposentadoria, numero string) *Processo {
 	}
 }
 
-// GetProcesso retorna um processo de aposentadoria pelo ID.
-func (s *Service) GetProcesso(ctx context.Context, id int64) (*Processo, error) {
+// GetProcessoAposentadoria retorna um processo de aposentadoria pelo ID.
+func (s *Service) GetProcessoAposentadoria(ctx context.Context, id int64) (*ProcessoAposentadoria, error) {
 	pa, err := s.store.GetProcessoAposentadoria(ctx, id)
 	if err != nil {
 		return nil, err
@@ -62,9 +62,9 @@ func (s *Service) GetProcesso(ctx context.Context, id int64) (*Processo, error) 
 	return mapProcesso(pa, p.Numero), nil
 }
 
-// GetProcessoByNumero retorna um processo de aposentadoria pelo
+// GetProcessoAposentadoriaByNumero retorna um processo de aposentadoria pelo
 // número do processo SEI.
-func (s *Service) GetProcessoByNumero(ctx context.Context, numero string) (*Processo, error) {
+func (s *Service) GetProcessoAposentadoriaByNumero(ctx context.Context, numero string) (*ProcessoAposentadoria, error) {
 	pa, err := s.store.GetProcessoAposentadoriaByNumero(ctx, numero)
 	if err != nil {
 		return nil, err
@@ -74,16 +74,18 @@ func (s *Service) GetProcessoByNumero(ctx context.Context, numero string) (*Proc
 }
 
 type ListProcessoAposentadoriaParams struct {
+	Numero string
 	Status string
 	Page   int
 	Limit  int
 }
 
 // ListProcesso retorna a lista paginada dos processos de aposentadoria com seus numeros.
-func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentadoriaParams) (*pagination.Result[*Processo], error) {
+func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentadoriaParams) (*pagination.Result[*ProcessoAposentadoria], error) {
 	offset := pagination.Offset(params.Page, params.Limit)
 
 	paa, totalCount, err := s.store.ListProcessoAposentadoria(ctx, database.ListProcessoAposentadoriaParams{
+		Numero: params.Numero,
 		Status: params.Status,
 		Limit:  params.Limit,
 		Offset: offset,
@@ -93,7 +95,7 @@ func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentad
 	}
 
 	if len(paa) == 0 {
-		return pagination.NewResult([]*Processo{}, params.Page, 0, params.Limit), nil
+		return pagination.NewResult[*ProcessoAposentadoria](nil, params.Page, 0, params.Limit), nil
 	}
 
 	processoIDs := make([]uuid.UUID, len(paa))
@@ -106,7 +108,7 @@ func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentad
 		return nil, err
 	}
 
-	processos := make([]*Processo, len(paa))
+	processos := make([]*ProcessoAposentadoria, len(paa))
 	for i, pa := range paa {
 		p, ok := processoMap[pa.ProcessoID]
 		if !ok {

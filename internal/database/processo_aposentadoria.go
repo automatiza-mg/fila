@@ -153,24 +153,28 @@ func (s *Store) UpdateProcessoAposentadoria(ctx context.Context, pa *ProcessoApo
 }
 
 type ListProcessoAposentadoriaParams struct {
+	Numero string
 	Status string
 	Limit  int
 	Offset int
 }
 
 // ListProcessoAposentadoria retorna uma lista paginada de processos de aposentadoria.
+// Permite filtrar por Numero (do processo) e Status.
 func (s *Store) ListProcessoAposentadoria(ctx context.Context, params ListProcessoAposentadoriaParams) ([]*ProcessoAposentadoria, int, error) {
 	q := `
 	SELECT
-		id, processo_id, data_requerimento, cpf_requerente,
-		data_nascimento_requerente, invalidez, judicial, prioridade,
-		score, status, analista_id, ultimo_analista_id,
-		criado_em, atualizado_em, COUNT(*) OVER()
-	FROM processos_aposentadoria
-	WHERE (LOWER(status::text) = LOWER($1) OR $1 = '')
-	ORDER BY criado_em DESC
-	LIMIT $2 OFFSET $3`
-	args := []any{params.Status, params.Limit, params.Offset}
+		pa.id, pa.processo_id, pa.data_requerimento, pa.cpf_requerente,
+		pa.data_nascimento_requerente, pa.invalidez, pa.judicial, pa.prioridade,
+		pa.score, pa.status, pa.analista_id, pa.ultimo_analista_id,
+		pa.criado_em, pa.atualizado_em, COUNT(*) OVER()
+	FROM processos_aposentadoria pa
+	INNER JOIN processos p ON pa.processo_id = p.id
+	WHERE (LOWER(pa.status::text) = LOWER($1) OR $1 = '')
+	  AND (p.numero LIKE '%' || $2 || '%' OR $2 = '')
+	ORDER BY pa.criado_em DESC
+	LIMIT $3 OFFSET $4`
+	args := []any{params.Status, params.Numero, params.Limit, params.Offset}
 
 	rows, err := s.db.Query(ctx, q, args...)
 	if err != nil {

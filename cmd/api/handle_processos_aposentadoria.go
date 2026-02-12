@@ -13,6 +13,7 @@ func (app *application) handleProcessoAposentadoriaList(w http.ResponseWriter, r
 	params := pagination.ParseQuery(r)
 
 	result, err := app.fila.ListProcesso(r.Context(), fila.ListProcessoAposentadoriaParams{
+		Numero: r.URL.Query().Get("numero"),
 		Status: r.URL.Query().Get("status"),
 		Page:   params.Page,
 		Limit:  params.Limit,
@@ -32,7 +33,7 @@ func (app *application) handleProcessoAposentadoriaDetail(w http.ResponseWriter,
 		return
 	}
 
-	pa, err := app.fila.GetProcesso(r.Context(), paID)
+	pa, err := app.fila.GetProcessoAposentadoria(r.Context(), paID)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrNotFound):
