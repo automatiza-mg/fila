@@ -32,6 +32,12 @@ import (
 	"github.com/riverqueue/river"
 )
 
+const (
+	readTimeout  = 10 * time.Second
+	writeTimeout = 15 * time.Second
+	idleTimeout  = time.Minute
+)
+
 func main() {
 	_ = godotenv.Load()
 
@@ -153,9 +159,9 @@ func run(ctx context.Context) error {
 	srv := &http.Server{
 		Addr:         *addr,
 		Handler:      app.routes(),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 25 * time.Second,
-		IdleTimeout:  time.Minute,
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
+		IdleTimeout:  idleTimeout,
 		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
 
