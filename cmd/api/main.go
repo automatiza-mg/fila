@@ -30,10 +30,7 @@ import (
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/automatiza-mg/fila/internal/tasks"
 	"github.com/go-playground/form/v4"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/redis/go-redis/v9"
 	"github.com/riverqueue/river"
 )
 
@@ -52,17 +49,10 @@ type application struct {
 	dev      bool
 	cfg      *config.Config
 	logger   *slog.Logger
-	rdb      *redis.Client
-	pool     *pgxpool.Pool
 	store    *database.Store
-	mail     mail.Sender
 	cache    cache.Cache
-	storage  blob.Storage
 	datalake *datalake.DataLake
-	di       *docintel.AzureDocIntel
-	ai       *llm.Client
 	sei      *sei.Client
-	queue    *river.Client[pgx.Tx]
 
 	auth      *auth.Service
 	fila      *fila.Service
@@ -168,16 +158,10 @@ func run(ctx context.Context) error {
 		dev:      *dev,
 		cfg:      cfg,
 		logger:   logger,
-		rdb:      rdb,
-		pool:     pool,
 		store:    database.New(pool),
-		mail:     sender,
 		cache:    cache,
-		storage:  storage,
 		datalake: dl,
 		sei:      sei,
-		di:       di,
-		ai:       ai,
 
 		fila:      fila,
 		auth:      auth,
