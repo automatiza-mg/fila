@@ -61,6 +61,14 @@ func (s *Service) AnalyzeAposentadoria(ctx context.Context, proc *processos.Proc
 	}
 	p.MetadadosIA = metadados
 
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	store := s.store.WithTx(tx)
+
 	if apos.Aposentadoria {
 		p.Aposentadoria.V = true
 
@@ -74,7 +82,7 @@ func (s *Service) AnalyzeAposentadoria(ctx context.Context, proc *processos.Proc
 			return err
 		}
 
-		err = s.store.SaveProcessoAposentadoria(ctx, &database.ProcessoAposentadoria{
+		pa := &database.ProcessoAposentadoria{
 			ProcessoID:               p.ID,
 			CPFRequerente:            apos.CPF,
 			Invalidez:                apos.Invalidez,
@@ -82,16 +90,29 @@ func (s *Service) AnalyzeAposentadoria(ctx context.Context, proc *processos.Proc
 			DataNascimentoRequerente: dataNascimento,
 			DataRequerimento:         dataRequerimento,
 			Status:                   database.StatusProcessoAnalisePendente,
+		}
+		err = store.SaveProcessoAposentadoria(ctx, pa)
+		if err != nil {
+			return err
+		}
+
+		err = store.SaveHistoricoStatusProcesso(ctx, &database.HistoricoStatusProcesso{
+			ProcessoAposentadoriaID: pa.ID,
+			StatusNovo:              database.StatusProcessoAnalisePendente,
+			Observacao: sql.Null[string]{
+				Valid: true,
+				V:     "Processo criado automaticamente através de análise de IA",
+			},
 		})
 		if err != nil {
 			return err
 		}
 	}
 
-	err = s.store.UpdateProcesso(ctx, p)
+	err = store.UpdateProcesso(ctx, p)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }

@@ -22,6 +22,10 @@ var (
 	_ AuthService = (*authService)(nil)
 )
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 type seiService struct{}
 
 func (s *seiService) ListarUnidades(ctx context.Context) (*sei.ListarUnidadesResponse, error) {
