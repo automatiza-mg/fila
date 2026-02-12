@@ -151,3 +151,52 @@ func (s *Store) UpdateProcessoAposentadoria(ctx context.Context, pa *ProcessoApo
 	}
 	return nil
 }
+
+type ListProcessoAposentadoriaParams struct {
+	Status string
+	Limit  int
+	Offset int
+}
+
+// ListProcessoAposentadoria retorna uma lista paginada de processos de aposentadoria.
+func (s *Store) ListProcessoAposentadoria(ctx context.Context, params ListProcessoAposentadoriaParams) ([]*ProcessoAposentadoria, int, error) {
+	q := `
+	SELECT
+		id, processo_id, data_requerimento, cpf_requerente,
+		data_nascimento_requerente, invalidez, judicial, prioridade,
+		score, status, analista_id, ultimo_analista_id,
+		criado_em, atualizado_em, COUNT(*) OVER()
+	FROM processos_aposentadoria
+	WHERE (LOWER(status::text) = LOWER($1) OR $1 = '')
+	ORDER BY criado_em DESC
+	LIMIT $2 OFFSET $3`
+	args := []any{params.Status, params.Limit, params.Offset}
+
+	rows, err := s.db.Query(ctx, q, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	totalCount := 0
+	paa := make([]*ProcessoAposentadoria, 0)
+
+	for rows.Next() {
+		var pa ProcessoAposentadoria
+		err := rows.Scan(
+			&pa.ID, &pa.ProcessoID, &pa.DataRequerimento, &pa.CPFRequerente,
+			&pa.DataNascimentoRequerente, &pa.Invalidez, &pa.Judicial, &pa.Prioridade,
+			&pa.Score, &pa.Status, &pa.AnalistaID, &pa.UltimoAnalistaID,
+			&pa.CriadoEm, &pa.AtualizadoEm, &totalCount,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		paa = append(paa, &pa)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	return paa, totalCount, nil
+}
