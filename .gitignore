@@ -1,5 +1,6 @@
 bin
 node_modules
+api
 .blob
 .idea
 .task
