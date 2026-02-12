@@ -18,8 +18,6 @@ func (app *application) routes() http.Handler {
 
 		if app.dev {
 			r.Route("/datalake", func(r chi.Router) {
-				r.Get("/stats", app.handleDatalakeStats)
-
 				r.Get("/processos", app.handleDatalakeProcessos)
 				r.Get("/processos/unidades", app.handleDatalakeUnidadesProcessos)
 

@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/blob"
 	"github.com/automatiza-mg/fila/internal/cache"
@@ -42,12 +43,11 @@ func main() {
 }
 
 type application struct {
-	dev      bool
-	cfg      *config.Config
-	logger   *slog.Logger
-	cache    cache.Cache
-	datalake *datalake.DataLake
+	dev    bool
+	cfg    *config.Config
+	logger *slog.Logger
 
+	apos      *aposentadoria.Service
 	auth      *auth.Service
 	fila      *fila.Service
 	processos *processos.Service
@@ -126,6 +126,8 @@ func run(ctx context.Context) error {
 	}
 	proc.RegisterHook(fila)
 
+	apos := aposentadoria.New(dl, cache)
+
 	workers := river.NewWorkers()
 	river.AddWorker(workers, tasks.NewSendEmailWorker(sender))
 	river.AddWorker(workers, tasks.NewAnalyzeProcessoWorker(logger, proc))
@@ -138,12 +140,11 @@ func run(ctx context.Context) error {
 	}
 
 	app := &application{
-		dev:      *dev,
-		cfg:      cfg,
-		logger:   logger,
-		cache:    cache,
-		datalake: dl,
+		dev:    *dev,
+		cfg:    cfg,
+		logger: logger,
 
+		apos:      apos,
 		fila:      fila,
 		auth:      auth,
 		processos: proc,

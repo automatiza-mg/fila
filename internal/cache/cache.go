@@ -17,15 +17,12 @@ type Cache interface {
 	// Get retorna os dados do cache pertencentes à chave informada.
 	// Retorna [ErrCacheMiss] quando a chave não estiver presente no cache.
 	Get(ctx context.Context, key string) ([]byte, error)
-
 	// Put adiciona a chave e valor no cache pelo tempo definido por ttl.
 	// Se ttl for zero, a chave não possui um tempo de expiração.
 	Put(ctx context.Context, key string, data []byte, ttl time.Duration) error
-
 	// Del remove o valor vinculado à uma chave do cache. Se a chave não existir,
 	// a operação é um noop.
 	Del(ctx context.Context, key string) error
-
 	// Remember combina os métodos Put e Get. Se a chave não existir, executa fn para obter
 	// os dados e salva no cache com o ttl informado.
 	Remember(ctx context.Context, key string, ttl time.Duration, fn func() ([]byte, error)) ([]byte, error)

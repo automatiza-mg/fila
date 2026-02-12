@@ -1,20 +1,11 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/automatiza-mg/fila/internal/datalake"
 )
-
-func (app *application) handleDatalakeStats(w http.ResponseWriter, r *http.Request) {
-	stats := app.datalake.Stats()
-	app.writeJSON(w, http.StatusOK, stats)
-}
 
 func (app *application) handleDatalakeProcessos(w http.ResponseWriter, r *http.Request) {
 	unidade := r.URL.Query().Get("unidade")
@@ -23,23 +14,8 @@ func (app *application) handleDatalakeProcessos(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	key := fmt.Sprintf("fila:datalake:processos:%s", unidade)
-	b, err := app.cache.Remember(r.Context(), key, 2*time.Hour, func() ([]byte, error) {
-		processos, _, err := app.datalake.ListProcessosAbertos(r.Context(), unidade)
-		if err != nil {
-			return nil, err
-		}
-		return json.Marshal(processos)
-	})
+	processos, err := app.apos.ListProcessosAbertos(r.Context(), unidade)
 	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	var processos []datalake.Processo
-	err = json.Unmarshal(b, &processos)
-	if err != nil {
-		_ = app.cache.Del(r.Context(), key)
 		app.serverError(w, r, err)
 		return
 	}
@@ -48,7 +24,7 @@ func (app *application) handleDatalakeProcessos(w http.ResponseWriter, r *http.R
 }
 
 func (app *application) handleDatalakeUnidadesProcessos(w http.ResponseWriter, r *http.Request) {
-	unidades, err := app.datalake.ListUnidadesDisponiveis(r.Context())
+	unidades, err := app.apos.ListUnidadesDisponiveis(r.Context())
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -60,14 +36,7 @@ func (app *application) handleDatalakeUnidadesProcessos(w http.ResponseWriter, r
 func (app *application) handleDatalakeServidor(w http.ResponseWriter, r *http.Request) {
 	cpf := r.PathValue("cpf")
 
-	key := fmt.Sprintf("fila:datalake:servidores:%s", cpf)
-	b, err := app.cache.Remember(r.Context(), key, 24*time.Hour, func() ([]byte, error) {
-		servidor, err := app.datalake.GetServidorByCPF(r.Context(), cpf)
-		if err != nil {
-			return nil, err
-		}
-		return json.Marshal(servidor)
-	})
+	servidor, err := app.apos.GetServidorByCPF(r.Context(), cpf)
 	if err != nil {
 		switch {
 		case errors.Is(err, datalake.ErrNotFound):
@@ -75,14 +44,6 @@ func (app *application) handleDatalakeServidor(w http.ResponseWriter, r *http.Re
 		default:
 			app.serverError(w, r, err)
 		}
-		return
-	}
-
-	var servidor datalake.Servidor
-	err = json.Unmarshal(b, &servidor)
-	if err != nil {
-		_ = app.cache.Del(context.Background(), key)
-		app.serverError(w, r, err)
 		return
 	}
 
