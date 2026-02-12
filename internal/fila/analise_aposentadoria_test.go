@@ -52,6 +52,24 @@ func seedProcesso(t *testing.T, svc *Service) *processos.Processo {
 	}
 }
 
+// callOnAnalyzeCompleteTx is a test helper that calls OnAnalyzeCompleteTx with a transaction.
+func callOnAnalyzeCompleteTx(t *testing.T, svc *Service, proc *processos.Processo, docs []*processos.Documento) error {
+	t.Helper()
+
+	tx, err := svc.pool.Begin(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(t.Context())
+
+	err = svc.OnAnalyzeCompleteTx(t.Context(), tx, proc, docs)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(t.Context())
+}
+
 func TestAnalyzeAposentadoria(t *testing.T) {
 	t.Parallel()
 
@@ -357,7 +375,7 @@ func TestAnalyzeAposentadoria(t *testing.T) {
 				}
 			}
 
-			err := svc.AnalyzeAposentadoria(t.Context(), proc, nil)
+			err := callOnAnalyzeCompleteTx(t, svc, proc, nil)
 			if (err != nil) != tt.expectError {
 				t.Fatalf("expectError %v, got error: %v", tt.expectError, err)
 			}
@@ -411,102 +429,9 @@ func TestOnAnalyzeComplete(t *testing.T) {
 			svc := newTestService(t)
 			proc, docs := tt.setupFunc(t, svc)
 
-			err := svc.OnAnalyzeComplete(t.Context(), proc, docs)
+			err := callOnAnalyzeCompleteTx(t, svc, proc, docs)
 			if (err != nil) != tt.expectError {
 				t.Fatalf("expectError %v, got error: %v", tt.expectError, err)
-			}
-		})
-	}
-}
-
-func TestAnalyzeAposentadoria_EdgeCases(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name          string
-		setupAnalyzer func() DocumentAnalyzer
-		setupProcesso func(*testing.T, *Service) (*processos.Processo, *database.Processo)
-		expectError   bool
-		checkFunc     func(*testing.T, *Service, *database.Processo)
-	}{
-		{
-			name: "empty documents list",
-			setupAnalyzer: func() DocumentAnalyzer {
-				return newTestAnalyzer(&aposentadoria.Analise{
-					Aposentadoria:    true,
-					CPF:              "12345678900",
-					DataNascimento:   "1970-01-01",
-					DataRequerimento: "2024-01-01",
-					Judicial:         false,
-					Invalidez:        false,
-				}, nil)
-			},
-			setupProcesso: func(t *testing.T, svc *Service) (*processos.Processo, *database.Processo) {
-				proc := seedProcesso(t, svc)
-				dbProc, err := svc.store.GetProcesso(t.Context(), proc.ID)
-				if err != nil {
-					t.Fatal(err)
-				}
-				return proc, dbProc
-			},
-			expectError: false,
-			checkFunc: func(t *testing.T, svc *Service, dbProc *database.Processo) {
-				pa, err := svc.store.GetProcessoAposentadoriaByNumero(t.Context(), dbProc.Numero)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if pa == nil {
-					t.Error("expected ProcessoAposentadoria to be created")
-				}
-			},
-		},
-		{
-			name: "cpf without formatting",
-			setupAnalyzer: func() DocumentAnalyzer {
-				return newTestAnalyzer(&aposentadoria.Analise{
-					Aposentadoria:    true,
-					CPF:              "12345678900",
-					DataNascimento:   "1970-01-01",
-					DataRequerimento: "2024-01-01",
-					Judicial:         false,
-					Invalidez:        false,
-				}, nil)
-			},
-			setupProcesso: func(t *testing.T, svc *Service) (*processos.Processo, *database.Processo) {
-				proc := seedProcesso(t, svc)
-				dbProc, err := svc.store.GetProcesso(t.Context(), proc.ID)
-				if err != nil {
-					t.Fatal(err)
-				}
-				return proc, dbProc
-			},
-			expectError: false,
-			checkFunc: func(t *testing.T, svc *Service, dbProc *database.Processo) {
-				pa, err := svc.store.GetProcessoAposentadoriaByNumero(t.Context(), dbProc.Numero)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if pa.CPFRequerente != "12345678900" {
-					t.Errorf("expected CPF unchanged, got %s", pa.CPFRequerente)
-				}
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			svc := newTestService(t)
-			svc.analyzer = tt.setupAnalyzer()
-
-			proc, dbProc := tt.setupProcesso(t, svc)
-
-			err := svc.AnalyzeAposentadoria(t.Context(), proc, nil)
-			if (err != nil) != tt.expectError {
-				t.Fatalf("expectError %v, got error: %v", tt.expectError, err)
-			}
-
-			if !tt.expectError && tt.checkFunc != nil {
-				tt.checkFunc(t, svc, dbProc)
 			}
 		})
 	}

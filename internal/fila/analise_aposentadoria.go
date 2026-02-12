@@ -10,6 +10,7 @@ import (
 	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/processos"
+	"github.com/jackc/pgx/v5"
 )
 
 var _ processos.AnalyzeHook = (*Service)(nil)
@@ -19,21 +20,21 @@ type DocumentAnalyzer interface {
 	AnalisarAposentadoria(ctx context.Context, docs []*processos.Documento) (*aposentadoria.Analise, error)
 }
 
-// OnAnalyzeComplete implementa [processos.AnalyzeHook].
+// OnAnalyzeCompleteTx implementa [processos.AnalyzeHook].
 // Executa a análise de IA sobre os documentos e atualiza o processo com o resultado.
-func (s *Service) OnAnalyzeComplete(ctx context.Context, proc *processos.Processo, dd []*processos.Documento) error {
-	return s.AnalyzeAposentadoria(ctx, proc, dd)
+func (s *Service) OnAnalyzeCompleteTx(ctx context.Context, tx pgx.Tx, proc *processos.Processo, dd []*processos.Documento) error {
+	return s.analyzeAposentadoriaTx(ctx, tx, proc, dd)
 }
 
-// AnalyzeAposentadoria processa o resultado da análise de IA para um processo
-// de aposentadoria, criando o registro em processos_aposentadoria.
-func (s *Service) AnalyzeAposentadoria(ctx context.Context, proc *processos.Processo, dd []*processos.Documento) error {
-	p, err := s.store.GetProcesso(ctx, proc.ID)
+func (s *Service) analyzeAposentadoriaTx(ctx context.Context, tx pgx.Tx, proc *processos.Processo, dd []*processos.Documento) error {
+	store := s.store.WithTx(tx)
+
+	p, err := store.GetProcesso(ctx, proc.ID)
 	if err != nil {
 		return err
 	}
 
-	_, err = s.store.GetProcessoAposentadoriaByNumero(ctx, proc.Numero)
+	_, err = store.GetProcessoAposentadoriaByNumero(ctx, proc.Numero)
 	if err == nil {
 		// TODO: Verificar se está EM_DILIGENCIA e tomar as devidas providências.
 		return nil
@@ -60,14 +61,6 @@ func (s *Service) AnalyzeAposentadoria(ctx context.Context, proc *processos.Proc
 		V:     time.Now(),
 	}
 	p.MetadadosIA = metadados
-
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	store := s.store.WithTx(tx)
 
 	if apos.Aposentadoria {
 		p.Aposentadoria.V = true
@@ -114,5 +107,5 @@ func (s *Service) AnalyzeAposentadoria(ctx context.Context, proc *processos.Proc
 		return err
 	}
 
-	return tx.Commit(ctx)
+	return nil
 }

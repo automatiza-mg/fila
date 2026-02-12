@@ -8,6 +8,7 @@ import (
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jackc/pgx/v5"
 )
 
 var ignoreDocumentoFields = cmpopts.IgnoreFields(Documento{}, "ID")
@@ -171,11 +172,53 @@ func TestAnalyze_HookError(t *testing.T) {
 	}
 }
 
+// TestAnalyze_RollsBackOnHookError verifies that when a hook fails,
+// the entire analysis is rolled back and processo remains in PENDENTE state.
+// This is the key transactional integrity test.
+func TestAnalyze_RollsBackOnHookError(t *testing.T) {
+	t.Parallel()
+
+	ts := newTestService(t)
+	proc := seedProcesso(t, ts.svc, "rollback-test")
+
+	// Verify initial state is PENDENTE
+	initial, _ := ts.svc.store.GetProcesso(t.Context(), proc.ID)
+	if initial.StatusProcessamento != "PENDENTE" {
+		t.Fatalf("expected initial status PENDENTE, got %s", initial.StatusProcessamento)
+	}
+
+	// Stub SEI to return no documents (simplest path)
+	ts.sei.listarDocumentosFn = func(_ context.Context, _ string) ([]sei.LinhaDocumento, error) {
+		return nil, nil
+	}
+
+	// Register a failing hook
+	errHook := &testErrorHook{err: fmt.Errorf("AI service unavailable")}
+	ts.svc.RegisterHook(errHook)
+
+	// Attempt analyze
+	err := ts.svc.Analyze(t.Context(), proc.ID)
+	if err == nil {
+		t.Fatal("expected error from hook")
+	}
+	if err.Error() != "AI service unavailable" {
+		t.Fatalf("expected 'AI service unavailable', got: %v", err)
+	}
+
+	// Verify: Processo should still be in PENDENTE state (rolled back from SUCESSO)
+	// This is the critical assertion - if the transaction didn't roll back,
+	// the status would be SUCESSO even though the hook failed.
+	updated, _ := ts.svc.store.GetProcesso(t.Context(), proc.ID)
+	if updated.StatusProcessamento != "PENDENTE" {
+		t.Fatalf("expected rolled-back status PENDENTE, got %s (transaction was NOT rolled back)", updated.StatusProcessamento)
+	}
+}
+
 // testErrorHook is a hook that always returns an error.
 type testErrorHook struct {
 	err error
 }
 
-func (h *testErrorHook) OnAnalyzeComplete(_ context.Context, _ *Processo, _ []*Documento) error {
+func (h *testErrorHook) OnAnalyzeCompleteTx(_ context.Context, _ pgx.Tx, _ *Processo, _ []*Documento) error {
 	return h.err
 }

@@ -73,52 +73,9 @@ func (s *Service) Analyze(ctx context.Context, procID uuid.UUID) error {
 		return err
 	}
 
-	p.StatusProcessamento = "PROCESSANDO"
-	err = s.store.UpdateProcesso(ctx, p)
+	seiDocs, err := s.prepareSeiDocs(ctx, docs)
 	if err != nil {
-		return err
-	}
-
-	err = s.processDocs(ctx, p, docs)
-	if err != nil {
-		return fmt.Errorf("failed to process docs: %w", err)
-	}
-
-	p.StatusProcessamento = "SUCESSO"
-	err = s.store.UpdateProcesso(ctx, p)
-	if err != nil {
-		return err
-	}
-
-	dd, err := s.ListDocumentos(ctx, p.ID)
-	if err != nil {
-		return err
-	}
-
-	return s.notifyAnalyzeComplete(ctx, mapProcesso(p), dd)
-}
-
-func (s *Service) processDocs(ctx context.Context, p *database.Processo, docs []sei.LinhaDocumento) error {
-	nums := make([]string, 0, len(docs))
-	for _, doc := range docs {
-		_, err := s.store.GetDocumentoByNumero(ctx, doc.Numero)
-		if err == nil {
-			continue
-		}
-		if !errors.Is(err, database.ErrNotFound) {
-			return err
-		}
-		nums = append(nums, doc.Numero)
-	}
-
-	// Não há nada para buscar.
-	if len(nums) == 0 {
-		return nil
-	}
-
-	seiDocs, err := s.fetcher.FetchDocumentos(ctx, nums)
-	if err != nil {
-		return err
+		return fmt.Errorf("failed to prepare sei docs: %w", err)
 	}
 
 	tx, err := s.pool.Begin(ctx)
@@ -129,6 +86,59 @@ func (s *Service) processDocs(ctx context.Context, p *database.Processo, docs []
 
 	store := s.store.WithTx(tx)
 
+	p.StatusProcessamento = "PROCESSANDO"
+	err = store.UpdateProcesso(ctx, p)
+	if err != nil {
+		return err
+	}
+
+	err = s.processDocsTx(ctx, store, p, seiDocs)
+	if err != nil {
+		return fmt.Errorf("failed to process docs: %w", err)
+	}
+
+	// Update status to SUCESSO before fetching documents and notifying hooks
+	p.StatusProcessamento = "SUCESSO"
+	err = store.UpdateProcesso(ctx, p)
+	if err != nil {
+		return err
+	}
+
+	dd, err := s.listDocumentos(ctx, store, p.ID)
+	if err != nil {
+		return err
+	}
+
+	err = s.notifyAnalyzeCompleteTx(ctx, tx, mapProcesso(p), dd)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (s *Service) prepareSeiDocs(ctx context.Context, docs []sei.LinhaDocumento) ([]DocumentoSei, error) {
+	nums := make([]string, 0, len(docs))
+	for _, doc := range docs {
+		_, err := s.store.GetDocumentoByNumero(ctx, doc.Numero)
+		if err == nil {
+			continue
+		}
+		if !errors.Is(err, database.ErrNotFound) {
+			return nil, err
+		}
+		nums = append(nums, doc.Numero)
+	}
+
+	// Não há nada para buscar.
+	if len(nums) == 0 {
+		return []DocumentoSei{}, nil
+	}
+
+	return s.fetcher.FetchDocumentos(ctx, nums)
+}
+
+func (s *Service) processDocsTx(ctx context.Context, store *database.Store, p *database.Processo, seiDocs []DocumentoSei) error {
 	for _, seiDoc := range seiDocs {
 		metadados, err := json.Marshal(seiDoc.APIData)
 		if err != nil {
@@ -152,34 +162,5 @@ func (s *Service) processDocs(ctx context.Context, p *database.Processo, docs []
 		}
 	}
 
-	return tx.Commit(ctx)
-}
-
-// TriggerReanalysis tenta inserir uma nova análise do processo.
-func (s *Service) TriggerReanalysis(ctx context.Context, procID uuid.UUID) error {
-	p, err := s.store.GetProcesso(ctx, procID)
-	if err != nil {
-		return err
-	}
-
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	inserted, err := s.queue.EnqueueAnalyzeTx(ctx, tx, p.ID)
-	if err != nil {
-		return err
-	}
-
-	if inserted {
-		p.StatusProcessamento = "PENDENTE"
-		err = s.store.WithTx(tx).UpdateProcesso(ctx, p)
-		if err != nil {
-			return err
-		}
-	}
-
-	return tx.Commit(ctx)
+	return nil
 }

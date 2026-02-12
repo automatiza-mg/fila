@@ -55,7 +55,11 @@ func mapDocumento(d *database.Documento) (*Documento, error) {
 
 // ListDocumentos retorna a lista de documentos de um processo SEI.
 func (s *Service) ListDocumentos(ctx context.Context, processoID uuid.UUID) ([]*Documento, error) {
-	dd, err := s.store.ListDocumentos(ctx, processoID)
+	return s.listDocumentos(ctx, s.store, processoID)
+}
+
+func (s *Service) listDocumentos(ctx context.Context, store *database.Store, processoID uuid.UUID) ([]*Documento, error) {
+	dd, err := store.ListDocumentos(ctx, processoID)
 	if err != nil {
 		return nil, err
 	}

@@ -65,7 +65,7 @@ type testHook struct {
 	documentos []*Documento
 }
 
-func (m *testHook) OnAnalyzeComplete(_ context.Context, p *Processo, dd []*Documento) error {
+func (m *testHook) OnAnalyzeCompleteTx(_ context.Context, _ pgx.Tx, p *Processo, dd []*Documento) error {
 	m.called = true
 	m.processo = p
 	m.documentos = dd
