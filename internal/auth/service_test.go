@@ -16,16 +16,16 @@ import (
 
 var ti *postgres.TestInstance
 
-var _ TaskInserter = (*taskInserter)(nil)
+var _ TaskInserter = (*fakeTaskInserter)(nil)
 
-type taskInserter struct {
+type fakeTaskInserter struct {
 	id atomic.Int64
 
 	mu   sync.Mutex
 	args []river.JobArgs
 }
 
-func (t *taskInserter) InsertTx(ctx context.Context, tx pgx.Tx, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error) {
+func (t *fakeTaskInserter) InsertTx(ctx context.Context, tx pgx.Tx, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error) {
 	t.mu.Lock()
 	t.args = append(t.args, args)
 	t.mu.Unlock()
@@ -38,7 +38,7 @@ func (t *taskInserter) InsertTx(ctx context.Context, tx pgx.Tx, args river.JobAr
 	}, nil
 }
 
-func (t *taskInserter) Args() []river.JobArgs {
+func (t *fakeTaskInserter) Args() []river.JobArgs {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -51,7 +51,7 @@ func newTestService(tb testing.TB) *Service {
 	tb.Helper()
 
 	pool := ti.NewDatabase(tb)
-	return New(pool, slog.New(slog.DiscardHandler), &taskInserter{})
+	return New(pool, slog.New(slog.DiscardHandler), &fakeTaskInserter{})
 }
 
 func TestMain(m *testing.M) {

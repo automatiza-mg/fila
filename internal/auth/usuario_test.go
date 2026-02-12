@@ -8,9 +8,9 @@ func TestUsuarioLifecycle(t *testing.T) {
 	t.Parallel()
 
 	auth := newTestService(t)
-	queue := auth.queue.(*taskInserter)
+	queue := auth.queue.(*fakeTaskInserter)
 
-	counter := &counterHook{}
+	counter := &fakeCounterHook{}
 	auth.RegisterHook(counter)
 
 	// Cria um novo usuário

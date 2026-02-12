@@ -7,19 +7,19 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var _ UsuarioHook = (*counterHook)(nil)
+var _ UsuarioHook = (*fakeCounterHook)(nil)
 
-type counterHook struct {
+type fakeCounterHook struct {
 	mu       sync.Mutex
 	actions  int
 	cleanups int
 }
 
-func (d *counterHook) Label() string {
+func (d *fakeCounterHook) Label() string {
 	return "counter"
 }
 
-func (d *counterHook) GetActions(ctx context.Context, u *Usuario) ([]PendingAction, error) {
+func (d *fakeCounterHook) GetActions(ctx context.Context, u *Usuario) ([]PendingAction, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -27,7 +27,7 @@ func (d *counterHook) GetActions(ctx context.Context, u *Usuario) ([]PendingActi
 	return nil, nil
 }
 
-func (d *counterHook) Cleanup(ctx context.Context, tx pgx.Tx, trigger CleanupTrigger, usuario *Usuario) error {
+func (d *fakeCounterHook) Cleanup(ctx context.Context, tx pgx.Tx, trigger CleanupTrigger, usuario *Usuario) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 

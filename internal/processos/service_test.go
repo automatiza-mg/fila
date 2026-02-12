@@ -16,56 +16,56 @@ import (
 var (
 	ti *postgres.TestInstance
 
-	_ SeiClient        = (*testSeiClient)(nil)
-	_ AnalyzeEnqueuer  = (*testEnqueuer)(nil)
-	_ DocumentoFetcher = (*testFetcher)(nil)
-	_ AnalyzeHook      = (*testHook)(nil)
+	_ SeiClient        = (*fakeSeiClient)(nil)
+	_ AnalyzeEnqueuer  = (*fakeEnqueuer)(nil)
+	_ DocumentoFetcher = (*fakeFetcher)(nil)
+	_ AnalyzeHook      = (*fakeHook)(nil)
 )
 
-type testSeiClient struct {
+type fakeSeiClient struct {
 	consultarProcedimentoFn func(ctx context.Context, protocolo string) (*sei.ConsultarProcedimentoResponse, error)
 	listarDocumentosFn      func(ctx context.Context, linkAcesso string) ([]sei.LinhaDocumento, error)
 }
 
-func (m *testSeiClient) ConsultarProcedimento(ctx context.Context, protocolo string) (*sei.ConsultarProcedimentoResponse, error) {
+func (m *fakeSeiClient) ConsultarProcedimento(ctx context.Context, protocolo string) (*sei.ConsultarProcedimentoResponse, error) {
 	if m.consultarProcedimentoFn != nil {
 		return m.consultarProcedimentoFn(ctx, protocolo)
 	}
 	return nil, fmt.Errorf("ConsultarProcedimento not implemented")
 }
 
-func (m *testSeiClient) ListarDocumentos(ctx context.Context, linkAcesso string) ([]sei.LinhaDocumento, error) {
+func (m *fakeSeiClient) ListarDocumentos(ctx context.Context, linkAcesso string) ([]sei.LinhaDocumento, error) {
 	if m.listarDocumentosFn != nil {
 		return m.listarDocumentosFn(ctx, linkAcesso)
 	}
 	return nil, fmt.Errorf("ListarDocumentos not implemented")
 }
 
-type testEnqueuer struct {
+type fakeEnqueuer struct {
 	inserted bool
 	err      error
 }
 
-func (m *testEnqueuer) EnqueueAnalyzeTx(_ context.Context, _ pgx.Tx, _ uuid.UUID) (bool, error) {
+func (m *fakeEnqueuer) EnqueueAnalyzeTx(_ context.Context, _ pgx.Tx, _ uuid.UUID) (bool, error) {
 	return m.inserted, m.err
 }
 
-type testFetcher struct {
+type fakeFetcher struct {
 	docs []DocumentoSei
 	err  error
 }
 
-func (m *testFetcher) FetchDocumentos(_ context.Context, _ []string) ([]DocumentoSei, error) {
+func (m *fakeFetcher) FetchDocumentos(_ context.Context, _ []string) ([]DocumentoSei, error) {
 	return m.docs, m.err
 }
 
-type testHook struct {
+type fakeHook struct {
 	called     bool
 	processo   *Processo
 	documentos []*Documento
 }
 
-func (m *testHook) OnAnalyzeCompleteTx(_ context.Context, _ pgx.Tx, p *Processo, dd []*Documento) error {
+func (m *fakeHook) OnAnalyzeCompleteTx(_ context.Context, _ pgx.Tx, p *Processo, dd []*Documento) error {
 	m.called = true
 	m.processo = p
 	m.documentos = dd
@@ -74,18 +74,18 @@ func (m *testHook) OnAnalyzeCompleteTx(_ context.Context, _ pgx.Tx, p *Processo,
 
 type newTestServiceResult struct {
 	svc     *Service
-	sei     *testSeiClient
-	queue   *testEnqueuer
-	fetcher *testFetcher
+	sei     *fakeSeiClient
+	queue   *fakeEnqueuer
+	fetcher *fakeFetcher
 }
 
 func newTestService(t *testing.T) *newTestServiceResult {
 	t.Helper()
 
 	pool := ti.NewDatabase(t)
-	seiTest := &testSeiClient{}
-	queue := &testEnqueuer{inserted: true}
-	fetcher := &testFetcher{}
+	seiTest := &fakeSeiClient{}
+	queue := &fakeEnqueuer{inserted: true}
+	fetcher := &fakeFetcher{}
 
 	svc := New(&ServiceOpts{
 		Pool:    pool,

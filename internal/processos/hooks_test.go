@@ -22,7 +22,7 @@ func TestRegisterHook(t *testing.T) {
 		t.Fatalf("expected 0 hooks, got %d", len(ts.svc.hooks))
 	}
 
-	ts.svc.RegisterHook(&testHook{})
+	ts.svc.RegisterHook(&fakeHook{})
 
 	if len(ts.svc.hooks) != 1 {
 		t.Fatalf("expected 1 hook, got %d", len(ts.svc.hooks))
@@ -69,7 +69,7 @@ func TestAnalyze_NotifiesHooks(t *testing.T) {
 			APIData:     apiData,
 		},
 	}
-	hook := &testHook{}
+	hook := &fakeHook{}
 	ts.svc.RegisterHook(hook)
 
 	err := ts.svc.Analyze(t.Context(), proc.ID)
@@ -110,8 +110,8 @@ func TestAnalyze_MultipleHooks(t *testing.T) {
 		return nil, nil
 	}
 
-	hook1 := &testHook{}
-	hook2 := &testHook{}
+	hook1 := &fakeHook{}
+	hook2 := &fakeHook{}
 	ts.svc.RegisterHook(hook1)
 	ts.svc.RegisterHook(hook2)
 
@@ -153,8 +153,8 @@ func TestAnalyze_HookError(t *testing.T) {
 		return nil, nil
 	}
 
-	errHook := &testErrorHook{err: fmt.Errorf("hook failed")}
-	hook2 := &testHook{}
+	errHook := &fakeErrorHook{err: fmt.Errorf("hook failed")}
+	hook2 := &fakeHook{}
 	ts.svc.RegisterHook(errHook)
 	ts.svc.RegisterHook(hook2)
 
@@ -193,7 +193,7 @@ func TestAnalyze_RollsBackOnHookError(t *testing.T) {
 	}
 
 	// Register a failing hook
-	errHook := &testErrorHook{err: fmt.Errorf("AI service unavailable")}
+	errHook := &fakeErrorHook{err: fmt.Errorf("AI service unavailable")}
 	ts.svc.RegisterHook(errHook)
 
 	// Attempt analyze
@@ -214,11 +214,11 @@ func TestAnalyze_RollsBackOnHookError(t *testing.T) {
 	}
 }
 
-// testErrorHook is a hook that always returns an error.
-type testErrorHook struct {
+// fakeErrorHook is a hook that always returns an error.
+type fakeErrorHook struct {
 	err error
 }
 
-func (h *testErrorHook) OnAnalyzeCompleteTx(_ context.Context, _ pgx.Tx, _ *Processo, _ []*Documento) error {
+func (h *fakeErrorHook) OnAnalyzeCompleteTx(_ context.Context, _ pgx.Tx, _ *Processo, _ []*Documento) error {
 	return h.err
 }
