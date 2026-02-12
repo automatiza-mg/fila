@@ -7,7 +7,6 @@ import (
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/fila"
 	"github.com/automatiza-mg/fila/internal/pagination"
-	"github.com/google/uuid"
 )
 
 func (app *application) handleProcessoAposentadoriaList(w http.ResponseWriter, r *http.Request) {
@@ -26,14 +25,14 @@ func (app *application) handleProcessoAposentadoriaList(w http.ResponseWriter, r
 	app.writeJSON(w, http.StatusOK, result)
 }
 
-func (app *application) handleProcessoDetailAposentadoria(w http.ResponseWriter, r *http.Request) {
-	processoID, err := uuid.Parse(r.PathValue("processoID"))
-	if err != nil {
+func (app *application) handleProcessoAposentadoriaDetail(w http.ResponseWriter, r *http.Request) {
+	paID, err := app.intParam(r, "paID")
+	if err != nil || paID < 1 {
 		app.notFound(w, r)
 		return
 	}
 
-	p, err := app.processos.GetProcesso(r.Context(), processoID)
+	pa, err := app.fila.GetProcesso(r.Context(), paID)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrNotFound):
@@ -44,11 +43,25 @@ func (app *application) handleProcessoDetailAposentadoria(w http.ResponseWriter,
 		return
 	}
 
-	pa, err := app.fila.GetProcessoByNumero(r.Context(), p.Numero)
+	app.writeJSON(w, http.StatusOK, pa)
+}
+
+func (app *application) handleProcessoAposentadoriaHistorico(w http.ResponseWriter, r *http.Request) {
+	paID, err := app.intParam(r, "paID")
+	if err != nil || paID < 1 {
+		app.notFound(w, r)
+		return
+	}
+
+	historico, err := app.fila.ListHistorico(r.Context(), paID)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, pa)
+	if historico == nil {
+		historico = make([]*fila.HistoricoStatusProcesso, 0)
+	}
+
+	app.writeJSON(w, http.StatusOK, historico)
 }

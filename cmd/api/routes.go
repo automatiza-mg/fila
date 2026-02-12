@@ -56,13 +56,16 @@ func (app *application) routes() http.Handler {
 			r.Get("/", app.handleProcessoList)
 			r.Post("/", app.handleProcessoCreate)
 			r.Get("/{processoID}", app.handleProcessoDetail)
-			r.Get("/{processoID}/aposentadoria", app.handleProcessoDetailAposentadoria)
 			r.Get("/{processoID}/documentos", app.handleProcessoDetailDocumentos)
-
-			r.Get("/aposentadoria", app.handleProcessoAposentadoriaList)
 
 			r.Post("/{processoID}/analisar", app.handleProcessoAnalyze)
 
+		})
+
+		r.Route("/aposentadoria", func(r chi.Router) {
+			r.Get("/", app.handleProcessoAposentadoriaList)
+			r.Get("/{paID}", app.handleProcessoAposentadoriaDetail)
+			r.Get("/{paID}/historico", app.handleProcessoAposentadoriaHistorico)
 		})
 
 		r.Route("/analistas", func(r chi.Router) {
