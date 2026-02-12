@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -9,9 +10,11 @@ import (
 
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/config"
+	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/logging"
 	"github.com/automatiza-mg/fila/internal/postgres"
 	"github.com/automatiza-mg/fila/internal/tasks"
+	"github.com/automatiza-mg/fila/internal/validator"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/term"
@@ -69,7 +72,6 @@ func run() error {
 					},
 				},
 				Action: func(ctx context.Context, c *cli.Command) error {
-
 					nome := c.String("nome")
 					cpf := c.String("cpf")
 					email := c.String("email")
@@ -81,14 +83,44 @@ func run() error {
 					}
 					fmt.Println()
 
-					u, err := a.CreateAdmin(ctx, auth.CreateAdminParams{
+					fmt.Printf("Confirme a senha: ")
+					confirmacao, err := term.ReadPassword(syscall.Stdin)
+					if err != nil {
+						return err
+					}
+					fmt.Println()
+
+					if string(senha) != string(confirmacao) {
+						return fmt.Errorf("as senhas não coincidem")
+					}
+
+					params := auth.CreateAdminParams{
 						Nome:  nome,
 						CPF:   cpf,
 						Email: email,
 						Senha: string(senha),
-					})
+					}
+
+					v := validator.New()
+					auth.ValidateCreateAdmin(v, params)
+					if !v.Valid() {
+						fmt.Println("Erros de validação:")
+						for field, msg := range v.FieldErrors {
+							fmt.Printf("  - %s: %s\n", field, msg)
+						}
+						return fmt.Errorf("validação falhou")
+					}
+
+					u, err := a.CreateAdmin(ctx, params)
 					if err != nil {
-						return err
+						switch {
+						case errors.Is(err, database.ErrUsuarioCPFTaken):
+							return fmt.Errorf("cpf em uso")
+						case errors.Is(err, database.ErrUsuarioEmailTaken):
+							return fmt.Errorf("email em uso")
+						default:
+							return err
+						}
 					}
 
 					fmt.Printf("Admin criado para %s\n", u.Nome)

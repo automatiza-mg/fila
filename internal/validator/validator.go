@@ -6,6 +6,14 @@ type Validator struct {
 	FieldErrors map[string]string
 }
 
+// New retorna um novo Validator.
+func New() *Validator {
+	return &Validator{
+		Errors:      make([]string, 0),
+		FieldErrors: make(map[string]string),
+	}
+}
+
 // SetError adiciona uma nova mensagem de erro não específica a um campo.
 func (v *Validator) SetError(msg string) {
 	if v.Errors == nil {
