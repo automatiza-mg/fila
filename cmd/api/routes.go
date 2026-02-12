@@ -25,11 +25,6 @@ func (app *application) routes() http.Handler {
 
 				r.Get("/servidores/{cpf}", app.handleDatalakeServidor)
 			})
-
-			r.Route("/sei", func(r chi.Router) {
-				r.Get("/unidades", app.handleSeiListarUnidades)
-				r.Get("/procedimentos", app.handleSeiConsultarProcedimento)
-			})
 		}
 
 		r.Route("/usuarios", func(r chi.Router) {
