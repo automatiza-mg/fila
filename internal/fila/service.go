@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 
+	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,28 +16,26 @@ import (
 
 var _ auth.UsuarioHook = (*Service)(nil)
 
-type SeiService interface {
+type SeiClient interface {
 	ListarUnidades(ctx context.Context) (*sei.ListarUnidadesResponse, error)
 }
 
-type AuthService interface {
-	GetUsuario(ctx context.Context, id int64) (*auth.Usuario, error)
+type AposentadoriaAnalyzer interface {
+	AnalisarAposentadoria(ctx context.Context, docs []*processos.Documento) (*aposentadoria.Analise, error)
 }
 
 type Service struct {
 	pool     *pgxpool.Pool
 	store    *database.Store
-	auth     AuthService
-	sei      SeiService
+	sei      SeiClient
 	cache    cache.Cache
-	analyzer DocumentAnalyzer
+	analyzer AposentadoriaAnalyzer
 }
 
-func New(pool *pgxpool.Pool, auth AuthService, sei SeiService, cache cache.Cache, analyzer DocumentAnalyzer) *Service {
+func New(pool *pgxpool.Pool, sei SeiClient, cache cache.Cache, analyzer AposentadoriaAnalyzer) *Service {
 	return &Service{
 		pool:     pool,
 		store:    database.New(pool),
-		auth:     auth,
 		sei:      sei,
 		cache:    cache,
 		analyzer: analyzer,

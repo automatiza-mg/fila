@@ -147,7 +147,7 @@ func run(ctx context.Context) error {
 	auth := auth.New(pool, logger, queue)
 
 	// Fila
-	fila := fila.New(pool, auth, sei, cache, ai)
+	fila := fila.New(pool, sei, cache, ai)
 	if err := auth.RegisterHook(fila); err != nil {
 		return err
 	}

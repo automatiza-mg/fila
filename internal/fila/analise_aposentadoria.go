@@ -7,18 +7,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/jackc/pgx/v5"
 )
 
 var _ processos.AnalyzeHook = (*Service)(nil)
-
-// DocumentAnalyzer analisa documentos de um processo usando IA.
-type DocumentAnalyzer interface {
-	AnalisarAposentadoria(ctx context.Context, docs []*processos.Documento) (*aposentadoria.Analise, error)
-}
 
 // OnAnalyzeCompleteTx implementa [processos.AnalyzeHook].
 // Executa a análise de IA sobre os documentos e atualiza o processo com o resultado.

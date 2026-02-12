@@ -56,6 +56,7 @@ func (s *Service) ListUnidadesAnalistas(ctx context.Context) ([]UnidadeSei, erro
 	return unidades, nil
 }
 
+// GetUnidadesMap retorna um mapa de unidades no formato ID -> Unidade.
 func (s *Service) GetUnidadesMap(ctx context.Context) (map[string]UnidadeSei, error) {
 	unidades, err := s.ListUnidadesAnalistas(ctx)
 	if err != nil {

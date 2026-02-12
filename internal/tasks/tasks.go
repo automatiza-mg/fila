@@ -12,7 +12,15 @@ import (
 
 const QueueProcessos = "processos"
 
-func NewQueue(ctx context.Context, pool *pgxpool.Pool) (*river.Client[pgx.Tx], error) {
+type RiverOptFunc func(cfg *river.Config)
+
+func WithTestOnly() RiverOptFunc {
+	return func(cfg *river.Config) {
+		cfg.TestOnly = true
+	}
+}
+
+func NewQueue(ctx context.Context, pool *pgxpool.Pool, opts ...RiverOptFunc) (*river.Client[pgx.Tx], error) {
 	driver := riverpgxv5.New(pool)
 
 	migrator, err := rivermigrate.New(driver, nil)
@@ -23,7 +31,12 @@ func NewQueue(ctx context.Context, pool *pgxpool.Pool) (*river.Client[pgx.Tx], e
 		return nil, err
 	}
 
-	return river.NewClient(driver, &river.Config{})
+	var cfg river.Config
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	return river.NewClient(driver, &cfg)
 }
 
 func NewWorker(ctx context.Context, pool *pgxpool.Pool, workers *river.Workers) (*river.Client[pgx.Tx], error) {

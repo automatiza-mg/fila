@@ -7,11 +7,13 @@ import (
 	"slices"
 	"time"
 
+	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/database"
 )
 
 var (
 	ErrInvalidUnidade = errors.New("invalid unidade id")
+	ErrInvalidPapel   = errors.New("invalid usuario papel: expected ANALISTA")
 
 	// AllowedOrgaos são os órgãos permitidos para o cadastro de analistas.
 	AllowedOrgaos = []string{
@@ -52,12 +54,12 @@ func (s *Service) CreateAnalista(ctx context.Context, params CreateAnalistaParam
 		return nil, fmt.Errorf("invalid orgao: %q", params.Orgao)
 	}
 
-	u, err := s.auth.GetUsuario(ctx, params.UsuarioID)
+	u, err := s.store.GetUsuario(ctx, params.UsuarioID)
 	if err != nil {
 		return nil, err
 	}
-	if !u.IsAnalista() {
-		return nil, fmt.Errorf("invalid papel: %s", u.Papel)
+	if u.Papel.V != auth.PapelAnalista {
+		return nil, ErrInvalidPapel
 	}
 
 	unidadesMap, err := s.GetUnidadesMap(ctx)
