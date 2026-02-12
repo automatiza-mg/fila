@@ -109,7 +109,7 @@ func TestProcesso_ListProcessos(t *testing.T) {
 	}
 
 	// No filter returns all
-	pp, count, err := store.ListProcessos(t.Context(), ListProcessosParams{})
+	pp, count, err := store.ListProcessos(t.Context(), ListProcessosParams{Limit: 20, Offset: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +121,7 @@ func TestProcesso_ListProcessos(t *testing.T) {
 	}
 
 	// Filter by partial numero
-	pp, count, err = store.ListProcessos(t.Context(), ListProcessosParams{Numero: "002"})
+	pp, count, err = store.ListProcessos(t.Context(), ListProcessosParams{Numero: "002", Limit: 20, Offset: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func TestProcesso_ListProcessos(t *testing.T) {
 	}
 
 	// Non-matching filter
-	pp, count, err = store.ListProcessos(t.Context(), ListProcessosParams{Numero: "nonexistent"})
+	pp, count, err = store.ListProcessos(t.Context(), ListProcessosParams{Numero: "nonexistent", Limit: 20, Offset: 0})
 	if err != nil {
 		t.Fatal(err)
 	}

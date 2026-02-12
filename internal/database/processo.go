@@ -52,6 +52,8 @@ func (s *Store) SaveProcesso(ctx context.Context, p *Processo) error {
 
 type ListProcessosParams struct {
 	Numero string
+	Limit  int
+	Offset int
 }
 
 func (s *Store) ListProcessos(ctx context.Context, params ListProcessosParams) ([]*Processo, int, error) {
@@ -62,8 +64,9 @@ func (s *Store) ListProcessos(ctx context.Context, params ListProcessosParams) (
 		atualizado_em, COUNT(*) OVER()
 	FROM processos
 	WHERE (numero LIKE '%' || $1 || '%' OR $1 = '')
-	ORDER BY criado_em DESC`
-	args := []any{params.Numero}
+	ORDER BY criado_em DESC
+	LIMIT $2 OFFSET $3`
+	args := []any{params.Numero, params.Limit, params.Offset}
 
 	rows, err := s.db.Query(ctx, q, args...)
 	if err != nil {

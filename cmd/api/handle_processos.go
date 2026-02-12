@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/pagination"
 	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/google/uuid"
 )
@@ -39,17 +40,19 @@ func (app *application) handleProcessoCreate(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) handleProcessoList(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
+	params := pagination.ParseQuery(r)
 
-	pp, err := app.processos.ListProcessos(r.Context(), processos.ListProcessosParams{
-		Numero: q.Get("numero"),
+	result, err := app.processos.ListProcessos(r.Context(), processos.ListProcessosParams{
+		Numero: r.URL.Query().Get("numero"),
+		Page:   params.Page,
+		Limit:  params.Limit,
 	})
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, pp)
+	app.writeJSON(w, http.StatusOK, result)
 }
 
 func (app *application) handleProcessoDetail(w http.ResponseWriter, r *http.Request) {

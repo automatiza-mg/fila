@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/pagination"
 	"github.com/google/uuid"
 )
 
@@ -111,14 +112,18 @@ func (s *Service) GetProcesso(ctx context.Context, processoID uuid.UUID) (*Proce
 
 type ListProcessosParams struct {
 	Numero string
+	Page   int
+	Limit  int
 }
 
-// TODO: Adicionar paginação.
-//
-// ListProcessos retorna a lista dos processos analisados pela aplicação.
-func (s *Service) ListProcessos(ctx context.Context, params ListProcessosParams) ([]*Processo, error) {
-	pp, _, err := s.store.ListProcessos(ctx, database.ListProcessosParams{
+// ListProcessos retorna a lista paginada dos processos analisados pela aplicação.
+func (s *Service) ListProcessos(ctx context.Context, params ListProcessosParams) (*pagination.Result[*Processo], error) {
+	offset := pagination.Offset(params.Page, params.Limit)
+
+	pp, totalCount, err := s.store.ListProcessos(ctx, database.ListProcessosParams{
 		Numero: params.Numero,
+		Limit:  params.Limit,
+		Offset: offset,
 	})
 	if err != nil {
 		return nil, err
@@ -129,5 +134,5 @@ func (s *Service) ListProcessos(ctx context.Context, params ListProcessosParams)
 		processos[i] = mapProcesso(p)
 	}
 
-	return processos, nil
+	return pagination.NewResult(processos, params.Page, totalCount, params.Limit), nil
 }
