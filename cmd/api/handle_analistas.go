@@ -45,7 +45,7 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 	unidade, unidadeOk := unidadesMap[input.SEIUnidadeID]
 
 	input.Check(validator.PermittedValue(input.Orgao, orgaosAllowed...), "orgao", fmt.Sprintf("Deve ser um dos valores: %s", strings.Join(orgaosAllowed, ", ")))
-	input.Check(unidadeOk, "unidade_id", "A unidade informada deve ser válida")
+	input.Check(unidadeOk, "sei_unidade_id", "A unidade informada deve ser válida")
 	if !input.Valid() {
 		app.validationFailed(w, r, input.FieldErrors)
 		return
