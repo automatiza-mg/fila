@@ -36,7 +36,6 @@ func main() {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
-
 	if err := run(ctx); err != nil {
 		log.Fatal(err)
 	}
@@ -55,6 +54,7 @@ type application struct {
 }
 
 func run(ctx context.Context) error {
+	addr := flag.String("addr", ":4000", "Define o endereço do servidor HTTP")
 	dev := flag.Bool("dev", false, "Executa a aplicação em modo de desenvolvimento")
 	flag.Parse()
 
@@ -95,25 +95,19 @@ func run(ctx context.Context) error {
 	}
 	defer sender.Close()
 
-	// River
 	queue, err := tasks.NewQueue(ctx, pool)
 	if err != nil {
 		return err
 	}
 
-	// Sei Client
 	sei := sei.NewClient(&cfg.SEI)
 
-	// Cache
 	cache := cache.NewRedisCache(rdb)
 
-	// Azure Document Intelligence
 	di := docintel.NewAzureDocIntel(&cfg.DocIntel)
 
-	// OpenAI
 	ai := llm.New(&cfg.LLM)
 
-	// Processos
 	proc := processos.New(&processos.ServiceOpts{
 		Pool:    pool,
 		Cache:   cache,
@@ -124,10 +118,8 @@ func run(ctx context.Context) error {
 		},
 	})
 
-	// Auth
 	auth := auth.New(pool, logger, queue)
 
-	// Fila
 	fila := fila.New(pool, sei, cache, ai)
 	if err := auth.RegisterHook(fila); err != nil {
 		return err
@@ -158,7 +150,7 @@ func run(ctx context.Context) error {
 	}
 
 	srv := &http.Server{
-		Addr:         ":4000",
+		Addr:         *addr,
 		Handler:      app.routes(),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 25 * time.Second,
