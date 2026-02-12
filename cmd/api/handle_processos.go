@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/automatiza-mg/fila/internal/database"
@@ -33,6 +34,7 @@ func (app *application) handleProcessoCreate(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	w.Header().Set("Location", fmt.Sprintf("/api/v1/processos/%s", p.ID))
 	app.writeJSON(w, http.StatusCreated, p)
 }
 

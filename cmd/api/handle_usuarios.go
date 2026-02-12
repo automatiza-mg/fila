@@ -111,6 +111,7 @@ func (app *application) handleUsuarioCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	w.Header().Set("Location", fmt.Sprintf("/api/v1/usuarios/%d", usuario.ID))
 	app.writeJSON(w, http.StatusCreated, usuario)
 }
 
