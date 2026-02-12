@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
+var ignoreDocumentoFields = cmpopts.IgnoreFields(Documento{}, "ID")
+
 func TestRegisterHook(t *testing.T) {
 	t.Parallel()
 
@@ -78,8 +80,6 @@ func TestAnalyze_NotifiesHooks(t *testing.T) {
 		t.Fatal("expected hook to be called")
 	}
 
-	ignoreDoc := cmpopts.IgnoreFields(Documento{}, "ID")
-
 	wantDocs := []*Documento{
 		{
 			Numero:          "HOOK-DOC-001",
@@ -93,7 +93,7 @@ func TestAnalyze_NotifiesHooks(t *testing.T) {
 			},
 		},
 	}
-	if diff := cmp.Diff(wantDocs, hook.documentos, ignoreDoc); diff != "" {
+	if diff := cmp.Diff(wantDocs, hook.documentos, ignoreDocumentoFields); diff != "" {
 		t.Fatalf("hook documentos mismatch (-want +got):\n%s", diff)
 	}
 }
@@ -126,8 +126,6 @@ func TestAnalyze_MultipleHooks(t *testing.T) {
 		t.Fatal("expected hook2 to be called")
 	}
 
-	ignore := cmpopts.IgnoreFields(Processo{}, "Aposentadoria", "AnalisadoEm", "CriadoEm", "AtualizadoEm")
-
 	wantProcesso := &Processo{
 		ID:              proc.ID,
 		Numero:          "multi-hook",
@@ -136,10 +134,10 @@ func TestAnalyze_MultipleHooks(t *testing.T) {
 		SeiUnidadeID:    "100",
 		SeiUnidadeSigla: "SEPLAG/AP01",
 	}
-	if diff := cmp.Diff(wantProcesso, hook1.processo, ignore); diff != "" {
+	if diff := cmp.Diff(wantProcesso, hook1.processo, ignoreProcessoFields); diff != "" {
 		t.Fatalf("hook1 processo mismatch (-want +got):\n%s", diff)
 	}
-	if diff := cmp.Diff(wantProcesso, hook2.processo, ignore); diff != "" {
+	if diff := cmp.Diff(wantProcesso, hook2.processo, ignoreProcessoFields); diff != "" {
 		t.Fatalf("hook2 processo mismatch (-want +got):\n%s", diff)
 	}
 }

@@ -13,6 +13,11 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	ignoreProcessoFields   = cmpopts.IgnoreFields(Processo{}, "Aposentadoria", "AnalisadoEm", "CriadoEm", "AtualizadoEm", "MetadadosIA")
+	ignoreProcessoIDFields = cmpopts.IgnoreFields(Processo{}, "ID", "Aposentadoria", "AnalisadoEm", "CriadoEm", "AtualizadoEm", "MetadadosIA")
+)
+
 func consultarProcedimentoOK(_ context.Context, protocolo string) (*sei.ConsultarProcedimentoResponse, error) {
 	return &sei.ConsultarProcedimentoResponse{
 		Parametros: sei.RetornoConsultaProcedimento{
@@ -38,8 +43,6 @@ func TestCreateProcesso(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ignore := cmpopts.IgnoreFields(Processo{}, "ID", "Aposentadoria", "AnalisadoEm", "CriadoEm", "AtualizadoEm")
-
 	want := &Processo{
 		Numero:          "123456",
 		Status:          "PENDENTE",
@@ -47,7 +50,7 @@ func TestCreateProcesso(t *testing.T) {
 		SeiUnidadeID:    "100",
 		SeiUnidadeSigla: "SEPLAG/AP01",
 	}
-	if diff := cmp.Diff(want, p, ignore); diff != "" {
+	if diff := cmp.Diff(want, p, ignoreProcessoIDFields); diff != "" {
 		t.Fatalf("CreateProcesso mismatch (-want +got):\n%s", diff)
 	}
 
@@ -89,8 +92,6 @@ func TestGetProcesso(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ignore := cmpopts.IgnoreFields(Processo{}, "Aposentadoria", "AnalisadoEm", "CriadoEm", "AtualizadoEm")
-
 	want := &Processo{
 		ID:              seeded.ID,
 		Numero:          "get-by-id",
@@ -99,7 +100,7 @@ func TestGetProcesso(t *testing.T) {
 		SeiUnidadeID:    "100",
 		SeiUnidadeSigla: "SEPLAG/AP01",
 	}
-	if diff := cmp.Diff(want, p, ignore); diff != "" {
+	if diff := cmp.Diff(want, p, ignoreProcessoFields); diff != "" {
 		t.Fatalf("GetProcesso mismatch (-want +got):\n%s", diff)
 	}
 }
@@ -126,8 +127,6 @@ func TestGetProcessoByNumero(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ignore := cmpopts.IgnoreFields(Processo{}, "Aposentadoria", "AnalisadoEm", "CriadoEm", "AtualizadoEm")
-
 	want := &Processo{
 		ID:              seeded.ID,
 		Numero:          "get-by-numero",
@@ -136,7 +135,7 @@ func TestGetProcessoByNumero(t *testing.T) {
 		SeiUnidadeID:    "100",
 		SeiUnidadeSigla: "SEPLAG/AP01",
 	}
-	if diff := cmp.Diff(want, p, ignore); diff != "" {
+	if diff := cmp.Diff(want, p, ignoreProcessoFields); diff != "" {
 		t.Fatalf("GetProcessoByNumero mismatch (-want +got):\n%s", diff)
 	}
 }
@@ -176,8 +175,6 @@ func TestListProcessos(t *testing.T) {
 	if len(pp) != 1 {
 		t.Fatalf("expected len=1, got len=%d", len(pp))
 	}
-	ignore := cmpopts.IgnoreFields(Processo{}, "ID", "Aposentadoria", "AnalisadoEm", "CriadoEm", "AtualizadoEm")
-
 	want := &Processo{
 		Numero:          "list-proc-002",
 		Status:          "PENDENTE",
@@ -185,7 +182,7 @@ func TestListProcessos(t *testing.T) {
 		SeiUnidadeID:    "100",
 		SeiUnidadeSigla: "SEPLAG/AP01",
 	}
-	if diff := cmp.Diff(want, pp[0], ignore); diff != "" {
+	if diff := cmp.Diff(want, pp[0], ignoreProcessoIDFields); diff != "" {
 		t.Fatalf("filtered processo mismatch (-want +got):\n%s", diff)
 	}
 

@@ -100,8 +100,8 @@ func TestParseQuery(t *testing.T) {
 
 		// Clamping tests
 		{"limit exceeds max", "?page=1&limit=200", 1, MaxLimit},
-		{"limit exceeds max by little", "?page=1&limit=101", 1, MaxLimit},
-		{"limit at max", "?page=1&limit=100", 1, 100},
+		{"limit exceeds max by little", "?page=1&limit=51", 1, MaxLimit},
+		{"limit at max", "?page=1&limit=50", 1, MaxLimit},
 		{"limit at min", "?page=1&limit=1", 1, 1},
 
 		// Multiple invalid parameters
@@ -144,7 +144,7 @@ func TestParseQuery_Boundaries(t *testing.T) {
 		{"page below min", "?page=-100&limit=50", MinPage, 50},
 		{"limit below min", "?page=2&limit=-50", 2, MinLimit},
 		{"limit above max", "?page=2&limit=1000", 2, MaxLimit},
-		{"all at boundaries", "?page=1&limit=100", 1, 100},
+		{"all at boundaries", "?page=1&limit=50", 1, MaxLimit},
 	}
 
 	for _, tt := range tests {
