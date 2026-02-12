@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"io/fs"
 	"log"
 	"log/slog"
 	"net/http"
@@ -17,7 +16,6 @@ import (
 	"github.com/automatiza-mg/fila/internal/blob"
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/config"
-	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/datalake"
 	"github.com/automatiza-mg/fila/internal/docintel"
 	"github.com/automatiza-mg/fila/internal/fila"
@@ -29,7 +27,6 @@ import (
 	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/automatiza-mg/fila/internal/tasks"
-	"github.com/go-playground/form/v4"
 	"github.com/joho/godotenv"
 	"github.com/riverqueue/river"
 )
@@ -49,17 +46,12 @@ type application struct {
 	dev      bool
 	cfg      *config.Config
 	logger   *slog.Logger
-	store    *database.Store
 	cache    cache.Cache
 	datalake *datalake.DataLake
 
 	auth      *auth.Service
 	fila      *fila.Service
 	processos *processos.Service
-
-	decoder *form.Decoder
-	views   fs.FS
-	static  fs.FS
 }
 
 func run(ctx context.Context) error {
@@ -157,17 +149,12 @@ func run(ctx context.Context) error {
 		dev:      *dev,
 		cfg:      cfg,
 		logger:   logger,
-		store:    database.New(pool),
 		cache:    cache,
 		datalake: dl,
 
 		fila:      fila,
 		auth:      auth,
 		processos: proc,
-
-		decoder: form.NewDecoder(),
-		views:   os.DirFS("web/views"),
-		static:  os.DirFS("web/static"),
 	}
 
 	srv := &http.Server{
