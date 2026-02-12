@@ -52,7 +52,6 @@ type application struct {
 	store    *database.Store
 	cache    cache.Cache
 	datalake *datalake.DataLake
-	sei      *sei.Client
 
 	auth      *auth.Service
 	fila      *fila.Service
@@ -161,7 +160,6 @@ func run(ctx context.Context) error {
 		store:    database.New(pool),
 		cache:    cache,
 		datalake: dl,
-		sei:      sei,
 
 		fila:      fila,
 		auth:      auth,
