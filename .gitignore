@@ -1,7 +1,5 @@
 bin
 node_modules
-api
-cli
 .blob
 .idea
 .task
@@ -9,6 +7,9 @@ cli
 .vscode
 .opencode
 .DS_Store
+
+./api
+./cli
 
 .env
 .env.*
