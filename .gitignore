@@ -7,6 +7,7 @@ cli
 .task
 .cursor
 .vscode
+.opencode
 .DS_Store
 
 .env
