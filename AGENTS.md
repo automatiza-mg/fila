@@ -336,6 +336,31 @@ func (w *JobNameWorker) Work(ctx context.Context, job *river.Job[JobNameArgs]) e
 - [ ] Define error types in service package
 - [ ] Add middleware if needed in `cmd/api/middleware.go`
 - [ ] Document with Portuguese doc comments
+- [ ] Update `README.md` if the change affects project structure, prerequisites, or setup
+
+## Updating the README
+
+The `README.md` is a lean developer onboarding document written in Portuguese. When updating it, follow these rules:
+
+- **Language**: Portuguese, consistent with all project documentation
+- **Tone**: Direct and concise. No emojis, no filler text
+- **Structure**: Keep the existing sections in order:
+  1. Title and one-line description
+  2. Arquitetura (components overview)
+  3. Estrutura do Projeto (directory tree)
+  4. Requisitos (prerequisites with links)
+  5. Configuracao (env setup)
+  6. Executando (run commands)
+  7. Comandos Disponiveis (task runner table)
+  8. Testes (how to run tests)
+- **When to update**:
+  - New `internal/` package added or removed: update the directory tree in "Estrutura do Projeto"
+  - New prerequisite tool required: add to "Requisitos" with install link
+  - New task added to `Taskfile.yml`: add to "Comandos Disponiveis" table
+  - New infrastructure dependency (e.g., new external service): add to "Arquitetura" components list
+  - Changes to how the app is started or configured: update "Executando" or "Configuracao"
+- **When NOT to update**: new handlers, routes, bug fixes, refactors, or internal changes that don't affect project setup or structure
+- **Do not** add API endpoint documentation to the README. Route definitions live in `cmd/api/routes.go`
 
 ### HTTP Endpoint Pattern
 1. Define handler method in `cmd/api`
