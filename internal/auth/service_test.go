@@ -54,6 +54,14 @@ func newTestService(tb testing.TB) *Service {
 	return New(pool, slog.New(slog.DiscardHandler), &fakeTaskInserter{})
 }
 
+func newTestServiceWithQueue(tb testing.TB) (*Service, *fakeTaskInserter) {
+	tb.Helper()
+
+	pool := ti.NewDatabase(tb)
+	queue := &fakeTaskInserter{}
+	return New(pool, slog.New(slog.DiscardHandler), queue), queue
+}
+
 func TestMain(m *testing.M) {
 	ti = postgres.MustTestInstance()
 	defer ti.Close()

@@ -84,8 +84,11 @@ func (app *application) routes() http.Handler {
 
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/entrar", app.handleAuthEntrar)
-			r.Get("/cadastrar", app.handleAuthCadastrarDetalhe)
+			r.Get("/token", app.handleAuthTokenInfo)
 			r.Post("/cadastrar", app.handleAuthCadastrar)
+
+			r.Post("/recuperar-senha", app.handleAuthRecuperarSenha)
+			r.Post("/redefinir-senha", app.handleAuthRedefinirSenha)
 
 			r.Group(func(r chi.Router) {
 				r.Use(app.requireAuth)

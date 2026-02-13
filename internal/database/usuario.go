@@ -220,3 +220,14 @@ func (s *Store) DeleteUsuario(ctx context.Context, id int64) error {
 	}
 	return nil
 }
+
+// UpdateUsuarioSenha atualiza apenas a senha (hash) de um usuário.
+func (s *Store) UpdateUsuarioSenha(ctx context.Context, usuarioID int64, hashSenha string) error {
+	q := `
+	UPDATE usuarios SET
+		hash_senha = $2,
+		atualizado_em = CURRENT_TIMESTAMP
+	WHERE id = $1`
+	_, err := s.db.Exec(ctx, q, usuarioID, hashSenha)
+	return err
+}

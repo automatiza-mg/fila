@@ -18,3 +18,13 @@ func ValidateCreateAdmin(v *validator.Validator, params CreateAdminParams) {
 	v.Check(validator.MinLength(params.Senha, 8), "senha", "Deve possuir no mínimo 8 caracteres")
 	v.Check(validator.StrongPassword(params.Senha), "senha", "Deve possuir pelo menos um número e um caractere especial")
 }
+
+// ValidateResetSenha valida os parâmetros para redefinição de senha.
+func ValidateResetSenha(v *validator.Validator, senha, confirmarSenha string) {
+	v.Check(validator.NotBlank(senha), "senha", "Campo obrigatório")
+	v.Check(validator.MinLength(senha, 8), "senha", "Deve possuir no mínimo 8 caracteres")
+	v.Check(validator.MaxLength(senha, 60), "senha", "Deve possuir no máximo 60 caracteres")
+	v.Check(validator.StrongPassword(senha), "senha", "Deve possuir pelo menos um número e um caractere especial")
+	v.Check(validator.NotBlank(confirmarSenha), "confirmar_senha", "Campo obrigatório")
+	v.Check(senha == confirmarSenha, "confirmar_senha", "Senhas devem ser idênticas")
+}

@@ -58,14 +58,28 @@ func (app *application) handleAuthEntrar(w http.ResponseWriter, r *http.Request)
 	app.writeJSON(w, http.StatusOK, token)
 }
 
-func (app *application) handleAuthCadastrarDetalhe(w http.ResponseWriter, r *http.Request) {
+// Retorna os dados do usuário dono de um token. Requer os query params `token` e `escopo`.
+// Escopos permitidos: "setup" e "reset-senha".
+func (app *application) handleAuthTokenInfo(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	if token == "" {
 		app.tokenError(w, r)
 		return
 	}
 
-	usuario, err := app.auth.GetTokenOwner(r.Context(), token, auth.EscopoSetup)
+	escopoParam := r.URL.Query().Get("escopo")
+	var escopo auth.Escopo
+	switch escopoParam {
+	case auth.EscopoSetup.String():
+		escopo = auth.EscopoSetup
+	case auth.EscopoResetSenha.String():
+		escopo = auth.EscopoResetSenha
+	default:
+		app.badRequest(w, r, "Escopo inválido")
+		return
+	}
+
+	usuario, err := app.auth.GetTokenOwner(r.Context(), token, escopo)
 	if err != nil {
 		switch {
 		case errors.Is(err, auth.ErrInvalidToken):
@@ -145,4 +159,84 @@ func (app *application) handleAuthAnalistaAtual(w http.ResponseWriter, r *http.R
 	}
 
 	app.writeJSON(w, http.StatusOK, analista)
+}
+
+type RecuperarSenhaRequest struct {
+	CPF string `json:"cpf"`
+
+	validator.Validator `json:"-"`
+}
+
+// Envia um email de recuperação de senha para o usuário com o CPF informado.
+func (app *application) handleAuthRecuperarSenha(w http.ResponseWriter, r *http.Request) {
+	var input RecuperarSenhaRequest
+	err := app.decodeJSON(w, r, &input)
+	if err != nil {
+		app.decodeError(w, r, err)
+		return
+	}
+
+	input.Check(validator.NotBlank(input.CPF), "cpf", "Deve ser informado")
+	input.Check(validator.Matches(input.CPF, validator.CpfRX), "cpf", "Deve ser um CPF válido")
+	if !input.Valid() {
+		app.validationFailed(w, r, input.FieldErrors)
+		return
+	}
+
+	tokenFn := func(token string) string {
+		return app.cfg.BaseURL + "/recuperar-senha?token=" + token
+	}
+
+	err = app.auth.SendResetSenha(r.Context(), input.CPF, tokenFn)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+}
+
+type RedefinirSenhaRequest struct {
+	Token          string `json:"token"`
+	Senha          string `json:"senha"`
+	ConfirmarSenha string `json:"confirmar_senha"`
+
+	validator.Validator `json:"-"`
+}
+
+// Redefine a senha do usuário utilizando um token de recuperação.
+func (app *application) handleAuthRedefinirSenha(w http.ResponseWriter, r *http.Request) {
+	var input RedefinirSenhaRequest
+	err := app.decodeJSON(w, r, &input)
+	if err != nil {
+		app.decodeError(w, r, err)
+		return
+	}
+
+	input.Check(validator.NotBlank(input.Token), "token", "Deve ser informado")
+	input.Check(validator.NotBlank(input.Senha), "senha", "Deve ser informado")
+	input.Check(validator.StrongPassword(input.Senha), "senha", "Deve possuir pelo menos 8 caracteres, um dígito e um caractere especial")
+	input.Check(validator.MaxLength(input.Senha, 60), "senha", "Deve possuir no máximo 60 caracteres")
+	input.Check(validator.NotBlank(input.ConfirmarSenha), "confirmar_senha", "Deve ser informado")
+	input.Check(input.Senha == input.ConfirmarSenha, "confirmar_senha", "Senhas devem ser idênticas")
+	if !input.Valid() {
+		app.validationFailed(w, r, input.FieldErrors)
+		return
+	}
+
+	err = app.auth.ResetSenha(r.Context(), auth.ResetSenhaParams{
+		Token: input.Token,
+		Senha: input.Senha,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, auth.ErrInvalidToken):
+			app.tokenError(w, r)
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

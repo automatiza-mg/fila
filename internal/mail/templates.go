@@ -10,7 +10,8 @@ var (
 	//go:embed templates
 	fs embed.FS
 
-	setupTmpl = template.Must(template.ParseFS(fs, "templates/cadastro.tmpl"))
+	setupTmpl      = template.Must(template.ParseFS(fs, "templates/cadastro.tmpl"))
+	resetSenhaTmpl = template.Must(template.ParseFS(fs, "templates/reset-senha.tmpl"))
 )
 
 // Executa as três partes de um template de Email: subject, text e html.
@@ -48,4 +49,15 @@ type SetupEmailParams struct {
 // NewSetupEmail retorna um novo [Email] para o template `cadastro.tmpl`, possibilitando a conclusão de cadastro do usuário.
 func NewSetupEmail(to string, params SetupEmailParams) (*Email, error) {
 	return executeTemplate(setupTmpl, []string{to}, params)
+}
+
+// ResetSenhaEmailParams são os parâmetros para o template de recuperação de senha.
+type ResetSenhaEmailParams struct {
+	// A URL para redefinição de senha do usuário.
+	ResetURL string
+}
+
+// NewResetSenhaEmail retorna um novo [Email] para o template `reset-senha.tmpl`, possibilitando a redefinição de senha do usuário.
+func NewResetSenhaEmail(to string, params ResetSenhaEmailParams) (*Email, error) {
+	return executeTemplate(resetSenhaTmpl, []string{to}, params)
 }

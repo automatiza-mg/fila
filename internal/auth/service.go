@@ -195,11 +195,108 @@ func (s *Service) SendSetup(ctx context.Context, usuario *Usuario, tokenFn func(
 	email, err := mail.NewSetupEmail(usuario.Email, mail.SetupEmailParams{
 		SetupURL: tokenFn(token.Token),
 	})
+	if err != nil {
+		return err
+	}
 
 	_, err = s.queue.InsertTx(ctx, tx, tasks.SendEmailArgs{
 		Email: email,
 	}, nil)
 
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+// SendResetSenha envia um email de recuperação de senha para o usuário identificado pelo CPF.
+// Retorna nil silenciosamente caso o usuário não exista ou não tenha email verificado,
+// evitando enumeração de contas.
+func (s *Service) SendResetSenha(ctx context.Context, cpf string, tokenFn func(token string) string) error {
+	r, err := s.store.GetUsuarioByCPF(ctx, cpf)
+	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	if !r.EmailVerificado {
+		return nil
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	store := s.store.WithTx(tx)
+
+	err = store.DeleteTokensUsuario(ctx, r.ID, EscopoResetSenha.String())
+	if err != nil {
+		return err
+	}
+
+	token, err := s.createToken(ctx, store, r.ID, EscopoResetSenha, 1*time.Hour)
+	if err != nil {
+		return err
+	}
+
+	email, err := mail.NewResetSenhaEmail(r.Email, mail.ResetSenhaEmailParams{
+		ResetURL: tokenFn(token.Token),
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = s.queue.InsertTx(ctx, tx, tasks.SendEmailArgs{
+		Email: email,
+	}, nil)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+// ResetSenhaParams são os parâmetros para redefinição de senha.
+type ResetSenhaParams struct {
+	Token string
+	Senha string
+}
+
+// ResetSenha redefine a senha do usuário utilizando um token de recuperação válido.
+// Retorna [ErrInvalidToken] se o token for inválido ou expirado.
+func (s *Service) ResetSenha(ctx context.Context, params ResetSenhaParams) error {
+	r, err := s.store.GetUsuarioForToken(ctx, params.Token, EscopoResetSenha.String())
+	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return ErrInvalidToken
+		}
+		return err
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(params.Senha), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	store := s.store.WithTx(tx)
+
+	err = store.UpdateUsuarioSenha(ctx, r.ID, string(hash))
+	if err != nil {
+		return err
+	}
+
+	err = store.DeleteTokensUsuario(ctx, r.ID, EscopoResetSenha.String())
 	if err != nil {
 		return err
 	}

@@ -202,3 +202,24 @@ func TestUsuario_List(t *testing.T) {
 		}
 	}
 }
+
+func TestUsuario_UpdateSenha(t *testing.T) {
+	t.Parallel()
+
+	store := newTestStore(t)
+	usuario := seedUsuario(t, store)
+
+	err := store.UpdateUsuarioSenha(t.Context(), usuario.ID, "new-hash-senha")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	read, err := store.GetUsuario(t.Context(), usuario.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !read.HashSenha.Valid || read.HashSenha.V != "new-hash-senha" {
+		t.Fatalf("expected hash_senha to be 'new-hash-senha', got: %v", read.HashSenha)
+	}
+}
