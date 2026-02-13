@@ -7,6 +7,7 @@ import (
 	"errors"
 	"time"
 
+	apos "github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/jackc/pgx/v5"
@@ -37,12 +38,12 @@ func (s *Service) analyzeAposentadoriaTx(ctx context.Context, tx pgx.Tx, proc *p
 		return err
 	}
 
-	apos, err := s.analyzer.AnalisarAposentadoria(ctx, dd)
+	res, err := s.analyzer.AnalisarAposentadoria(ctx, dd)
 	if err != nil {
 		return err
 	}
 
-	metadados, err := json.Marshal(apos)
+	metadados, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
@@ -56,27 +57,30 @@ func (s *Service) analyzeAposentadoriaTx(ctx context.Context, tx pgx.Tx, proc *p
 	}
 	p.MetadadosIA = metadados
 
-	if apos.Aposentadoria {
+	if res.Aposentadoria {
 		p.Aposentadoria.V = true
 
-		dataNascimento, err := time.Parse(time.DateOnly, apos.DataNascimento)
+		dataNascimento, err := time.Parse(time.DateOnly, res.DataNascimento)
 		if err != nil {
 			return err
 		}
 
-		dataRequerimento, err := time.Parse(time.DateOnly, apos.DataRequerimento)
+		dataRequerimento, err := time.Parse(time.DateOnly, res.DataRequerimento)
 		if err != nil {
 			return err
 		}
+
+		score := apos.CalculateScore(dataNascimento, res.Invalidez)
 
 		pa := &database.ProcessoAposentadoria{
 			ProcessoID:               p.ID,
-			CPFRequerente:            apos.CPF,
-			Invalidez:                apos.Invalidez,
-			Judicial:                 apos.Judicial,
+			CPFRequerente:            res.CPF,
+			Invalidez:                res.Invalidez,
+			Judicial:                 res.Judicial,
 			DataNascimentoRequerente: dataNascimento,
 			DataRequerimento:         dataRequerimento,
 			Status:                   database.StatusProcessoAnalisePendente,
+			Score:                    score,
 		}
 		err = store.SaveProcessoAposentadoria(ctx, pa)
 		if err != nil {
