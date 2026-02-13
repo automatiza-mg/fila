@@ -39,7 +39,7 @@ func (app *application) handleAuthEntrar(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		switch {
 		case errors.Is(err, auth.ErrNoPassword):
-			app.writeError(w, http.StatusBadRequest, "O usuário não possui uma senha cadastrada")
+			app.badRequest(w, r, "O usuário não possui uma senha cadastrada")
 		case errors.Is(err, auth.ErrInvalidCredentials):
 			app.writeError(w, http.StatusUnauthorized, "Credenciais inválidas")
 		default:

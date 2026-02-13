@@ -84,6 +84,14 @@ func (app *application) decodeError(w http.ResponseWriter, _ *http.Request, err 
 	})
 }
 
+func (app *application) badRequest(w http.ResponseWriter, _ *http.Request, msg string) {
+	app.writeError(w, http.StatusBadRequest, msg)
+}
+
+func (app *application) alreadyExists(w http.ResponseWriter, _ *http.Request, msg string) {
+	app.writeError(w, http.StatusConflict, msg)
+}
+
 func (app *application) tokenError(w http.ResponseWriter, _ *http.Request) {
 	app.writeJSON(w, http.StatusUnauthorized, ErrorResponse{
 		Message: "O token informado é inválido ou expirou.",

@@ -136,7 +136,7 @@ func (app *application) handleUsuarioEnviarCadastro(w http.ResponseWriter, r *ht
 	usuario := app.getUsuario(r.Context())
 
 	if usuario.EmailVerificado {
-		app.writeError(w, http.StatusBadRequest, "Usuário já possui um cadastro ativo.")
+		app.badRequest(w, r, "Usuário já possui um cadastro ativo.")
 		return
 	}
 

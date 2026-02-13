@@ -59,9 +59,7 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrAnalistaExists):
-			app.writeJSON(w, http.StatusConflict, ErrorResponse{
-				Message: "O usuário já possui dados complementares de analista cadastrados.",
-			})
+			app.alreadyExists(w, r, "O usuário já possui dados complementares de analista cadastrados.")
 		default:
 			app.serverError(w, r, err)
 		}

@@ -27,7 +27,7 @@ func (app *application) handleProcessoCreate(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		switch {
 		case errors.Is(err, processos.ErrProcessoExists):
-			app.writeError(w, http.StatusConflict, "O processo informado já existe")
+			app.alreadyExists(w, r, "O processo informado já existe")
 		default:
 			app.serverError(w, r, err)
 		}
