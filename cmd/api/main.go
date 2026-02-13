@@ -124,15 +124,15 @@ func run(ctx context.Context) error {
 		},
 	})
 
+	apos := aposentadoria.New(dl, cache)
+
 	auth := auth.New(pool, logger, queue)
 
-	fila := fila.New(pool, sei, cache, ai)
+	fila := fila.New(pool, sei, cache, ai, apos)
 	if err := auth.RegisterHook(fila); err != nil {
 		return err
 	}
 	proc.RegisterHook(fila)
-
-	apos := aposentadoria.New(dl, cache)
 
 	workers := river.NewWorkers()
 	river.AddWorker(workers, tasks.NewSendEmailWorker(sender))

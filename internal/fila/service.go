@@ -8,6 +8,7 @@ import (
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/datalake"
 	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/jackc/pgx/v5"
@@ -20,25 +21,31 @@ type SeiClient interface {
 	ListarUnidades(ctx context.Context) (*sei.ListarUnidadesResponse, error)
 }
 
+type ServidorProvider interface {
+	GetServidorByCPF(ctx context.Context, cpf string) (*datalake.Servidor, error)
+}
+
 type AposentadoriaAnalyzer interface {
 	AnalisarAposentadoria(ctx context.Context, docs []*processos.Documento) (*aposentadoria.Analise, error)
 }
 
 type Service struct {
-	pool     *pgxpool.Pool
-	store    *database.Store
-	sei      SeiClient
-	cache    cache.Cache
-	analyzer AposentadoriaAnalyzer
+	pool       *pgxpool.Pool
+	store      *database.Store
+	sei        SeiClient
+	cache      cache.Cache
+	analyzer   AposentadoriaAnalyzer
+	servidores ServidorProvider
 }
 
-func New(pool *pgxpool.Pool, sei SeiClient, cache cache.Cache, analyzer AposentadoriaAnalyzer) *Service {
+func New(pool *pgxpool.Pool, sei SeiClient, cache cache.Cache, analyzer AposentadoriaAnalyzer, servidores ServidorProvider) *Service {
 	return &Service{
-		pool:     pool,
-		store:    database.New(pool),
-		sei:      sei,
-		cache:    cache,
-		analyzer: analyzer,
+		pool:       pool,
+		store:      database.New(pool),
+		sei:        sei,
+		cache:      cache,
+		analyzer:   analyzer,
+		servidores: servidores,
 	}
 }
 

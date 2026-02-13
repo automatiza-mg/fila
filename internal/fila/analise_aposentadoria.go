@@ -70,7 +70,11 @@ func (s *Service) analyzeAposentadoriaTx(ctx context.Context, tx pgx.Tx, proc *p
 			return err
 		}
 
-		score := apos.CalculateScore(dataNascimento, res.Invalidez)
+		serv, err := s.servidores.GetServidorByCPF(ctx, res.CPF)
+		if err == nil {
+			dataNascimento = serv.DataNascimento
+			res.Invalidez = serv.PossuiDeficiencia
+		}
 
 		pa := &database.ProcessoAposentadoria{
 			ProcessoID:               p.ID,
@@ -80,7 +84,7 @@ func (s *Service) analyzeAposentadoriaTx(ctx context.Context, tx pgx.Tx, proc *p
 			DataNascimentoRequerente: dataNascimento,
 			DataRequerimento:         dataRequerimento,
 			Status:                   database.StatusProcessoAnalisePendente,
-			Score:                    score,
+			Score:                    apos.CalculateScore(dataNascimento, res.Invalidez),
 		}
 		err = store.SaveProcessoAposentadoria(ctx, pa)
 		if err != nil {

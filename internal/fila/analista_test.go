@@ -33,11 +33,12 @@ func TestAnalistaLifecycle(t *testing.T) {
 
 	pool := ti.NewDatabase(t)
 	fila := &Service{
-		pool:     pool,
-		store:    database.New(pool),
-		sei:      &fakeSei{},
-		cache:    cache.NewMemoryCache(),
-		analyzer: &fakeAnalyzer{},
+		pool:       pool,
+		store:      database.New(pool),
+		sei:        &fakeSei{},
+		cache:      cache.NewMemoryCache(),
+		analyzer:   &fakeAnalyzer{},
+		servidores: &fakeServidores{},
 	}
 
 	usuarioID := seedUsuario(t, fila.store, auth.PapelAnalista)
@@ -92,11 +93,12 @@ func TestAnalista_InvalidUnidade(t *testing.T) {
 
 	pool := ti.NewDatabase(t)
 	fila := &Service{
-		pool:     pool,
-		store:    database.New(pool),
-		sei:      &fakeSei{},
-		cache:    cache.NewMemoryCache(),
-		analyzer: &fakeAnalyzer{},
+		pool:       pool,
+		store:      database.New(pool),
+		sei:        &fakeSei{},
+		cache:      cache.NewMemoryCache(),
+		analyzer:   &fakeAnalyzer{},
+		servidores: &fakeServidores{},
 	}
 
 	usuarioID := seedUsuario(t, fila.store, auth.PapelAnalista)
@@ -116,11 +118,12 @@ func TestAnalista_InvalidPapel(t *testing.T) {
 
 	pool := ti.NewDatabase(t)
 	fila := &Service{
-		pool:     pool,
-		store:    database.New(pool),
-		sei:      &fakeSei{},
-		cache:    cache.NewMemoryCache(),
-		analyzer: &fakeAnalyzer{},
+		pool:       pool,
+		store:      database.New(pool),
+		sei:        &fakeSei{},
+		cache:      cache.NewMemoryCache(),
+		analyzer:   &fakeAnalyzer{},
+		servidores: &fakeServidores{},
 	}
 
 	usuarioID := seedUsuario(t, fila.store, auth.PapelGestor)

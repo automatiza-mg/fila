@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/automatiza-mg/fila/internal/aposentadoria"
+	"github.com/automatiza-mg/fila/internal/datalake"
 	"github.com/automatiza-mg/fila/internal/postgres"
 	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/automatiza-mg/fila/internal/sei"
@@ -39,6 +41,17 @@ func (s *fakeSei) ListarUnidades(ctx context.Context) (*sei.ListarUnidadesRespon
 		Parametros: sei.Parametros[sei.Unidade]{
 			Items: unidades,
 		},
+	}, nil
+}
+
+type fakeServidores struct {
+	//
+}
+
+func (f *fakeServidores) GetServidorByCPF(ctx context.Context, cpf string) (*datalake.Servidor, error) {
+	return &datalake.Servidor{
+		CPF:            cpf,
+		DataNascimento: time.Now().AddDate(-50, 0, 0),
 	}, nil
 }
 

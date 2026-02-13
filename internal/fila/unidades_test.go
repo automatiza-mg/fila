@@ -13,11 +13,12 @@ func TestListarUnidadesAnalista(t *testing.T) {
 
 	pool := ti.NewDatabase(t)
 	fila := &Service{
-		pool:     pool,
-		store:    database.New(pool),
-		sei:      &fakeSei{},
-		cache:    cache.NewMemoryCache(),
-		analyzer: &fakeAnalyzer{},
+		pool:       pool,
+		store:      database.New(pool),
+		sei:        &fakeSei{},
+		cache:      cache.NewMemoryCache(),
+		analyzer:   &fakeAnalyzer{},
+		servidores: &fakeServidores{},
 	}
 
 	unidades, err := fila.ListUnidadesAnalistas(t.Context())
