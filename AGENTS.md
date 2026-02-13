@@ -2,6 +2,10 @@
 
 Guidelines for AI agents working on this codebase. Follow these patterns to maintain consistency and code quality.
 
+## Build Verification
+
+Always use `make api/build` to verify that code compiles after making changes.
+
 ## Documentation & Comments
 
 - **Doc comments**: Always write in Portuguese (exported types, functions, constants)

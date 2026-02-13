@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -81,6 +82,24 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		ctx := app.setAuth(r.Context(), usuario)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func (app *application) requirePapel(papeis ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			usuario := app.getAuth(r.Context())
+			if usuario.HasPapel(auth.PapelAdmin) {
+				next.ServeHTTP(w, r)
+				return
+			}
+			if slices.ContainsFunc(papeis, usuario.HasPapel) {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			app.writeError(w, http.StatusForbidden, "Você não possui permissão para acessar esse recurso")
+		})
+	}
 }
 
 func (app *application) requireAuth(next http.Handler) http.Handler {

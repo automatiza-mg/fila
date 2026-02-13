@@ -84,9 +84,14 @@ func (u *Usuario) HasPapel(papel string) bool {
 	return u.Papel == papel
 }
 
+// IsAdmin verifica se o usuário é um admin.
+func (u *Usuario) IsAdmin() bool {
+	return u.HasPapel(PapelAdmin)
+}
+
 // IsAnalista verifica se o usuário é um analista.
 func (u *Usuario) IsAnalista() bool {
-	return u.Papel == PapelAnalista
+	return u.HasPapel(PapelAnalista)
 }
 
 // HasSenha reporta se o usuário possui uma senha cadastrada.

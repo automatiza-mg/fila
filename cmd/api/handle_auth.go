@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/auth"
+	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/validator"
 )
 
@@ -126,4 +127,22 @@ func (app *application) handleAuthCadastrar(w http.ResponseWriter, r *http.Reque
 func (app *application) handleAuthUsuarioAtual(w http.ResponseWriter, r *http.Request) {
 	usuario := app.getAuth(r.Context())
 	app.writeJSON(w, http.StatusOK, usuario)
+}
+
+// Retorna os dados de analista do usuário autenticado.
+func (app *application) handleAuthAnalistaAtual(w http.ResponseWriter, r *http.Request) {
+	usuario := app.getAuth(r.Context())
+
+	analista, err := app.fila.GetAnalista(r.Context(), usuario.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrNotFound):
+			app.notFound(w, r)
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, analista)
 }

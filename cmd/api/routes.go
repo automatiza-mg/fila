@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -26,6 +27,11 @@ func (app *application) routes() http.Handler {
 		}
 
 		r.Route("/usuarios", func(r chi.Router) {
+			r.Use(
+				app.requireAuth,
+				app.requirePapel(auth.PapelGestor, auth.PapelSubsecretario),
+			)
+
 			r.Get("/", app.handleUsuarioList)
 			r.Post("/", app.handleUsuarioCreate)
 
@@ -75,6 +81,7 @@ func (app *application) routes() http.Handler {
 				r.Use(app.requireAuth)
 
 				r.Get("/me", app.handleAuthUsuarioAtual)
+				r.Get("/me/analista", app.handleAuthAnalistaAtual)
 			})
 		})
 	})
