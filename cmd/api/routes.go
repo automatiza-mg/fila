@@ -52,6 +52,11 @@ func (app *application) routes() http.Handler {
 		})
 
 		r.Route("/processos", func(r chi.Router) {
+			r.Use(
+				app.requireAuth,
+				app.requirePapel(auth.PapelGestor, auth.PapelSubsecretario),
+			)
+
 			r.Get("/", app.handleProcessoList)
 			r.Post("/", app.handleProcessoCreate)
 			r.Get("/{processoID}", app.handleProcessoDetail)
@@ -59,6 +64,11 @@ func (app *application) routes() http.Handler {
 		})
 
 		r.Route("/aposentadoria", func(r chi.Router) {
+			r.Use(
+				app.requireAuth,
+				app.requirePapel(auth.PapelGestor, auth.PapelSubsecretario),
+			)
+
 			r.Get("/", app.handleProcessoAposentadoriaList)
 			r.Get("/{paID}", app.handleProcessoAposentadoriaDetail)
 			r.Get("/{paID}/historico", app.handleProcessoAposentadoriaHistorico)
