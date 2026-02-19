@@ -48,7 +48,7 @@
         required
       />
       {#each login.fields.cpf.issues() as issue}
-        <p>{issue.message}</p>
+        <p class="text-sm text-red-500">{issue.message}</p>
       {/each}
     </div>
 
@@ -61,7 +61,6 @@
           {...login.fields._senha.as(showPassword ? "text" : "password")}
           autocomplete="current-password"
           class="py-2 px-3 border rounded-2xl border-stone-200 w-full"
-          required
         />
         <button
           type="button"
@@ -77,12 +76,13 @@
         </button>
       </div>
 
+      {#each login.fields._senha.issues() as issue}
+        <p class="text-sm text-red-500">{issue.message}</p>
+      {/each}
+
       <a href="/recuperar-senha" class="underline text-stone-600 w-fit">
         Esqueci minha senha
       </a>
-      {#each login.fields._senha.issues() as issue}
-        <p>{issue.message}</p>
-      {/each}
     </div>
   </div>
 
