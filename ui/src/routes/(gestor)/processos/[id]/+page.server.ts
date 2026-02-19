@@ -1,11 +1,13 @@
+import { getClient } from "$lib/server/utils.js";
 import { error } from "@sveltejs/kit";
 
-export const load = async ({ locals, params }) => {
+export const load = async ({ params }) => {
   const { id } = params;
-
   const processoId = parseInt(id, 10);
+  const client = getClient();
+
   try {
-    const processo = await locals.auth?.client.getAposentadoria(processoId);
+    const processo = await client.getAposentadoria(processoId);
     return {
       processo,
     };

@@ -8,6 +8,21 @@ export type Paginated<T> = {
   has_previous: boolean;
 };
 
+export type ErrorResponse = {
+  message: string;
+  errors?: Record<string, string>;
+};
+
+export type Credenciais = {
+  cpf: string;
+  senha: string;
+};
+
+export type Token = {
+  token: string;
+  expira: string;
+};
+
 export type Papel = "ADMIN" | "ANALISTA" | "GESTOR" | "SUBSECRETARIO";
 
 export type Usuario = {

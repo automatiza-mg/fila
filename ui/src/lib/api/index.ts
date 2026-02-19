@@ -1,8 +1,11 @@
 import { env } from "$env/dynamic/public";
 import type {
+  Credenciais,
+  ErrorResponse,
   Paginated,
   Processo,
   ProcessoAposentadoria,
+  Token,
   Usuario,
 } from "./types";
 
@@ -10,6 +13,36 @@ type Fetch = (
   input: RequestInfo | URL,
   init?: RequestInit,
 ) => Promise<Response>;
+
+export class ApiError extends Error {
+  constructor(
+    public message: string,
+    public status: number,
+    public response: ErrorResponse,
+  ) {
+    super(message);
+  }
+}
+
+export async function authenticate(
+  { cpf, senha }: Credenciais,
+  fetchFn: Fetch = fetch,
+): Promise<Token> {
+  const res = await fetchFn(`${env.PUBLIC_API_URL}/api/v1/auth/entrar`, {
+    method: "POST",
+    body: JSON.stringify({
+      cpf,
+      senha,
+    }),
+  });
+
+  if (!res.ok) {
+    const data = (await res.json()) as ErrorResponse;
+    throw new ApiError(data.message, res.status, data);
+  }
+
+  return await res.json();
+}
 
 export class Client {
   constructor(

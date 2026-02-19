@@ -5,7 +5,7 @@ import type { Papel } from "$lib/api/types.js";
 const allowedPapeis: Papel[] = ["ADMIN", "GESTOR", "SUBSECRETARIO"];
 
 export const load = async ({ locals, cookies }) => {
-  const usuario = locals.auth?.usuario;
+  const usuario = locals.usuario;
   if (!usuario) {
     redirect(303, "/entrar");
   }

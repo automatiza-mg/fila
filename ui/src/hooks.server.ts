@@ -6,10 +6,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (authToken) {
     const client = new Client(authToken, event.fetch);
     const usuario = await client.usuarioAtual();
-    event.locals.auth = {
-      client,
-      usuario,
-    };
+    event.locals.usuario = usuario;
   }
 
   const response = await resolve(event);
