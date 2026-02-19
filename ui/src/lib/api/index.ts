@@ -2,6 +2,7 @@ import { env } from "$env/dynamic/public";
 import type {
   Credenciais,
   ErrorResponse,
+  Escopo,
   Paginated,
   Processo,
   ProcessoAposentadoria,
@@ -44,12 +45,36 @@ export async function authenticate(
   return await res.json();
 }
 
+export async function tokenInfo(
+  token: string,
+  escopo: Escopo,
+  fetchFn: Fetch = fetch,
+): Promise<Usuario> {
+  const q = new URLSearchParams({
+    token,
+    escopo,
+  });
+
+  const res = await fetchFn(
+    `${env.PUBLIC_API_URL}/api/v1/auth/token?${q.toString()}`,
+  );
+  if (!res.ok) {
+    const data = (await res.json()) as ErrorResponse;
+    throw new ApiError(data.message, res.status, data);
+  }
+
+  return await res.json();
+}
+
 export class Client {
+  private readonly baseUrl: string;
+
   constructor(
     public authToken: string,
     private fetch: Fetch = fetch,
-    private baseUrl = `${env.PUBLIC_API_URL}/api/v1`,
-  ) {}
+  ) {
+    this.baseUrl = `${env.PUBLIC_API_URL}/api/v1`;
+  }
 
   async usuarioAtual(): Promise<Usuario> {
     const res = await this.fetch(`${this.baseUrl}/auth/me`, {

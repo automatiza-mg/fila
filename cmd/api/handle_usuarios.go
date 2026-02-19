@@ -89,13 +89,11 @@ func (app *application) handleUsuarioCreate(w http.ResponseWriter, r *http.Reque
 	}
 
 	usuario, err := app.auth.CreateUsuario(r.Context(), auth.CreateUsuarioParams{
-		Nome:  input.Nome,
-		CPF:   input.CPF,
-		Email: input.Email,
-		Papel: input.Papel,
-		TokenURL: func(token string) string {
-			return fmt.Sprintf("%s/cadastro?token=%s", app.cfg.BaseURL, token)
-		},
+		Nome:     input.Nome,
+		CPF:      input.CPF,
+		Email:    input.Email,
+		Papel:    input.Papel,
+		TokenURL: app.setupURL,
 	})
 	if err != nil {
 		switch {
@@ -140,9 +138,7 @@ func (app *application) handleUsuarioEnviarCadastro(w http.ResponseWriter, r *ht
 		return
 	}
 
-	err := app.auth.SendSetup(r.Context(), usuario, func(token string) string {
-		return fmt.Sprintf("%s/cadastrar?token=%s", app.cfg.BaseURL, token)
-	})
+	err := app.auth.SendSetup(r.Context(), usuario, app.setupURL)
 	if err != nil {
 		app.serverError(w, r, err)
 		return

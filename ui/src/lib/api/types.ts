@@ -23,6 +23,8 @@ export type Token = {
   expira: string;
 };
 
+export type Escopo = "reset-senha" | "setup";
+
 export type Papel = "ADMIN" | "ANALISTA" | "GESTOR" | "SUBSECRETARIO";
 
 export type Usuario = {
@@ -32,7 +34,10 @@ export type Usuario = {
   email: string;
   email_verificado: boolean;
   papel?: Papel;
-  pendencias: any[];
+  pendencias: {
+    slug: string;
+    titulo: string;
+  }[];
 };
 
 export type Processo = {

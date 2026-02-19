@@ -2,13 +2,25 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/validator"
 )
+
+// Constroi a URL de cadastro no cliente para o envio do token.
+func (app *application) setupURL(token string) string {
+	return fmt.Sprintf("%s/cadastrar?token=%s", app.cfg.ClientURL, url.QueryEscape(token))
+}
+
+// Constroi a URL de reset de senha no cliente para o envio do token.
+func (app *application) resetSenhaURL(token string) string {
+	return fmt.Sprintf("%s/redefinir-senha?token=%s", app.cfg.ClientURL, url.QueryEscape(token))
+}
 
 type EntrarRequest struct {
 	CPF   string `json:"cpf"`
@@ -183,11 +195,7 @@ func (app *application) handleAuthRecuperarSenha(w http.ResponseWriter, r *http.
 		return
 	}
 
-	tokenFn := func(token string) string {
-		return app.cfg.BaseURL + "/recuperar-senha?token=" + token
-	}
-
-	err = app.auth.SendResetSenha(r.Context(), input.CPF, tokenFn)
+	err = app.auth.SendResetSenha(r.Context(), input.CPF, app.resetSenhaURL)
 	if err != nil {
 		app.serverError(w, r, err)
 		return

@@ -11,7 +11,6 @@
   }
 
   $effect(() => {
-    // Remove non-digits, limit to 11 digits, and format as XXX.XXX.XXX-XX
     cpf = cpf
       .replace(/\D/g, "")
       .slice(0, 11)
