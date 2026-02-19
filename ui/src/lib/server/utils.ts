@@ -8,5 +8,5 @@ export function getClient() {
     throw new Error("Not authenticated");
   }
 
-  return new Client(authToken, event.fetch);
+  return new Client(authToken);
 }
