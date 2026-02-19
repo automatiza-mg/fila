@@ -7,7 +7,7 @@ export const load = async ({ locals }) => {
     redirect(302, "/entrar");
   }
 
-  if (usuario.papel === "ANALISTA") {
+  if (hasPapel(usuario, "ANALISTA")) {
     redirect(302, "/analise");
   }
 
