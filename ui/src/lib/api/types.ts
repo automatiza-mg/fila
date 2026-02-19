@@ -27,6 +27,12 @@ export type Escopo = "reset-senha" | "setup";
 
 export type Papel = "ADMIN" | "ANALISTA" | "GESTOR" | "SUBSECRETARIO";
 
+export type Cadastrar = {
+  token: string;
+  senha: string;
+  confirmar_senha: string;
+};
+
 export type Usuario = {
   id: number;
   nome: string;

@@ -1,5 +1,6 @@
 import { env } from "$env/dynamic/public";
 import type {
+  Cadastrar,
   Credenciais,
   ErrorResponse,
   Escopo,
@@ -58,6 +59,17 @@ export async function tokenInfo(
   }
 
   return await res.json();
+}
+
+export async function cadastrar(data: Cadastrar) {
+  const res = await fetch(`${env.PUBLIC_API_URL}/api/v1/auth/cadastrar`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const data = (await res.json()) as ErrorResponse;
+    throw new ApiError(data.message, res.status, data);
+  }
 }
 
 export class Client {
