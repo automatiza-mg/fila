@@ -1,1 +1,8 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+@theme {
+  --color-escritorio: #00183b;
+  --color-escritorio-light: #59a1ba;
+
+  --font-sans: "Inter", sans-serif;
+}
