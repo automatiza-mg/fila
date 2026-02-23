@@ -75,10 +75,20 @@ func (app *application) routes() http.Handler {
 		})
 
 		r.Route("/analistas", func(r chi.Router) {
+			r.Use(
+				app.requireAuth,
+				app.requirePapel(auth.PapelGestor, auth.PapelSubsecretario),
+			)
+
 			r.Get("/", app.handleAnalistaList)
 		})
 
 		r.Route("/unidades", func(r chi.Router) {
+			r.Use(
+				app.requireAuth,
+				app.requirePapel(auth.PapelGestor, auth.PapelSubsecretario),
+			)
+
 			r.Get("/", app.handleUnidadeList)
 		})
 
