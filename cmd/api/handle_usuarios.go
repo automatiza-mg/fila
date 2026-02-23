@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/database"
@@ -51,20 +50,11 @@ func (app *application) handleUsuarioList(w http.ResponseWriter, r *http.Request
 	app.writeJSON(w, http.StatusOK, usuarios)
 }
 
-// Lista de papeis permitidos
-var papeisAllowed = []string{
-	auth.PapelAnalista,
-	auth.PapelGestor,
-	auth.PapelSubsecretario,
-}
-
 type usuarioCreateRequest struct {
 	Nome  string `json:"nome"`
 	CPF   string `json:"cpf"`
 	Email string `json:"email"`
 	Papel string `json:"papel"`
-
-	validator.Validator `json:"-"`
 }
 
 func (app *application) handleUsuarioCreate(w http.ResponseWriter, r *http.Request) {
@@ -75,34 +65,30 @@ func (app *application) handleUsuarioCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	input.Check(validator.NotBlank(input.Nome), "nome", "Campo obrigatório")
-	input.Check(validator.MaxLength(input.Nome, 255), "nome", "Deve possuir até 255 caracteres")
-	input.Check(validator.NotBlank(input.CPF), "cpf", "Campo obrigatório")
-	input.Check(validator.Matches(input.CPF, validator.CpfRX), "cpf", "Deve ser um CPF válido")
-	input.Check(validator.NotBlank(input.Email), "email", "Campo obrigatório")
-	input.Check(validator.MaxLength(input.Email, 255), "email", "Deve possuir até 255 caracteres")
-	input.Check(validator.Matches(input.Email, validator.EmailRX), "email", "Deve ser um email válido")
-	input.Check(validator.PermittedValue(input.Papel, papeisAllowed...), "papel", fmt.Sprintf("Deve ser um dos valores: %s", strings.Join(papeisAllowed, ", ")))
-	if !input.Valid() {
-		app.validationFailed(w, r, input.FieldErrors)
-		return
-	}
-
-	usuario, err := app.auth.CreateUsuario(r.Context(), auth.CreateUsuarioParams{
+	params := auth.CreateUsuarioParams{
 		Nome:     input.Nome,
 		CPF:      input.CPF,
 		Email:    input.Email,
 		Papel:    input.Papel,
 		TokenURL: app.setupURL,
-	})
+	}
+
+	v := validator.New()
+	auth.ValidateCreateUsuario(v, params)
+	if !v.Valid() {
+		app.validationFailed(w, r, v.FieldErrors)
+		return
+	}
+
+	usuario, err := app.auth.CreateUsuario(r.Context(), params)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrUsuarioCPFTaken):
-			input.SetFieldError("cpf", "Valor já está em uso")
-			app.validationFailed(w, r, input.FieldErrors)
+			v.SetFieldError("cpf", "Valor já está em uso")
+			app.validationFailed(w, r, v.FieldErrors)
 		case errors.Is(err, database.ErrUsuarioEmailTaken):
-			input.SetFieldError("email", "Valor já está em uso")
-			app.validationFailed(w, r, input.FieldErrors)
+			v.SetFieldError("email", "Valor já está em uso")
+			app.validationFailed(w, r, v.FieldErrors)
 		default:
 			app.serverError(w, r, err)
 		}
