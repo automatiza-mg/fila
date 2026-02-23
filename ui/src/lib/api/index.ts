@@ -21,6 +21,15 @@ export class ApiError extends Error {
   }
 }
 
+async function handleResponse<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    const data = (await res.json()) as ErrorResponse;
+    throw new ApiError(data.message, res.status, data);
+  }
+
+  return await res.json();
+}
+
 export async function authenticate({
   cpf,
   senha,
@@ -33,12 +42,7 @@ export async function authenticate({
     }),
   });
 
-  if (!res.ok) {
-    const data = (await res.json()) as ErrorResponse;
-    throw new ApiError(data.message, res.status, data);
-  }
-
-  return await res.json();
+  return await handleResponse<Token>(res);
 }
 
 export async function tokenInfo(
@@ -53,12 +57,7 @@ export async function tokenInfo(
   const res = await fetch(
     `${env.PUBLIC_API_URL}/api/v1/auth/token?${q.toString()}`,
   );
-  if (!res.ok) {
-    const data = (await res.json()) as ErrorResponse;
-    throw new ApiError(data.message, res.status, data);
-  }
-
-  return await res.json();
+  return await handleResponse<Usuario>(res);
 }
 
 export async function cadastrar(data: Cadastrar) {
@@ -66,10 +65,7 @@ export async function cadastrar(data: Cadastrar) {
     method: "POST",
     body: JSON.stringify(data),
   });
-  if (!res.ok) {
-    const data = (await res.json()) as ErrorResponse;
-    throw new ApiError(data.message, res.status, data);
-  }
+  return await handleResponse(res);
 }
 
 export class Client {
@@ -79,69 +75,44 @@ export class Client {
     this.baseUrl = `${env.PUBLIC_API_URL}/api/v1`;
   }
 
-  async usuarioAtual(): Promise<Usuario> {
-    const res = await fetch(`${this.baseUrl}/auth/me`, {
+  private async request<T>(
+    url: string,
+    options?: RequestInit,
+  ): Promise<T> {
+    const res = await fetch(url, {
+      ...options,
       headers: {
+        ...options?.headers,
         Authorization: `Bearer ${this.authToken}`,
       },
     });
 
-    if (!res.ok) {
-      throw new Error("Não foi possível carregar usuário atual");
-    }
+    return await handleResponse<T>(res);
+  }
 
-    return await res.json();
+  async usuarioAtual(): Promise<Usuario> {
+    return await this.request<Usuario>(`${this.baseUrl}/auth/me`);
   }
 
   async listarProcessos(): Promise<Paginated<Processo>> {
-    const res = await fetch(`${this.baseUrl}/processos`, {
-      headers: {
-        Authorization: `Bearer ${this.authToken}`,
-      },
-    });
-    if (!res.ok) {
-      throw new Error("Não foi possível listar processos");
-    }
-
-    return await res.json();
+    return await this.request<Paginated<Processo>>(
+      `${this.baseUrl}/processos`,
+    );
   }
 
   async listarUsuarios(): Promise<Usuario[]> {
-    const res = await fetch(`${this.baseUrl}/usuarios`, {
-      headers: {
-        Authorization: `Bearer ${this.authToken}`,
-      },
-    });
-    if (!res.ok) {
-      throw new Error("Não foi possível listar usuarios");
-    }
-
-    return await res.json();
+    return await this.request<Usuario[]>(`${this.baseUrl}/usuarios`);
   }
 
   async listarAposentadoria(): Promise<Paginated<ProcessoAposentadoria>> {
-    const res = await fetch(`${this.baseUrl}/aposentadoria`, {
-      headers: {
-        Authorization: `Bearer ${this.authToken}`,
-      },
-    });
-    if (!res.ok) {
-      throw new Error("Não foi possível listar usuarios");
-    }
-
-    return await res.json();
+    return await this.request<Paginated<ProcessoAposentadoria>>(
+      `${this.baseUrl}/aposentadoria`,
+    );
   }
 
   async getAposentadoria(id: number): Promise<ProcessoAposentadoria> {
-    const res = await fetch(`${this.baseUrl}/aposentadoria/${id}`, {
-      headers: {
-        Authorization: `Bearer ${this.authToken}`,
-      },
-    });
-    if (!res.ok) {
-      throw new Error("Não foi possível buscar processo");
-    }
-
-    return await res.json();
+    return await this.request<ProcessoAposentadoria>(
+      `${this.baseUrl}/aposentadoria/${id}`,
+    );
   }
 }
