@@ -1,12 +1,15 @@
 import { env } from "$env/dynamic/public";
 import type {
+  Analista,
   Cadastrar,
   Credenciais,
+  Documento,
   ErrorResponse,
   Escopo,
   Paginated,
   Processo,
   ProcessoAposentadoria,
+  ProcessoHistorico,
   Token,
   Usuario,
 } from "./types";
@@ -68,6 +71,16 @@ export async function cadastrar(data: Cadastrar) {
   return await handleResponse(res);
 }
 
+export async function getAnalistaAtual(token: string): Promise<Analista> {
+  const res = await fetch(`${env.PUBLIC_API_URL}/api/v1/auth/me/analista`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return await handleResponse<Analista>(res);
+}
+
 export class Client {
   private readonly baseUrl: string;
 
@@ -113,6 +126,24 @@ export class Client {
   async getAposentadoria(id: number): Promise<ProcessoAposentadoria> {
     return await this.request<ProcessoAposentadoria>(
       `${this.baseUrl}/aposentadoria/${id}`,
+    );
+  }
+
+  async getProcesso(id: string): Promise<Processo> {
+    return await this.request<Processo>(`${this.baseUrl}/processos/${id}`);
+  }
+
+  async getProcessoDocumentos(id: string): Promise<Documento[]> {
+    return await this.request<Documento[]>(
+      `${this.baseUrl}/processos/${id}/documentos`,
+    );
+  }
+
+  async getProcessoAposentadoriaHistorico(
+    id: number,
+  ): Promise<ProcessoHistorico[]> {
+    return await this.request<ProcessoHistorico[]>(
+      `${this.baseUrl}/aposentadoria/${id}/historico`,
     );
   }
 }

@@ -91,3 +91,27 @@ export type ProcessoAposentadoria = {
   criado_em: string;
   atualizado_em: string;
 };
+
+export type Analista = {
+  usuario_id: number;
+  orgao: string;
+  sei_unidade_id: string;
+  sei_unidade_sigla: string;
+  afastado: boolean;
+  ultima_atribuicao_em: string | null;
+};
+
+export type Documento = {
+  id: string;
+  nome: string;
+  link: string;
+};
+
+export type ProcessoHistorico = {
+  id: number;
+  processo_aposentadoria_id: number;
+  status_anterior: StatusProcessoAposentadoria;
+  status_novo: StatusProcessoAposentadoria;
+  observacao: string;
+  criado_em: string;
+};
