@@ -186,3 +186,32 @@ func (s *Store) DeleteAnalista(ctx context.Context, usuarioID int64) error {
 	}
 	return nil
 }
+
+func (s *Store) GetAnalistaDisponivel(ctx context.Context) (int64, error) {
+	q := `
+	SELECT a.usuario_id
+	FROM analistas a
+	JOIN usuarios u ON u.id = a.usuario_id
+	WHERE afastado = FALSE
+	AND u.email_verificado = TRUE
+	AND NOT EXISTS (
+		SELECT 1
+		FROM processos_aposentadoria pa
+		WHERE analista_id = u.id
+		AND status = 'EM_ANALISE'
+	)
+	ORDER BY a.ultima_atribuicao_em ASC NULLS FIRST
+	LIMIT 1
+	FOR UPDATE SKIP LOCKED`
+
+	var usuarioID int64
+	err := s.db.QueryRow(ctx, q).Scan(&usuarioID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNotFound
+		}
+		return 0, err
+	}
+
+	return usuarioID, nil
+}

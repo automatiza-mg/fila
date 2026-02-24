@@ -204,3 +204,73 @@ func (s *Store) ListProcessoAposentadoria(ctx context.Context, params ListProces
 
 	return paa, totalCount, nil
 }
+
+func (s *Store) GetProcessoPrioriatario(ctx context.Context, analistaID int64) (*ProcessoAposentadoria, error) {
+	q := `
+	SELECT 
+		pa.id, pa.processo_id, pa.data_requerimento, pa.cpf_requerente,
+		pa.data_nascimento_requerente, pa.invalidez, pa.judicial, pa.prioridade,
+		pa.score, pa.status, pa.analista_id, pa.ultimo_analista_id,
+		pa.criado_em, pa.atualizado_em
+	FROM processos_aposentadoria pa
+	WHERE pa.status IN ('RETORNO_DILIGENCIA', 'ANALISE_PENDENTE')
+	ORDER BY
+		CASE
+			WHEN pa.status = 'RETORNO_DILIGENCIA' AND pa.ultimo_analista_id = $1 THEN 1
+			WHEN pa.status = 'RETORNO_DILIGENCIA' AND pa.ultimo_analista_id IS NULL THEN 2
+			WHEN pa.status = 'ANALISE_PENDENTE' THEN 3
+			ELSE 4
+		END,
+		pa.score DESC,
+		pa.data_requerimento ASC
+	LIMIT 1
+	FOR UPDATE SKIP LOCKED`
+
+	var pa ProcessoAposentadoria
+	err := s.db.QueryRow(ctx, q, analistaID).Scan(
+		&pa.ID, &pa.ProcessoID, &pa.DataRequerimento, &pa.CPFRequerente,
+		&pa.DataNascimentoRequerente, &pa.Invalidez, &pa.Judicial, &pa.Prioridade,
+		&pa.Score, &pa.Status, &pa.AnalistaID, &pa.UltimoAnalistaID,
+		&pa.CriadoEm, &pa.AtualizadoEm,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &pa, nil
+}
+
+func (s *Store) GetProcessoAtribuido(ctx context.Context, analistaID int64) (*ProcessoAposentadoria, error) {
+	q := `
+	SELECT
+		pa.id, pa.processo_id, pa.data_requerimento, pa.cpf_requerente,
+		pa.data_nascimento_requerente, pa.invalidez, pa.judicial, pa.prioridade,
+		pa.score, pa.status, pa.analista_id, pa.ultimo_analista_id,
+		pa.criado_em, pa.atualizado_em
+	FROM processos_aposentadoria pa
+	WHERE pa.status = 'EM_ANALISE'
+	AND analista_id = $1`
+
+	var pa ProcessoAposentadoria
+	err := s.db.QueryRow(ctx, q, analistaID).Scan(
+		&pa.ID, &pa.ProcessoID, &pa.DataRequerimento, &pa.CPFRequerente,
+		&pa.DataNascimentoRequerente, &pa.Invalidez, &pa.Judicial, &pa.Prioridade,
+		&pa.Score, &pa.Status, &pa.AnalistaID, &pa.UltimoAnalistaID,
+		&pa.CriadoEm, &pa.AtualizadoEm,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &pa, nil
+}

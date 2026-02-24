@@ -70,6 +70,7 @@ func run(ctx context.Context) error {
 	}
 
 	logger := logging.NewLogger(os.Stdout, *dev)
+	ctx = logging.WithLogger(ctx, logger)
 
 	rdb, err := infra.NewRedis(ctx, cfg.RedisURL)
 	if err != nil {
@@ -155,6 +156,8 @@ func run(ctx context.Context) error {
 		auth:      auth,
 		processos: proc,
 	}
+
+	fila.StartAssignmentWorker(ctx, 30*time.Second)
 
 	srv := &http.Server{
 		Addr:         *addr,
