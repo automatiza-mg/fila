@@ -48,6 +48,7 @@ func (app *application) routes() http.Handler {
 
 				r.Post("/analista/afastar", app.handleAnalistaAfastar)
 				r.Post("/analista/retornar", app.handleAnalistaRetornar)
+				r.Get("/analista/processo", app.handleAnalistaProcessoAtribuido)
 			})
 		})
 
@@ -106,6 +107,11 @@ func (app *application) routes() http.Handler {
 				r.Get("/me", app.handleAuthUsuarioAtual)
 				r.Get("/me/analista", app.handleAuthAnalistaAtual)
 			})
+		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(app.requireAuth)
+			r.Get("/meu-processo", app.handleMeuProcessoAtribuido)
 		})
 	})
 

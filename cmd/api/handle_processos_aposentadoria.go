@@ -66,3 +66,37 @@ func (app *application) handleProcessoAposentadoriaHistorico(w http.ResponseWrit
 
 	app.writeJSON(w, http.StatusOK, historico)
 }
+
+func (app *application) handleAnalistaProcessoAtribuido(w http.ResponseWriter, r *http.Request) {
+	usuario := app.getUsuario(r.Context())
+
+	pa, err := app.fila.GetProcessoAtribuido(r.Context(), usuario.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrNotFound):
+			app.notFound(w, r)
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, pa)
+}
+
+func (app *application) handleMeuProcessoAtribuido(w http.ResponseWriter, r *http.Request) {
+	usuario := app.getAuth(r.Context())
+
+	pa, err := app.fila.GetProcessoAtribuido(r.Context(), usuario.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrNotFound):
+			app.notFound(w, r)
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, pa)
+}

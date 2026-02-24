@@ -119,3 +119,19 @@ func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentad
 
 	return pagination.NewResult(processos, params.Page, totalCount, params.Limit), nil
 }
+
+// GetProcessoAtribuido retorna o processo de aposentadoria atribuído a um analista.
+// Retorna database.ErrNotFound se o analista não tiver um processo EM_ANALISE.
+func (s *Service) GetProcessoAtribuido(ctx context.Context, analistaID int64) (*ProcessoAposentadoria, error) {
+	pa, err := s.store.GetProcessoAtribuido(ctx, analistaID)
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := s.store.GetProcesso(ctx, pa.ProcessoID)
+	if err != nil {
+		return nil, err
+	}
+
+	return mapProcesso(pa, p.Numero), nil
+}
