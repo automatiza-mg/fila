@@ -3,6 +3,7 @@ import type {
   Analista,
   Cadastrar,
   Credenciais,
+  CriarUsuario,
   Documento,
   ErrorResponse,
   Escopo,
@@ -115,6 +116,13 @@ export class Client {
 
   async listarUsuarios(): Promise<Usuario[]> {
     return await this.request<Usuario[]>(`${this.baseUrl}/usuarios`);
+  }
+
+  async criarUsuario(data: CriarUsuario): Promise<Usuario> {
+    return await this.request<Usuario>(`${this.baseUrl}/usuarios`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
   async listarAposentadoria(): Promise<Paginated<ProcessoAposentadoria>> {

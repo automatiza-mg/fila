@@ -33,6 +33,13 @@ export type Cadastrar = {
   confirmar_senha: string;
 };
 
+export type CriarUsuario = {
+  nome: string;
+  cpf: string;
+  email: string;
+  papel: Papel;
+};
+
 export type Usuario = {
   id: number;
   nome: string;
