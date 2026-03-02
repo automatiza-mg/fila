@@ -154,4 +154,26 @@ export class Client {
       `${this.baseUrl}/aposentadoria/${id}/historico`,
     );
   }
+
+  async getUsuario(id: number): Promise<Usuario> {
+    return await this.request<Usuario>(`${this.baseUrl}/usuarios/${id}`);
+  }
+
+  async getAnalista(usuarioId: number): Promise<Analista> {
+    return await this.request<Analista>(
+      `${this.baseUrl}/usuarios/${usuarioId}/analista`,
+    );
+  }
+
+  async deleteUsuario(id: number): Promise<void> {
+    await this.request<void>(`${this.baseUrl}/usuarios/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async enviarCadastro(id: number): Promise<void> {
+    await this.request<void>(`${this.baseUrl}/usuarios/${id}/enviar-cadastro`, {
+      method: "POST",
+    });
+  }
 }

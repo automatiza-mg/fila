@@ -95,8 +95,10 @@
           <tr
             class="border-b border-gray-100 hover:bg-gray-50 transition-colors"
           >
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">
-              {usuario.nome}
+            <td class="px-6 py-4 text-sm font-medium text-escritorio">
+              <a href="/usuarios/{usuario.id}" class="hover:underline">
+                {usuario.nome}
+              </a>
             </td>
             <td class="px-6 py-4 text-sm text-gray-600 font-mono">
               {usuario.cpf}
