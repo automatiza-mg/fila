@@ -3,6 +3,7 @@ import type {
   Analista,
   Cadastrar,
   Credenciais,
+  CriarAnalista,
   CriarUsuario,
   Documento,
   ErrorResponse,
@@ -12,6 +13,7 @@ import type {
   ProcessoAposentadoria,
   ProcessoHistorico,
   Token,
+  Unidade,
   Usuario,
 } from "./types";
 
@@ -163,6 +165,23 @@ export class Client {
     return await this.request<Analista>(
       `${this.baseUrl}/usuarios/${usuarioId}/analista`,
     );
+  }
+
+  async criarAnalista(
+    usuarioId: number,
+    data: CriarAnalista,
+  ): Promise<Analista> {
+    return await this.request<Analista>(
+      `${this.baseUrl}/usuarios/${usuarioId}/analista`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    );
+  }
+
+  async listarUnidades(): Promise<Unidade[]> {
+    return await this.request<Unidade[]>(`${this.baseUrl}/unidades`);
   }
 
   async deleteUsuario(id: number): Promise<void> {

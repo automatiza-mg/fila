@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
+  import { criarAnalista } from "./criar-analista.remote";
   import { enviarCadastro } from "./enviar-cadastro.remote";
   import { excluir } from "./excluir.remote";
 
@@ -179,6 +180,67 @@
             </dd>
           </div>
         </dl>
+      </div>
+    </div>
+  {:else if data.usuario.papel === "ANALISTA"}
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="px-6 py-4 bg-escritorio">
+        <h2 class="text-lg font-semibold text-white">Cadastrar Dados de Analista</h2>
+      </div>
+      <div class="p-6">
+        {#each criarAnalista.fields.issues() as issue}
+          <div class="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-sm">
+            {issue.message}
+          </div>
+        {/each}
+
+        <form {...criarAnalista} class="flex flex-col gap-4">
+          <input type="hidden" name="usuario_id" value={data.usuario.id} />
+
+          <div class="grid gap-1">
+            <label for="orgao" class="font-medium w-fit">Órgão</label>
+            <select
+              id="orgao"
+              required
+              {...criarAnalista.fields.orgao.as("select")}
+              class="py-2 px-3 border rounded-2xl border-stone-200 w-full bg-white"
+            >
+              <option value="" disabled selected>Selecione um órgão</option>
+              <option value="SEPLAG">SEPLAG</option>
+              <option value="SEE">SEE</option>
+            </select>
+            {#each criarAnalista.fields.orgao.issues() as issue}
+              <p class="text-sm text-red-500">{issue.message}</p>
+            {/each}
+          </div>
+
+          <div class="grid gap-1">
+            <label for="sei_unidade_id" class="font-medium w-fit">Unidade SEI</label>
+            <select
+              id="sei_unidade_id"
+              required
+              {...criarAnalista.fields.sei_unidade_id.as("select")}
+              class="py-2 px-3 border rounded-2xl border-stone-200 w-full bg-white"
+            >
+              <option value="" disabled selected>Selecione uma unidade</option>
+              {#each data.unidades as unidade}
+                <option value={unidade.id}>{unidade.sigla} - {unidade.descricao}</option>
+              {/each}
+            </select>
+            {#each criarAnalista.fields.sei_unidade_id.issues() as issue}
+              <p class="text-sm text-red-500">{issue.message}</p>
+            {/each}
+          </div>
+
+          <div class="flex justify-end mt-2">
+            <button
+              type="submit"
+              class="px-4 py-2 bg-escritorio text-white rounded-xl font-semibold hover:opacity-90 transition-opacity"
+            >
+              Cadastrar Analista
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   {/if}

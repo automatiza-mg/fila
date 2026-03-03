@@ -108,6 +108,17 @@ export type Analista = {
   ultima_atribuicao_em: string | null;
 };
 
+export type Unidade = {
+  id: string;
+  sigla: string;
+  descricao: string;
+};
+
+export type CriarAnalista = {
+  sei_unidade_id: string;
+  orgao: string;
+};
+
 export type Documento = {
   id: string;
   nome: string;
