@@ -1,10 +1,12 @@
 <script lang="ts">
   import Input from "$lib/components/input.svelte";
   import PasswordInput from "$lib/components/password-input.svelte";
+  import PasswordRules from "$lib/components/password-rules.svelte";
   import type { PageProps } from "./$types";
   import { registrar } from "./register.remote";
 
   let { data }: PageProps = $props();
+  let senha = $state("");
 </script>
 
 <svelte:head>
@@ -28,7 +30,9 @@
       minlength={8}
       maxlength={60}
       {...registrar.fields._senha.as("password")}
+      bind:value={senha}
     />
+    <PasswordRules password={senha} />
   </div>
 
   <div class="grid gap-1">
