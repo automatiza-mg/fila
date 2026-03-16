@@ -9,6 +9,7 @@ import (
 
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/pipeline"
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -68,14 +69,21 @@ func (s *Service) Analyze(ctx context.Context, procID uuid.UUID) error {
 		return err
 	}
 
-	docs, err := s.sei.ListarDocumentos(ctx, p.LinkAcesso)
-	if err != nil {
-		return err
+	// Pipeline de pré-transação: lista, filtra e busca documentos do SEI.
+	state := &pipeline.State{
+		ProcessoID: p.ID,
+		LinkAcesso: p.LinkAcesso,
+		Status:     p.StatusProcessamento,
 	}
 
-	seiDocs, err := s.prepareSeiDocs(ctx, docs)
-	if err != nil {
-		return fmt.Errorf("failed to prepare sei docs: %w", err)
+	preTx := pipeline.New(
+		pipeline.ListDocumentos(&seiListerAdapter{sei: s.sei}),
+		pipeline.FiltrarNovos(&storeCheckerAdapter{store: s.store}),
+		pipeline.BuscarDocumentos(&fetcherAdapter{fetcher: s.fetcher}),
+	)
+
+	if err := preTx.Run(ctx, state); err != nil {
+		return fmt.Errorf("pre-tx pipeline: %w", err)
 	}
 
 	tx, err := s.pool.Begin(ctx)
@@ -85,21 +93,21 @@ func (s *Service) Analyze(ctx context.Context, procID uuid.UUID) error {
 	defer tx.Rollback(ctx)
 
 	store := s.store.WithTx(tx)
+	txUpdater := &storeTxUpdater{store: store}
+	txPersister := &storeTxPersister{store: store}
 
-	p.StatusProcessamento = "PROCESSANDO"
-	err = store.UpdateProcesso(ctx, p)
-	if err != nil {
-		return err
+	txPipeline := pipeline.New(
+		pipeline.AtualizarStatus("PROCESSANDO", txUpdater),
+		pipeline.PersistirDocumentos(txPersister),
+		pipeline.AtualizarStatus("SUCESSO", txUpdater),
+	)
+
+	if err := txPipeline.Run(ctx, state); err != nil {
+		return fmt.Errorf("tx pipeline: %w", err)
 	}
 
-	err = s.processDocsTx(ctx, store, p, seiDocs)
-	if err != nil {
-		return fmt.Errorf("failed to process docs: %w", err)
-	}
-
-	// Update status to SUCESSO before fetching documents and notifying hooks
-	p.StatusProcessamento = "SUCESSO"
-	err = store.UpdateProcesso(ctx, p)
+	// Recarrega o processo com o status atualizado pela pipeline transacional.
+	p, err = store.GetProcesso(ctx, procID)
 	if err != nil {
 		return err
 	}
@@ -117,50 +125,102 @@ func (s *Service) Analyze(ctx context.Context, procID uuid.UUID) error {
 	return tx.Commit(ctx)
 }
 
-func (s *Service) prepareSeiDocs(ctx context.Context, docs []sei.LinhaDocumento) ([]DocumentoSei, error) {
-	nums := make([]string, 0, len(docs))
-	for _, doc := range docs {
-		_, err := s.store.GetDocumentoByNumero(ctx, doc.Numero)
-		if err == nil {
-			continue
-		}
-		if !errors.Is(err, database.ErrNotFound) {
-			return nil, err
-		}
-		nums = append(nums, doc.Numero)
-	}
-
-	// Não há nada para buscar.
-	if len(nums) == 0 {
-		return []DocumentoSei{}, nil
-	}
-
-	return s.fetcher.FetchDocumentos(ctx, nums)
+// seiListerAdapter adapta SeiClient para pipeline.DocumentLister.
+type seiListerAdapter struct {
+	sei SeiClient
 }
 
-func (s *Service) processDocsTx(ctx context.Context, store *database.Store, p *database.Processo, seiDocs []DocumentoSei) error {
-	for _, seiDoc := range seiDocs {
-		metadados, err := json.Marshal(seiDoc.APIData)
-		if err != nil {
-			return err
-		}
+func (a *seiListerAdapter) ListDocumentos(ctx context.Context, linkAcesso string) ([]string, error) {
+	docs, err := a.sei.ListarDocumentos(ctx, linkAcesso)
+	if err != nil {
+		return nil, err
+	}
+	nums := make([]string, len(docs))
+	for i, d := range docs {
+		nums[i] = d.Numero
+	}
+	return nums, nil
+}
 
-		d := &database.Documento{
-			Numero:       seiDoc.Numero,
-			ProcessoID:   p.ID,
-			Tipo:         seiDoc.Tipo(),
-			Unidade:      seiDoc.APIData.UnidadeElaboradora.Sigla,
-			ContentType:  seiDoc.ContentType,
-			OCR:          seiDoc.Conteudo,
-			LinkAcesso:   seiDoc.APIData.LinkAcesso,
+// storeCheckerAdapter adapta database.Store para pipeline.DocumentChecker.
+type storeCheckerAdapter struct {
+	store *database.Store
+}
+
+func (a *storeCheckerAdapter) ExisteDocumento(ctx context.Context, numero string) (bool, error) {
+	_, err := a.store.GetDocumentoByNumero(ctx, numero)
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, database.ErrNotFound) {
+		return false, nil
+	}
+	return false, err
+}
+
+// fetcherAdapter adapta DocumentoFetcher para pipeline.DocumentFetcher.
+type fetcherAdapter struct {
+	fetcher DocumentoFetcher
+}
+
+func (a *fetcherAdapter) FetchDocumentos(ctx context.Context, nums []string) ([]pipeline.DocBuscado, error) {
+	docs, err := a.fetcher.FetchDocumentos(ctx, nums)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]pipeline.DocBuscado, len(docs))
+	for i, d := range docs {
+		metadados, err := json.Marshal(d.APIData)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = pipeline.DocBuscado{
+			Numero:       d.Numero,
+			Conteudo:     d.Conteudo,
+			ContentType:  d.ContentType,
+			Tipo:         d.Tipo(),
+			Unidade:      d.APIData.UnidadeElaboradora.Sigla,
+			LinkAcesso:   d.APIData.LinkAcesso,
 			MetadadosAPI: metadados,
 		}
+	}
+	return out, nil
+}
 
-		err = store.SaveDocumento(ctx, d)
-		if err != nil {
+// storeTxUpdater adapta database.Store (transacional) para pipeline.StatusUpdater.
+type storeTxUpdater struct {
+	store *database.Store
+}
+
+func (a *storeTxUpdater) AtualizarStatus(ctx context.Context, state *pipeline.State) error {
+	p, err := a.store.GetProcesso(ctx, state.ProcessoID)
+	if err != nil {
+		return err
+	}
+	p.StatusProcessamento = state.Status
+	return a.store.UpdateProcesso(ctx, p)
+}
+
+// storeTxPersister adapta database.Store (transacional) para pipeline.DocumentPersister.
+type storeTxPersister struct {
+	store *database.Store
+}
+
+func (a *storeTxPersister) PersistirDocumentos(ctx context.Context, state *pipeline.State) error {
+	for _, doc := range state.DocumentosBuscados {
+		d := &database.Documento{
+			Numero:       doc.Numero,
+			ProcessoID:   state.ProcessoID,
+			Tipo:         doc.Tipo,
+			Unidade:      doc.Unidade,
+			ContentType:  doc.ContentType,
+			OCR:          doc.Conteudo,
+			LinkAcesso:   doc.LinkAcesso,
+			MetadadosAPI: doc.MetadadosAPI,
+		}
+		if err := a.store.SaveDocumento(ctx, d); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
