@@ -3,7 +3,7 @@ import { Client } from "$lib/api";
 
 export function getClient() {
   const event = getRequestEvent();
-  const authToken = event.cookies.get("auth_token");
+  const authToken = event.cookies.get("auth");
   if (!authToken) {
     throw new Error("Not authenticated");
   }

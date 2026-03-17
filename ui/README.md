@@ -15,7 +15,7 @@ To recreate this project with the same configuration:
 
 ```sh
 # recreate this project
-npx sv create --template minimal --types ts --add vitest="usages:unit" tailwindcss="plugins:none" sveltekit-adapter="adapter:node" devtools-json --install npm ui
+npx sv@0.12.7 create --template minimal --types ts --add tailwindcss="plugins:typography,forms" sveltekit-adapter="adapter:node" devtools-json --install npm ui
 ```
 
 ## Developing

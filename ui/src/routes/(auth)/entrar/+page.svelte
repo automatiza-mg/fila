@@ -1,73 +1,52 @@
 <script lang="ts">
-  import Input from "$lib/components/input.svelte";
-  import PasswordInput from "$lib/components/password-input.svelte";
-  import type { FormEventHandler } from "svelte/elements";
-  import { login } from "./login.remote";
-
-  const formatCpf: FormEventHandler<HTMLInputElement> = (e) => {
-    const target = e.currentTarget;
-    let value = target.value;
-    target.value = value
-      .replace(/\D/g, "")
-      .slice(0, 11)
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
-      .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3-$4");
-  };
+  import { entrarForm } from "../auth.remote";
 </script>
 
 <svelte:head>
-  <title>Entrar | Fila Aposentadoria</title>
+  <title>Entrar - Fila Aposentadoria</title>
 </svelte:head>
 
-<div>
-  <h1 class="text-center text-3xl font-bold">Entrar</h1>
-</div>
+<h1 class="text-3xl font-bold text-center">Entrar</h1>
 
-{#each login.fields.issues() as issue}
-  <div>
+{#each entrarForm.fields.issues() as issue}
+  <div role="alert" class="p-4 bg-red-50 border border-red-300 rounded-2xl">
     {issue.message}
   </div>
 {/each}
 
-<form {...login} class="flex flex-col gap-8">
-  <div class="space-y-4">
+<form class="flex flex-col gap-8" {...entrarForm}>
+  <div class="flex flex-col gap-4">
     <div class="grid gap-1">
-      <label for="cpf" class="font-medium w-fit">CPF</label>
-      <Input
-        id="cpf"
-        autocomplete="username"
-        required
-        {...login.fields.cpf.as("text")}
-        oninput={formatCpf}
+      <label for="cpf">CPF</label>
+      <input
+        {...entrarForm.fields.cpf.as("text")}
+        class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
       />
-      {#each login.fields.cpf.issues() as issue}
-        <p class="text-sm text-red-500">{issue.message}</p>
+      {#each entrarForm.fields.cpf.issues() as issue}
+        <p class="text-sm text-red-600">{issue.message}</p>
       {/each}
     </div>
 
     <div class="grid gap-1">
-      <label for="senha" class="font-medium w-fit">Senha</label>
-      <PasswordInput
-        id="senha"
-        {...login.fields._senha.as("password")}
-        required
-        minlength={8}
-        maxlength={60}
-        autocomplete="current-password"
+      <label for="senha">Senha</label>
+      <input
+        {...entrarForm.fields._senha.as("password")}
+        class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
       />
-
-      {#each login.fields._senha.issues() as issue}
-        <p class="text-sm text-red-500">{issue.message}</p>
+      <div class="flex justify-end">
+        <a href="/recuperar-senha" class="text-muted-foreground underline"
+          >Esqueci minha senha</a
+        >
+      </div>
+      {#each entrarForm.fields._senha.issues() as issue}
+        <p class="text-sm text-red-600">{issue.message}</p>
       {/each}
-
-      <a href="/recuperar-senha" class="underline text-stone-600 w-fit">
-        Esqueci minha senha
-      </a>
     </div>
   </div>
 
-  <button class="px-4 py-2 bg-escritorio text-white rounded-xl font-semibold">
+  <button
+    class="px-4 py-2 font-semibold bg-primary text-white rounded-2xl border border-transparent"
+  >
     Enviar
   </button>
 </form>

@@ -1,8 +1,12 @@
 @import "tailwindcss";
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
 
 @theme {
-  --color-escritorio: #00183b;
-  --color-escritorio-light: #59a1ba;
+  --color-primary: #00183b;
+  --color-secondary: #59a1ba;
+  --color-muted: #d4e7ed;
+  --color-muted-foreground: #44403b;
 
   --font-sans: "Inter", sans-serif;
 }

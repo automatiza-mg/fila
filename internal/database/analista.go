@@ -215,3 +215,13 @@ func (s *Store) GetAnalistaDisponivel(ctx context.Context) (int64, error) {
 
 	return usuarioID, nil
 }
+
+func (s *Store) GetNomeAnalista(ctx context.Context, analistaID int64) (string, error) {
+	q := `SELECT nome FROM usuario WHERE id = $1`
+	var nome string
+	err := s.db.QueryRow(ctx, q, analistaID).Scan(&nome)
+	if err != nil {
+		return "", err
+	}
+	return nome, nil
+}

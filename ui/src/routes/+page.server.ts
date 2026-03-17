@@ -1,19 +1,5 @@
-import { hasPapel } from "$lib/auth.js";
-import { error, redirect } from "@sveltejs/kit";
+import { redirect } from "@sveltejs/kit";
 
-export const load = async ({ locals }) => {
-  const usuario = locals.usuario;
-  if (!usuario) {
-    redirect(302, "/entrar");
-  }
-
-  if (hasPapel(usuario, "ANALISTA")) {
-    redirect(302, "/analise");
-  }
-
-  if (hasPapel(usuario, "ADMIN", "GESTOR", "SUBSECRETARIO")) {
-    redirect(302, "/processos");
-  }
-
-  error(403, "Você não tem permissão para acessar essa aplicação.");
+export const load = async () => {
+  redirect(302, "/entrar");
 };

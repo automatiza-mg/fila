@@ -1,0 +1,45 @@
+import { form, getRequestEvent } from "$app/server";
+import { env } from "$env/dynamic/public";
+import { error, invalid, redirect } from "@sveltejs/kit";
+import { z } from "zod/v4";
+
+const entrarSchema = z.object({
+  cpf: z.string(),
+  _senha: z.string(),
+});
+
+export const entrarForm = form(entrarSchema, async ({ cpf, _senha }, issue) => {
+  const { cookies } = getRequestEvent();
+
+  const res = await fetch(`${env.PUBLIC_API_URL}/api/v1/auth/entrar`, {
+    method: "POST",
+    body: JSON.stringify({
+      cpf: cpf,
+      senha: _senha,
+    }),
+  });
+
+  if (res.ok) {
+    const { token, expira } = await res.json();
+    cookies.set("auth", token, {
+      path: "/",
+      expires: new Date(expira),
+      httpOnly: true,
+    });
+
+    redirect(303, "/painel");
+  }
+
+  invalid(issue("Não foi possível autenticar, confira suas credenciais."));
+});
+
+export const sairForm = form("unchecked", async () => {
+  const { locals, cookies } = getRequestEvent();
+  if (!locals.usuario) {
+    error(401, "Usuário não autenticado");
+  }
+  cookies.delete("auth", {
+    path: "/",
+  });
+  redirect(303, "/entrar");
+});

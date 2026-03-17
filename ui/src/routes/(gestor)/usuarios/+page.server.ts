@@ -1,4 +1,4 @@
-import { getClient } from "$lib/server/utils.js";
+import { getClient } from "$lib/server/util";
 
 export const load = async () => {
   const client = getClient();

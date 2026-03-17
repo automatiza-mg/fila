@@ -3,10 +3,10 @@
 </script>
 
 <main
-  class="flex flex-col items-center justify-center min-h-svh p-4 bg-linear-to-b from-escritorio-light to-escritorio"
+  class="bg-linear-to-b from-secondary flex flex-col items-center justify-center p-4 to-primary min-h-svh"
 >
   <section
-    class="max-w-105 w-full px-8 py-10 space-y-6 bg-white rounded-4xl shadow-md"
+    class="max-w-100 w-full bg-white px-6 py-8 rounded-4xl shadow-sm space-y-4"
   >
     {@render children()}
   </section>

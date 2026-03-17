@@ -22,12 +22,13 @@ type ProcessoAposentadoria struct {
 	Prioridade               bool      `json:"prioridade"`
 	Score                    int       `json:"score"`
 	Status                   string    `json:"status"`
+	Analista                 *string   `json:"analista"`
 	AnalistaID               *int64    `json:"analista_id"`
 	CriadoEm                 time.Time `json:"criado_em"`
 	AtualizadoEm             time.Time `json:"atualizado_em"`
 }
 
-func mapProcesso(pa *database.ProcessoAposentadoria, numero string) *ProcessoAposentadoria {
+func mapProcesso(pa *database.ProcessoAposentadoria, numero string, analista *string) *ProcessoAposentadoria {
 	return &ProcessoAposentadoria{
 		ID:                       pa.ID,
 		ProcessoID:               pa.ProcessoID,
@@ -58,7 +59,16 @@ func (s *Service) GetProcessoAposentadoria(ctx context.Context, id int64) (*Proc
 		return nil, err
 	}
 
-	return mapProcesso(pa, numero), nil
+	var analista *string
+	if pa.AnalistaID.Valid {
+		nome, err := s.store.GetNomeAnalista(ctx, pa.AnalistaID.V)
+		if err != nil {
+			return nil, err
+		}
+		analista = &nome
+	}
+
+	return mapProcesso(pa, numero, analista), nil
 }
 
 // GetProcessoAposentadoriaByNumero retorna um processo de aposentadoria pelo
@@ -69,7 +79,16 @@ func (s *Service) GetProcessoAposentadoriaByNumero(ctx context.Context, numero s
 		return nil, err
 	}
 
-	return mapProcesso(pa, numero), nil
+	var analista *string
+	if pa.AnalistaID.Valid {
+		nome, err := s.store.GetNomeAnalista(ctx, pa.AnalistaID.V)
+		if err != nil {
+			return nil, err
+		}
+		analista = &nome
+	}
+
+	return mapProcesso(pa, numero, analista), nil
 }
 
 type ListProcessoAposentadoriaParams struct {
@@ -105,7 +124,17 @@ func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentad
 		if err != nil {
 			return nil, err
 		}
-		processos = append(processos, mapProcesso(pa, numero))
+
+		var analista *string
+		if pa.AnalistaID.Valid {
+			nome, err := s.store.GetNomeAnalista(ctx, pa.AnalistaID.V)
+			if err != nil {
+				return nil, err
+			}
+			analista = &nome
+		}
+
+		processos = append(processos, mapProcesso(pa, numero, analista))
 	}
 
 	return pagination.NewResult(processos, params.Page, totalCount, params.Limit), nil
@@ -124,5 +153,14 @@ func (s *Service) GetProcessoAtribuido(ctx context.Context, analistaID int64) (*
 		return nil, err
 	}
 
-	return mapProcesso(pa, p.Numero), nil
+	var analista *string
+	if pa.AnalistaID.Valid {
+		nome, err := s.store.GetNomeAnalista(ctx, pa.AnalistaID.V)
+		if err != nil {
+			return nil, err
+		}
+		analista = &nome
+	}
+
+	return mapProcesso(pa, p.Numero, analista), nil
 }
