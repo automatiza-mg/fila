@@ -30,7 +30,6 @@
       minlength={8}
       maxlength={60}
       {...registrar.fields._senha.as("password")}
-      bind:value={senha}
     />
     <PasswordRules password={senha} />
   </div>

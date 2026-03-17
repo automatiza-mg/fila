@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"text/template"
 
-	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/responses"
@@ -56,10 +55,20 @@ Note que pequenas correções podem ocorrer ao longo do processo.
 </documentos>
 `
 
+type AnaliseAposentadoria struct {
+	Aposentadoria    bool   `json:"aposentadoria" jsonschema:"required" jsonschema_description:"Indica se o processo é ou não um pedido de aposentadoria"`
+	CPF              string `json:"cpf_requerente" jsonschema:"required" jsonschema_description:"O CPF do requerente da aposentadoria, sem pontos e traços"`
+	DataRequerimento string `json:"data_requerimento" jsonschema:"required,format=date" jsonschema_description:"A data em que o requerimento foi enviado, no formato YYYY-MM-DD"`
+	DataNascimento   string `json:"data_nascimento_requerente" jsonschema:"required,format=date" jsonschema_description:"A data de nascimento do requerente, no formato YYYY-MM-DD"`
+	Judicial         bool   `json:"judicial" jsonschema:"required" jsonschema_description:"Indica se houve pedido judicial para dar início ao processo"`
+	Invalidez        bool   `json:"invalidez" jsonschema:"required" jsonschema_description:"Indica se o requerente abriu o processo por invalidez"`
+	CPFDiligencia    string `json:"cpf_responsavel_diligencia" jsonschema:"not_required" jsonschema_description:"O CPF do responsável pelo envio da diligência, se houver, sem pontos e traços"`
+}
+
 // AnalisarAposentadoria faz o uso de Inteligência Artificial para analisar
 // uma lista de documentos para gerar um análise indicando os dados de
 // aposentadoria de um processo.
-func (c *Client) AnalisarAposentadoria(ctx context.Context, docs []*processos.Documento) (*aposentadoria.Analise, error) {
+func (c *Client) AnalisarAposentadoria(ctx context.Context, docs []*processos.Documento) (*AnaliseAposentadoria, error) {
 	tmpl := template.Must(template.New("prompt").Parse(promptAposentadoria))
 	buf := new(bytes.Buffer)
 	err := tmpl.Execute(buf, map[string]any{
@@ -69,7 +78,7 @@ func (c *Client) AnalisarAposentadoria(ctx context.Context, docs []*processos.Do
 		return nil, err
 	}
 
-	schema, err := GenerateMapSchema[aposentadoria.Analise]()
+	schema, err := GenerateMapSchema[AnaliseAposentadoria]()
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +98,7 @@ func (c *Client) AnalisarAposentadoria(ctx context.Context, docs []*processos.Do
 		return nil, err
 	}
 
-	var analise aposentadoria.Analise
+	var analise AnaliseAposentadoria
 	err = json.Unmarshal([]byte(resp.Output[0].Content[0].Text), &analise)
 	if err != nil {
 		return nil, err

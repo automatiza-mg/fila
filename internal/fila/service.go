@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/datalake"
+	"github.com/automatiza-mg/fila/internal/llm"
 	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/jackc/pgx/v5"
@@ -26,7 +26,7 @@ type ServidorProvider interface {
 }
 
 type AposentadoriaAnalyzer interface {
-	AnalisarAposentadoria(ctx context.Context, docs []*processos.Documento) (*aposentadoria.Analise, error)
+	AnalisarAposentadoria(ctx context.Context, docs []*processos.Documento) (*llm.AnaliseAposentadoria, error)
 }
 
 type Service struct {

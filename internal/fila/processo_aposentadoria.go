@@ -2,7 +2,6 @@ package fila
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
@@ -54,12 +53,12 @@ func (s *Service) GetProcessoAposentadoria(ctx context.Context, id int64) (*Proc
 		return nil, err
 	}
 
-	p, err := s.store.GetProcesso(ctx, pa.ProcessoID)
+	numero, err := s.store.GetNumeroProcessoAposentadoria(ctx, pa.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return mapProcesso(pa, p.Numero), nil
+	return mapProcesso(pa, numero), nil
 }
 
 // GetProcessoAposentadoriaByNumero retorna um processo de aposentadoria pelo
@@ -98,23 +97,15 @@ func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentad
 		return pagination.NewResult[*ProcessoAposentadoria](nil, params.Page, 0, params.Limit), nil
 	}
 
-	processoIDs := make([]uuid.UUID, len(paa))
-	for i, pa := range paa {
-		processoIDs[i] = pa.ProcessoID
-	}
+	processos := make([]*ProcessoAposentadoria, 0, len(paa))
 
-	processoMap, err := s.store.GetProcessosMap(ctx, processoIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	processos := make([]*ProcessoAposentadoria, len(paa))
-	for i, pa := range paa {
-		p, ok := processoMap[pa.ProcessoID]
-		if !ok {
-			return nil, fmt.Errorf("processo %s not found for aposentadoria %d", pa.ProcessoID, pa.ID)
+	// Busca os números dos processos.
+	for _, pa := range paa {
+		numero, err := s.store.GetNumeroProcessoAposentadoria(ctx, pa.ID)
+		if err != nil {
+			return nil, err
 		}
-		processos[i] = mapProcesso(pa, p.Numero)
+		processos = append(processos, mapProcesso(pa, numero))
 	}
 
 	return pagination.NewResult(processos, params.Page, totalCount, params.Limit), nil

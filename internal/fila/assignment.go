@@ -22,11 +22,9 @@ func (s *Service) assignProcessoAposentadoria(ctx context.Context) error {
 
 	store := s.store.WithTx(tx)
 
-	// Obtém um analista disponível
 	analistaID, err := store.GetAnalistaDisponivel(ctx)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
-			// Nenhum analista disponível - não é erro
 			logger := logging.FromContext(ctx)
 			if logger != nil {
 				logger.Debug("Nenhum analista disponível para atribuição")
@@ -36,11 +34,9 @@ func (s *Service) assignProcessoAposentadoria(ctx context.Context) error {
 		return fmt.Errorf("erro ao obter analista disponível: %w", err)
 	}
 
-	// Obtém o processo prioritário para o analista
 	processo, err := store.GetProcessoPrioriatario(ctx, analistaID)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
-			// Nenhum processo para atribuir - não é erro
 			logger := logging.FromContext(ctx)
 			if logger != nil {
 				logger.Debug("nenhum processo disponível para atribuição", slog.Int64("analista_id", analistaID))

@@ -73,6 +73,7 @@ func (app *application) routes() http.Handler {
 			r.Get("/", app.handleProcessoAposentadoriaList)
 			r.Get("/{paID}", app.handleProcessoAposentadoriaDetail)
 			r.Get("/{paID}/historico", app.handleProcessoAposentadoriaHistorico)
+			r.Post("/{paID}/prioridade", app.handleProcessoAposentadoriaSolicitarPrioridade)
 		})
 
 		r.Route("/analistas", func(r chi.Router) {
@@ -107,6 +108,18 @@ func (app *application) routes() http.Handler {
 				r.Get("/me", app.handleAuthUsuarioAtual)
 				r.Get("/me/analista", app.handleAuthAnalistaAtual)
 			})
+		})
+
+		r.Route("/solicitacoes-prioridade", func(r chi.Router) {
+			r.Use(
+				app.requireAuth,
+				app.requirePapel(auth.PapelSubsecretario),
+			)
+
+			r.Get("/", app.handleSolicitacoesPrioridadeList)
+			r.Get("/{spID}", app.handleSolicitacoesPrioridadeDetail)
+			r.Post("/{spID}/aprovar", app.handleSolicitacoesPrioridadeAprovar)
+			r.Post("/{spID}/negar", app.handleSolicitacoesPrioridadeNegar)
 		})
 
 		r.Group(func(r chi.Router) {

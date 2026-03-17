@@ -159,7 +159,7 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <dialog
   bind:this={dialogEl}
-  class="rounded-2xl shadow-xl p-0 w-full max-w-lg backdrop:bg-black/50"
+  class="rounded-2xl shadow-xl p-0 w-full max-w-lg backdrop:bg-black/50 m-auto"
   onclose={closeDialog}
   onkeydown={(e) => e.key === "Escape" && closeDialog()}
 >
@@ -184,11 +184,7 @@
     <form {...criar} class="flex flex-col gap-4">
       <div class="grid gap-1">
         <label for="nome" class="font-medium w-fit">Nome</label>
-        <Input
-          id="nome"
-          required
-          {...criar.fields.nome.as("text")}
-        />
+        <Input id="nome" required {...criar.fields.nome.as("text")} />
         {#each criar.fields.nome.issues() as issue}
           <p class="text-sm text-red-500">{issue.message}</p>
         {/each}

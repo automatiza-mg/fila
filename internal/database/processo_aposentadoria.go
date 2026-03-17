@@ -140,10 +140,18 @@ func (s *Store) UpdateProcessoAposentadoria(ctx context.Context, pa *ProcessoApo
 		ultimo_analista_id = $3,
 		score = $4,
 		status = $5,
+		prioridade = $6,
 		atualizado_em = CURRENT_TIMESTAMP
 	WHERE id = $1
 	RETURNING atualizado_em`
-	args := []any{pa.ID, pa.AnalistaID, pa.UltimoAnalistaID, pa.Score, pa.Status}
+	args := []any{
+		pa.ID,
+		pa.AnalistaID,
+		pa.UltimoAnalistaID,
+		pa.Score,
+		pa.Status,
+		pa.Prioridade,
+	}
 
 	err := s.db.QueryRow(ctx, q, args...).Scan(&pa.AtualizadoEm)
 	if err != nil {
@@ -273,4 +281,27 @@ func (s *Store) GetProcessoAtribuido(ctx context.Context, analistaID int64) (*Pr
 	}
 
 	return &pa, nil
+}
+
+// GetNumeroProcessoAposentadoria retorna no número do processo SEI para um
+// determinado processo de aposentadoria
+func (s *Store) GetNumeroProcessoAposentadoria(ctx context.Context, paID int64) (string, error) {
+	q := `
+	SELECT
+		p.numero
+	FROM processos_aposentadoria pa
+	JOIN processos p ON pa.processo_id = p.id
+	WHERE pa.id = $1`
+
+	var numero string
+	err := s.db.QueryRow(ctx, q, paID).Scan(&numero)
+	if err != nil {
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return "", ErrNotFound
+		default:
+			return "", err
+		}
+	}
+	return numero, nil
 }

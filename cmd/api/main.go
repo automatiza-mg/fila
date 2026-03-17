@@ -49,10 +49,9 @@ func main() {
 }
 
 type application struct {
-	dev    bool
-	cfg    *config.Config
-	logger *slog.Logger
-
+	dev       bool
+	cfg       *config.Config
+	logger    *slog.Logger
 	apos      *aposentadoria.Service
 	auth      *auth.Service
 	fila      *fila.Service
@@ -147,10 +146,9 @@ func run(ctx context.Context) error {
 	}
 
 	app := &application{
-		dev:    *dev,
-		cfg:    cfg,
-		logger: logger,
-
+		dev:       *dev,
+		cfg:       cfg,
+		logger:    logger,
 		apos:      apos,
 		fila:      fila,
 		auth:      auth,
