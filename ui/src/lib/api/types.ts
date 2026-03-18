@@ -40,6 +40,11 @@ export type CriarUsuario = {
   papel: Papel;
 };
 
+export type Pendencia = {
+  slug: string;
+  titulo: string;
+};
+
 export type Usuario = {
   id: number;
   nome: string;
@@ -47,10 +52,7 @@ export type Usuario = {
   email: string;
   email_verificado: boolean;
   papel?: Papel;
-  pendencias: {
-    slug: string;
-    titulo: string;
-  }[];
+  pendencias: Pendencia[];
 };
 
 export type Processo = {

@@ -1,5 +1,12 @@
 <script lang="ts">
+  import Alert from "$lib/components/ui/alert.svelte";
+  import { formatCpf } from "$lib/formatter";
   import { entrarForm } from "../auth.remote";
+
+  $effect(() => {
+    const value = entrarForm.fields.cpf.value() ?? "";
+    entrarForm.fields.cpf.set(formatCpf(value));
+  });
 </script>
 
 <svelte:head>
@@ -9,9 +16,7 @@
 <h1 class="text-3xl font-bold text-center">Entrar</h1>
 
 {#each entrarForm.fields.issues() as issue}
-  <div role="alert" class="p-4 bg-red-50 border border-red-300 rounded-2xl">
-    {issue.message}
-  </div>
+  <Alert message={issue.message} variant="danger" />
 {/each}
 
 <form class="flex flex-col gap-8" {...entrarForm}>

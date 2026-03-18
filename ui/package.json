@@ -26,6 +26,7 @@
     "vite-plugin-devtools-json": "^1.0.0"
   },
   "dependencies": {
+    "bits-ui": "^2.16.3",
     "zod": "^4.3.6"
   },
   "overrides": {

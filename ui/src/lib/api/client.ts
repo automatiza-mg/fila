@@ -1,7 +1,9 @@
 import { env } from "$env/dynamic/public";
 import type {
+  Cadastrar,
   CriarUsuario,
   ErrorResponse,
+  Escopo,
   Paginated,
   Processo,
   ProcessoAposentadoria,
@@ -26,6 +28,29 @@ async function handleResponse<T>(res: Response): Promise<T> {
   }
 
   return await res.json();
+}
+
+export async function tokenInfo(
+  token: string,
+  escopo: Escopo,
+): Promise<Usuario> {
+  const q = new URLSearchParams({
+    token,
+    escopo,
+  });
+
+  const res = await fetch(
+    `${env.PUBLIC_API_URL}/api/v1/auth/token?${q.toString()}`,
+  );
+  return await handleResponse<Usuario>(res);
+}
+
+export async function cadastrar(data: Cadastrar) {
+  const res = await fetch(`${env.PUBLIC_API_URL}/api/v1/auth/cadastrar`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return await handleResponse(res);
 }
 
 export class Client {

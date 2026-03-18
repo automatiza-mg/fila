@@ -2,6 +2,7 @@ package fila
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/automatiza-mg/fila/internal/auth"
@@ -82,18 +83,43 @@ func (s *Service) GetActions(ctx context.Context, u *auth.Usuario) ([]auth.Pendi
 //
 // Cleanup executa as ações de limpeza da fila quando um usuário é removido
 // da aplicação ou tem seu papel alterado.
-func (s *Service) Cleanup(ctx context.Context, tx pgx.Tx, _ auth.CleanupTrigger, usuario *auth.Usuario) error {
+func (s *Service) Cleanup(ctx context.Context, tx pgx.Tx, trigger auth.CleanupTrigger, usuario *auth.Usuario) error {
 	if !usuario.IsAnalista() {
 		return nil
 	}
 
-	_, err := s.store.GetAnalista(ctx, usuario.ID)
+	store := s.store.WithTx(tx)
+
+	analista, err := store.GetAnalista(ctx, usuario.ID)
 	if errors.Is(err, database.ErrNotFound) {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
+
+	pa, err := store.GetProcessoAtribuido(ctx, analista.UsuarioID)
+	if errors.Is(err, database.ErrNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	pa.AnalistaID = sql.Null[int64]{}
+	pa.UltimoAnalistaID = sql.Null[int64]{}
+
+	store.SaveHistoricoStatusProcesso(ctx, &database.HistoricoStatusProcesso{
+		ProcessoAposentadoriaID: pa.ID,
+		StatusAnterior: sql.Null[database.StatusProcesso]{
+			V:     pa.Status,
+			Valid: true,
+		},
+		StatusNovo: database.StatusProcessoAnalisePendente,
+		Observacao: sql.Null[string]{
+			V: "Processo desatribuído em razão de alteração do usuário",
+		},
+	})
 
 	return nil
 }

@@ -84,11 +84,9 @@ func (app *application) handleUsuarioCreate(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrUsuarioCPFTaken):
-			v.SetFieldError("cpf", "Valor já está em uso")
-			app.validationFailed(w, r, v.FieldErrors)
+			app.alreadyExists(w, r, "Um usuário com esse CPF já existe")
 		case errors.Is(err, database.ErrUsuarioEmailTaken):
-			v.SetFieldError("email", "Valor já está em uso")
-			app.validationFailed(w, r, v.FieldErrors)
+			app.alreadyExists(w, r, "Um usuário com esse email já existe")
 		default:
 			app.serverError(w, r, err)
 		}

@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head>
-  <title>Processos | Fila Aposentadoria</title>
+  <title>Processos - Fila Aposentadoria</title>
 </svelte:head>
 
 <div>
