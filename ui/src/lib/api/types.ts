@@ -5,7 +5,7 @@ export type Paginated<T> = {
   total_count: number;
   total_pages: number;
   has_next: boolean;
-  has_previous: boolean;
+  has_prev: boolean;
 };
 
 export type ErrorResponse = {
@@ -55,6 +55,16 @@ export type Usuario = {
   pendencias: Pendencia[];
 };
 
+export type MetadadoIA = {
+  judicial: boolean;
+  invalidez: boolean;
+  aposentadoria: boolean;
+  cpf_requerente: string;
+  data_requerimento: string;
+  cpf_responsavel_diligencia: string;
+  data_nascimento_requerente: string;
+};
+
 export type Processo = {
   id: string;
   numero: string;
@@ -62,17 +72,9 @@ export type Processo = {
   link_acesso: string;
   sei_unidade_id: string;
   sei_unidade_sigla: string;
-  aposentadoria: boolean;
-  analisado_em: string;
-  metadados_ia?: {
-    judicial: boolean;
-    invalidez: boolean;
-    aposentadoria: boolean;
-    cpf_requerente: string;
-    data_requerimento: string;
-    cpf_responsavel_diligencia: string;
-    data_nascimento_requerente: string;
-  };
+  aposentadoria: boolean | null;
+  analisado_em: string | null;
+  metadados_ia: MetadadoIA | null;
   criado_em: string;
   atualizado_em: string;
 };
@@ -91,6 +93,7 @@ export type ProcessoAposentadoria = {
   numero: string;
   data_requerimento: string;
   cpf_requerente: string;
+  data_nascimento_requerente: string;
   judicial: boolean;
   invalidez: boolean;
   prioridade: boolean;
@@ -122,17 +125,54 @@ export type CriarAnalista = {
   orgao: string;
 };
 
-export type Documento = {
-  id: string;
+export type Assinatura = {
   nome: string;
-  link: string;
+  cpf: string;
+};
+
+export type Documento = {
+  id: number;
+  numero: string;
+  tipo: string;
+  conteudo: string;
+  link_acesso: string;
+  data: string;
+  unidade_geradora: string;
+  assinaturas: Assinatura[];
 };
 
 export type ProcessoHistorico = {
-  id: number;
-  processo_aposentadoria_id: number;
-  status_anterior: StatusProcessoAposentadoria;
+  status_anterior: StatusProcessoAposentadoria | null;
   status_novo: StatusProcessoAposentadoria;
-  observacao: string;
+  usuario_id: number | null;
+  observacao: string | null;
+  alterado_em: string;
+};
+
+export type SolicitacaoPrioridade = {
+  id: number;
+  numero_processo: string;
+  processo_aposentadoria_id: number;
+  justificativa: string;
+  status: string;
   criado_em: string;
+  atualizado_em: string;
+};
+
+export type SolicitarPrioridade = {
+  justificativa: string;
+};
+
+export type RecuperarSenha = {
+  cpf: string;
+};
+
+export type RedefinirSenha = {
+  token: string;
+  senha: string;
+  confirmar_senha: string;
+};
+
+export type CriarProcesso = {
+  numero: string;
 };

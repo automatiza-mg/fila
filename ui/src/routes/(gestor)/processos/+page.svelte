@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { statusProcesso } from "$lib/processo";
+  import { statusColor, statusText } from "$lib/processo";
   import { process } from "zod/v4/core";
   import type { PageProps } from "./$types";
 
@@ -34,7 +34,9 @@
               {processo.numero}</a
             >
           </td>
-          <td class="p-2.5">{statusProcesso(processo.status)}</td>
+          <td class={`p-2.5 ${statusColor(processo.status)}`}
+            >{statusText(processo.status)}</td
+          >
           <td class="p-2.5"
             >{new Date(processo.data_requerimento).toLocaleDateString("pt-BR", {
               timeZone: "UTC",

@@ -42,7 +42,9 @@
       <div
         class="bg-muted flex h-full grow flex-col rounded-tr-2xl rounded-b-2xl p-8"
       >
-        <div class="grow overflow-y-auto rounded-md bg-white p-6 shadow">
+        <div
+          class="grow overflow-y-auto rounded-xl bg-white p-6 shadow border border-secondary"
+        >
           {@render children()}
         </div>
       </div>

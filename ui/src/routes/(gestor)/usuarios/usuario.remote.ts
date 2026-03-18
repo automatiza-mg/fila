@@ -1,4 +1,4 @@
-import { form } from "$app/server";
+import { form, query } from "$app/server";
 import { ApiError } from "$lib/api/client";
 import { getClient } from "$lib/server/util";
 import { invalid, redirect } from "@sveltejs/kit";
@@ -39,5 +39,25 @@ export const createUsuarioForm = form(
     }
 
     redirect(303, "/usuarios");
+  },
+);
+
+const analistaQuerySchema = z.object({
+  usuarioId: z.number().int(),
+});
+
+export const analistaQuery = query(
+  analistaQuerySchema,
+  async ({ usuarioId }) => {
+    const client = getClient();
+
+    try {
+      return await client.getAnalista(usuarioId);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        return null;
+      }
+      throw err;
+    }
   },
 );

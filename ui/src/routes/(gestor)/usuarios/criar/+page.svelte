@@ -27,6 +27,7 @@
         id="nome"
         {...createUsuarioForm.fields.nome.as("text")}
         class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
+        required
       />
     </div>
 
@@ -36,6 +37,7 @@
         id="cpf"
         {...createUsuarioForm.fields.cpf.as("text")}
         class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
+        required
       />
 
       {#each createUsuarioForm.fields.cpf.issues() as issue}
@@ -49,6 +51,7 @@
         id="email"
         {...createUsuarioForm.fields.email.as("email")}
         class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
+        required
       />
 
       {#each createUsuarioForm.fields.email.issues() as issue}
@@ -62,6 +65,7 @@
         id="papel"
         {...createUsuarioForm.fields.papel.as("select")}
         class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
+        required
       >
         <option value="ANALISTA">Analista</option>
         <option value="GESTOR">Gestor(a)</option>
