@@ -5,6 +5,7 @@
   import { hasPapel } from "$lib/papel";
   import { statusText } from "$lib/processo";
   import type { PageProps } from "./$types";
+  import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
 
   let { data }: PageProps = $props();
 </script>
@@ -14,9 +15,16 @@
 </svelte:head>
 
 <div class="space-y-6">
-  <div>
-    <span>Nº processo SEI:</span>
-    <span>{data.processo.numero}</span>
+  <div class="flex justify-between items-center">
+    <div>
+      <span>Nº processo SEI:</span>
+      <span>{data.processo.numero}</span>
+    </div>
+
+    <a href="/processos" class="flex flex-col items-center">
+      <ArrowElbowUpLeftIcon class="size-5" />
+      <span>Voltar</span>
+    </a>
   </div>
 
   <div class="flex gap-4 max-w-xl">
