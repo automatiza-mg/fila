@@ -205,8 +205,9 @@ export class Client {
     return this.request<Analista[]>("/api/v1/analistas");
   }
 
-  async listarProcessos(): Promise<Paginated<Processo>> {
-    return this.request<Paginated<Processo>>("/api/v1/processos");
+  async listarProcessos(page = 1): Promise<Paginated<Processo>> {
+    const q = new URLSearchParams({ page: String(page) });
+    return this.request<Paginated<Processo>>(`/api/v1/processos?${q}`);
   }
 
   async criarProcesso(data: CriarProcesso): Promise<Processo> {
@@ -224,9 +225,10 @@ export class Client {
     return this.request<Documento[]>(`/api/v1/processos/${id}/documentos`);
   }
 
-  async listarAposentadoria(): Promise<Paginated<ProcessoAposentadoria>> {
+  async listarAposentadoria(page = 1): Promise<Paginated<ProcessoAposentadoria>> {
+    const q = new URLSearchParams({ page: String(page) });
     return this.request<Paginated<ProcessoAposentadoria>>(
-      "/api/v1/aposentadoria",
+      `/api/v1/aposentadoria?${q}`,
     );
   }
 
@@ -253,11 +255,12 @@ export class Client {
     );
   }
 
-  async listarSolicitacoesPrioridade(): Promise<
+  async listarSolicitacoesPrioridade(page = 1): Promise<
     Paginated<SolicitacaoPrioridade>
   > {
+    const q = new URLSearchParams({ page: String(page) });
     return this.request<Paginated<SolicitacaoPrioridade>>(
-      "/api/v1/solicitacoes-prioridade",
+      `/api/v1/solicitacoes-prioridade?${q}`,
     );
   }
 

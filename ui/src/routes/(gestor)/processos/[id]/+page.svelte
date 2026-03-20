@@ -39,7 +39,7 @@
         />
       </FormField>
 
-      <div>
+      <div class="grid gap-2">
         <FormField label="Prioritário" id="prioridade">
           <Input
             type="text"

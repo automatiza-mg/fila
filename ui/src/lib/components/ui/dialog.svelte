@@ -21,7 +21,9 @@
 </script>
 
 <Dialog.Root bind:open {...restProps}>
-  <Dialog.Trigger>
+  <Dialog.Trigger
+    class="px-4 py-2 font-semibold bg-primary text-white rounded-2xl border border-transparent"
+  >
     {buttonText}
   </Dialog.Trigger>
   <Dialog.Portal>
