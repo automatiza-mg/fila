@@ -1,5 +1,7 @@
 <script lang="ts">
   import Alert from "$lib/components/ui/alert.svelte";
+  import FormField from "$lib/components/ui/form-field.svelte";
+  import Input from "$lib/components/ui/input.svelte";
   import { formatCpf } from "$lib/formatter";
   import { entrarForm } from "../auth.remote";
 
@@ -21,31 +23,24 @@
 
 <form class="flex flex-col gap-8" {...entrarForm}>
   <div class="flex flex-col gap-4">
-    <div class="grid gap-1">
-      <label for="cpf">CPF</label>
-      <input
-        {...entrarForm.fields.cpf.as("text")}
-        class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
-      />
-      {#each entrarForm.fields.cpf.issues() as issue}
-        <p class="text-sm text-red-600">{issue.message}</p>
-      {/each}
-    </div>
+    <FormField label="CPF" id="cpf" issues={entrarForm.fields.cpf.issues()}>
+      <Input {...entrarForm.fields.cpf.as("text")} />
+    </FormField>
 
-    <div class="grid gap-1">
-      <label for="senha">Senha</label>
-      <input
-        {...entrarForm.fields._senha.as("password")}
-        class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
-      />
+    <div class="space-y-1">
+      <FormField
+        label="Senha"
+        id="senha"
+        issues={entrarForm.fields._senha.issues()}
+      >
+        <Input {...entrarForm.fields._senha.as("password")} />
+      </FormField>
+
       <div class="flex justify-end">
-        <a href="/recuperar-senha" class="text-muted-foreground underline"
-          >Esqueci minha senha</a
-        >
+        <a href="/recuperar-senha" class="text-muted-foreground underline">
+          Esqueci minha senha
+        </a>
       </div>
-      {#each entrarForm.fields._senha.issues() as issue}
-        <p class="text-sm text-red-600">{issue.message}</p>
-      {/each}
     </div>
   </div>
 

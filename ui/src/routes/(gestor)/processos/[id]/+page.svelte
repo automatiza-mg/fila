@@ -1,4 +1,7 @@
 <script lang="ts">
+  import FormField from "$lib/components/ui/form-field.svelte";
+  import Input from "$lib/components/ui/input.svelte";
+  import { hasPapel } from "$lib/papel";
   import { statusText } from "$lib/processo";
   import type { PageProps } from "./$types";
 
@@ -17,72 +20,64 @@
 
   <div class="flex gap-4 max-w-xl">
     <div class="flex-1 space-y-4">
-      <div class="grid gap-1">
-        <label for="analista">Analista Responsável</label>
-        <input
+      <FormField label="Analista Responsável" id="analista">
+        <Input
           type="text"
           readonly
           id="analista"
           value={data.processo.analista ?? "Não possui"}
-          class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
         />
-      </div>
+      </FormField>
 
-      <div class="grid gap-1">
-        <label for="status">Status</label>
-        <input
+      <FormField label="Status" id="status">
+        <Input
           type="text"
           readonly
           id="status"
           value={statusText(data.processo.status)}
-          class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
         />
-      </div>
+      </FormField>
 
-      <div class="grid gap-1">
-        <label for="prioridade">Prioritário</label>
-        <input
-          type="text"
-          readonly
-          id="prioridade"
-          value={data.processo.prioridade ? "Sim" : "Não"}
-          class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
-        />
-        {#if !data.processo.prioridade}
+      <div>
+        <FormField label="Prioritário" id="prioridade">
+          <Input
+            type="text"
+            readonly
+            id="prioridade"
+            value={data.processo.prioridade ? "Sim" : "Não"}
+          />
+        </FormField>
+        {#if !data.processo.prioridade && hasPapel(data.usuario, "GESTOR")}
           <div>
-            <button class="text-smè">Solicitar Prioridade</button>
+            <button class="text-sm font-semibold px-4 py-2">
+              Solicitar Prioridade
+            </button>
           </div>
         {/if}
       </div>
     </div>
 
     <div class="flex-1 space-y-4">
-      <div class="grid gap-1">
-        <label for="data-requerimento">Data Requerimento</label>
-        <input
+      <FormField label="Data Requerimento" id="data-requerimento">
+        <Input
           type="text"
           readonly
           id="data-requerimento"
           value={new Date(data.processo.data_requerimento).toLocaleDateString(
             "pt-BR",
-            {
-              timeZone: "UTC",
-            },
+            { timeZone: "UTC" },
           )}
-          class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
         />
-      </div>
+      </FormField>
 
-      <div class="grid gap-1">
-        <label for="score">Score</label>
-        <input
+      <FormField label="Score" id="score">
+        <Input
           type="text"
           readonly
           id="score"
           value={data.processo.score}
-          class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
         />
-      </div>
+      </FormField>
     </div>
   </div>
 </div>
