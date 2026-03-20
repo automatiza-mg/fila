@@ -3,6 +3,7 @@ package fila
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/auth"
@@ -54,7 +55,7 @@ func (s *Service) CreateSolicitacaoPrioridade(ctx context.Context, params Solici
 
 	sp := &database.SolicitacaoPrioridade{
 		ProcessoAposentadoriaID: params.ProcessoAposentadoriaID,
-		Justificativa:           params.Justificativa,
+		Justificativa:           strings.TrimSpace(params.Justificativa),
 		Status:                  "pendente",
 		UsuarioID:               params.UsuarioID,
 	}
@@ -69,7 +70,7 @@ func (s *Service) CreateSolicitacaoPrioridade(ctx context.Context, params Solici
 		return nil, err
 	}
 
-	if err := s.notifyPrioridadeCreated(ctx, tx, numero); err != nil {
+	if err := s.notifyPrioridadeCreated(ctx, tx, numero, sp.Justificativa); err != nil {
 		return nil, err
 	}
 
@@ -82,7 +83,7 @@ func (s *Service) CreateSolicitacaoPrioridade(ctx context.Context, params Solici
 
 // Envia notificação ao(s) subsecretário(s) cadastrados no sistema de uma nova
 // solicitação de prioridade.
-func (s *Service) notifyPrioridadeCreated(ctx context.Context, tx pgx.Tx, numero string) error {
+func (s *Service) notifyPrioridadeCreated(ctx context.Context, tx pgx.Tx, numero, justificativa string) error {
 	store := s.store.WithTx(tx)
 
 	subs, err := store.ListEmailsByPapel(ctx, auth.PapelSubsecretario)
@@ -95,6 +96,7 @@ func (s *Service) notifyPrioridadeCreated(ctx context.Context, tx pgx.Tx, numero
 
 	email, err := mail.NewPrioridadeEmail(subs, mail.PrioridadeEmailParams{
 		NumeroProcesso: numero,
+		Justificativa:  justificativa,
 	})
 	if err != nil {
 		return err

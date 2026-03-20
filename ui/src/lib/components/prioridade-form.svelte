@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { criarPrioridadeForm } from "../../routes/(gestor)/processos/[id]/processo.remote";
   import Dialog from "./ui/dialog.svelte";
   import FormField from "./ui/form-field.svelte";
