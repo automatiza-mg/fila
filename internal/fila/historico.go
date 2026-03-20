@@ -7,7 +7,6 @@ import (
 	"github.com/automatiza-mg/fila/internal/database"
 )
 
-// HistoricoStatusProcesso representa uma mudança de status em um processo de aposentadoria.
 type HistoricoStatusProcesso struct {
 	StatusAnterior *string   `json:"status_anterior"`
 	StatusNovo     string    `json:"status_novo"`
@@ -33,8 +32,8 @@ func mapHistoricoStatusProcesso(h *database.HistoricoStatusProcesso) *HistoricoS
 }
 
 // ListHistorico retorna o histórico completo de mudanças de status de um processo de aposentadoria.
-func (s *Service) ListHistorico(ctx context.Context, processoAposentadoriaID int64) ([]*HistoricoStatusProcesso, error) {
-	hh, err := s.store.ListHistoricoStatusProcesso(ctx, processoAposentadoriaID)
+func (s *Service) ListHistorico(ctx context.Context, paID int64) ([]*HistoricoStatusProcesso, error) {
+	hh, err := s.store.ListHistoricoStatusProcesso(ctx, paID)
 	if err != nil {
 		return nil, err
 	}

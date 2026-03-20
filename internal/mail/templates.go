@@ -12,9 +12,9 @@ var (
 
 	setupTmpl      = template.Must(template.ParseFS(fs, "templates/cadastro.tmpl"))
 	resetSenhaTmpl = template.Must(template.ParseFS(fs, "templates/reset-senha.tmpl"))
+	prioridadeTmpl = template.Must(template.ParseFS(fs, "templates/prioridade.tmpl"))
 )
 
-// Executa as três partes de um template de Email: subject, text e html.
 func executeTemplate(tmpl *template.Template, to []string, data any) (*Email, error) {
 	subjectBuf := new(bytes.Buffer)
 	err := tmpl.ExecuteTemplate(subjectBuf, "subject", data)
@@ -42,22 +42,25 @@ func executeTemplate(tmpl *template.Template, to []string, data any) (*Email, er
 }
 
 type SetupEmailParams struct {
-	// A URL de conclusão de cadastro do usuário.
 	SetupURL string
 }
 
-// NewSetupEmail retorna um novo [Email] para o template `cadastro.tmpl`, possibilitando a conclusão de cadastro do usuário.
 func NewSetupEmail(to string, params SetupEmailParams) (*Email, error) {
 	return executeTemplate(setupTmpl, []string{to}, params)
 }
 
-// ResetSenhaEmailParams são os parâmetros para o template de recuperação de senha.
 type ResetSenhaEmailParams struct {
-	// A URL para redefinição de senha do usuário.
 	ResetURL string
 }
 
-// NewResetSenhaEmail retorna um novo [Email] para o template `reset-senha.tmpl`, possibilitando a redefinição de senha do usuário.
 func NewResetSenhaEmail(to string, params ResetSenhaEmailParams) (*Email, error) {
 	return executeTemplate(resetSenhaTmpl, []string{to}, params)
+}
+
+type PrioridadeEmailParams struct {
+	NumeroProcesso string
+}
+
+func NewPrioridadeEmail(to []string, params PrioridadeEmailParams) (*Email, error) {
+	return executeTemplate(prioridadeTmpl, to, params)
 }

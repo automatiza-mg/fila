@@ -231,3 +231,29 @@ func (s *Store) UpdateUsuarioSenha(ctx context.Context, usuarioID int64, hashSen
 	_, err := s.db.Exec(ctx, q, usuarioID, hashSenha)
 	return err
 }
+
+// ListEmailsByPapel retorna a lista de emails de todos os usuários com determinado papel.
+func (s *Store) ListEmailsByPapel(ctx context.Context, papel string) ([]string, error) {
+	q := `SELECT email FROM usuarios WHERE papel = $1`
+
+	emails := make([]string, 0)
+
+	rows, err := s.db.Query(ctx, q, papel)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var email string
+		err := rows.Scan(&email)
+		if err != nil {
+			return nil, err
+		}
+		emails = append(emails, email)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return emails, nil
+}

@@ -8,6 +8,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+const (
+	StatusPrioridadePendente = "pendente"
+	StatusPrioridadeAprovado = "aprovado"
+	StatusPrioridadeNegado   = "negado"
+)
+
 type SolicitacaoPrioridade struct {
 	ID                      int64
 	ProcessoAposentadoriaID int64
@@ -66,6 +72,7 @@ func (s *Store) GetSolicitacaoPrioridade(ctx context.Context, spID int64) (*Soli
 
 type ListSolicitacoesPrioridadeParams struct {
 	ProcessoAposentadoriaID int64
+	Status                  string
 	Limit                   int
 	Offset                  int
 }
@@ -83,13 +90,15 @@ func (s *Store) ListSolicitacoesPrioridade(ctx context.Context, params ListSolic
 		COUNT(*) OVER()
 	FROM solicitacoes_prioridade
 	WHERE (processo_aposentadoria_id = $1 OR $1 = 0)
-	LIMIT $2 OFFSET $3`
+	AND (status = $2 OR $2 = '')
+	LIMIT $3 OFFSET $4`
 
 	totalCount := 0
 	ssp := make([]*SolicitacaoPrioridade, 0)
 
 	args := []any{
 		params.ProcessoAposentadoriaID,
+		params.Status,
 		params.Limit,
 		params.Offset,
 	}

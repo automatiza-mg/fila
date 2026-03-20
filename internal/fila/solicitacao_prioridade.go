@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/pagination"
+	"github.com/automatiza-mg/fila/internal/tasks"
+	"github.com/jackc/pgx/v5"
 )
 
 type SolicitacaoPrioridade struct {
@@ -37,7 +41,17 @@ type SolicitarPrioridadeParams struct {
 	Justificativa           string
 }
 
+// CreateSolicitacaoPrioridade cria uma solicitação de priorização de um
+// processo a ser analisada por um usuário com papel de SUBSECRETARIO.
 func (s *Service) CreateSolicitacaoPrioridade(ctx context.Context, params SolicitarPrioridadeParams) (*SolicitacaoPrioridade, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	store := s.store.WithTx(tx)
+
 	sp := &database.SolicitacaoPrioridade{
 		ProcessoAposentadoriaID: params.ProcessoAposentadoriaID,
 		Justificativa:           params.Justificativa,
@@ -45,19 +59,59 @@ func (s *Service) CreateSolicitacaoPrioridade(ctx context.Context, params Solici
 		UsuarioID:               params.UsuarioID,
 	}
 
-	err := s.store.SaveSolicitacaoPrioridade(ctx, sp)
+	err = store.SaveSolicitacaoPrioridade(ctx, sp)
 	if err != nil {
 		return nil, err
 	}
 
-	numero, err := s.store.GetNumeroProcessoAposentadoria(ctx, sp.ProcessoAposentadoriaID)
+	numero, err := store.GetNumeroProcessoAposentadoria(ctx, sp.ProcessoAposentadoriaID)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := s.notifyPrioridadeCreated(ctx, tx, numero); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 
 	return mapSolicitacaoPrioridade(sp, numero), nil
 }
 
+// Envia notificação ao(s) subsecretário(s) cadastrados no sistema de uma nova
+// solicitação de prioridade.
+func (s *Service) notifyPrioridadeCreated(ctx context.Context, tx pgx.Tx, numero string) error {
+	store := s.store.WithTx(tx)
+
+	subs, err := store.ListEmailsByPapel(ctx, auth.PapelSubsecretario)
+	if err != nil {
+		return err
+	}
+	if len(subs) == 0 {
+		return nil
+	}
+
+	email, err := mail.NewPrioridadeEmail(subs, mail.PrioridadeEmailParams{
+		NumeroProcesso: numero,
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = s.queue.InsertTx(ctx, tx, tasks.SendEmailArgs{
+		Email: email,
+	}, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetSolicitacaoPrioridade retorna os dados básicos de uma solicitação de
+// prioridade.
 func (s *Service) GetSolicitacaoPrioridade(ctx context.Context, spID int64) (*SolicitacaoPrioridade, error) {
 	sp, err := s.store.GetSolicitacaoPrioridade(ctx, spID)
 	if err != nil {
@@ -74,13 +128,17 @@ func (s *Service) GetSolicitacaoPrioridade(ctx context.Context, spID int64) (*So
 
 type ListSolicitacoesPrioridadeParams struct {
 	ProcessoAposentadoriaID int64
+	Status                  string
 	Page                    int
 	Limit                   int
 }
 
+// ListSolicitacoesPrioridade retorna a lista paginada de solicitações de
+// prioridade.
 func (s *Service) ListSolicitacoesPrioridade(ctx context.Context, params ListSolicitacoesPrioridadeParams) (*pagination.Result[*SolicitacaoPrioridade], error) {
 	ssp, totalCount, err := s.store.ListSolicitacoesPrioridade(ctx, database.ListSolicitacoesPrioridadeParams{
 		ProcessoAposentadoriaID: params.ProcessoAposentadoriaID,
+		Status:                  params.Status,
 		Limit:                   params.Limit,
 		Offset:                  pagination.Offset(params.Page, params.Limit),
 	})
@@ -100,6 +158,8 @@ func (s *Service) ListSolicitacoesPrioridade(ctx context.Context, params ListSol
 	return pagination.NewResult(solicitacoes, params.Page, totalCount, params.Limit), nil
 }
 
+// AprovarSolicitacaoPrioridade marca um processo como prioritário a partir
+// de uma solicitação criada por um gestor.
 func (s *Service) AprovarSolicitacaoPrioridade(ctx context.Context, spID int64) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -119,14 +179,12 @@ func (s *Service) AprovarSolicitacaoPrioridade(ctx context.Context, spID int64) 
 		return fmt.Errorf("failed to get processo: %w", err)
 	}
 
-	// Atualiza o processo de aposentadoria.
 	pa.Prioridade = true
 	err = store.UpdateProcessoAposentadoria(ctx, pa)
 	if err != nil {
 		return err
 	}
 
-	// Atualiza a solicitação.
 	sp.Status = "aprovado"
 	err = store.UpdateSolicitacaoPrioridade(ctx, sp)
 	if err != nil {
@@ -136,6 +194,8 @@ func (s *Service) AprovarSolicitacaoPrioridade(ctx context.Context, spID int64) 
 	return tx.Commit(ctx)
 }
 
+// NegarSolicitacaoPrioridade marca um processo como não prioritário a partir
+// de uma solicitação criada por um gestor.
 func (s *Service) NegarSolicitacaoPrioridade(ctx context.Context, spID int64) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -155,14 +215,12 @@ func (s *Service) NegarSolicitacaoPrioridade(ctx context.Context, spID int64) er
 		return err
 	}
 
-	// Atualiza o processo de aposentadoria.
 	pa.Prioridade = false
 	err = store.UpdateProcessoAposentadoria(ctx, pa)
 	if err != nil {
 		return err
 	}
 
-	// Atualiza a solicitação.
 	sp.Status = "negado"
 	err = store.UpdateSolicitacaoPrioridade(ctx, sp)
 	if err != nil {

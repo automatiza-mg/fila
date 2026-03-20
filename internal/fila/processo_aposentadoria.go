@@ -41,6 +41,7 @@ func mapProcesso(pa *database.ProcessoAposentadoria, numero string, analista *st
 		Prioridade:               pa.Prioridade,
 		Score:                    pa.Score,
 		Status:                   string(pa.Status),
+		Analista:                 analista,
 		AnalistaID:               database.Ptr(pa.AnalistaID),
 		CriadoEm:                 pa.CriadoEm,
 		AtualizadoEm:             pa.AtualizadoEm,

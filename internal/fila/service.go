@@ -14,6 +14,8 @@ import (
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/rivertype"
 )
 
 var _ auth.UsuarioHook = (*Service)(nil)
@@ -30,6 +32,10 @@ type AposentadoriaAnalyzer interface {
 	AnalisarAposentadoria(ctx context.Context, docs []*processos.Documento) (*llm.AnaliseAposentadoria, error)
 }
 
+type TaskInserter interface {
+	InsertTx(ctx context.Context, tx pgx.Tx, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error)
+}
+
 type Service struct {
 	pool       *pgxpool.Pool
 	store      *database.Store
@@ -37,9 +43,10 @@ type Service struct {
 	cache      cache.Cache
 	analyzer   AposentadoriaAnalyzer
 	servidores ServidorProvider
+	queue      TaskInserter
 }
 
-func New(pool *pgxpool.Pool, sei SeiClient, cache cache.Cache, analyzer AposentadoriaAnalyzer, servidores ServidorProvider) *Service {
+func New(pool *pgxpool.Pool, sei SeiClient, cache cache.Cache, analyzer AposentadoriaAnalyzer, servidores ServidorProvider, queue TaskInserter) *Service {
 	return &Service{
 		pool:       pool,
 		store:      database.New(pool),
@@ -47,6 +54,7 @@ func New(pool *pgxpool.Pool, sei SeiClient, cache cache.Cache, analyzer Aposenta
 		cache:      cache,
 		analyzer:   analyzer,
 		servidores: servidores,
+		queue:      queue,
 	}
 }
 

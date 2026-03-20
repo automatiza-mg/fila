@@ -8,11 +8,13 @@ import (
 )
 
 func (app *application) handleSolicitacoesPrioridadeList(w http.ResponseWriter, r *http.Request) {
-	params := pagination.ParseQuery(r)
+	pag := pagination.ParseQuery(r)
+	status := r.URL.Query().Get("status")
 
 	ssp, err := app.fila.ListSolicitacoesPrioridade(r.Context(), fila.ListSolicitacoesPrioridadeParams{
-		Page:  params.Page,
-		Limit: params.Limit,
+		Status: status,
+		Page:   pag.Page,
+		Limit:  pag.Limit,
 	})
 	if err != nil {
 		app.serverError(w, r, err)

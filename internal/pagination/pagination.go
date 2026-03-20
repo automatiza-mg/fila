@@ -14,7 +14,7 @@ type Params struct {
 // Constantes padrão de paginação.
 const (
 	DefaultPage  = 1
-	DefaultLimit = 20
+	DefaultLimit = 10
 	MaxLimit     = 50
 	MinLimit     = 1
 	MinPage      = 1
