@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PrioridadeForm from "$lib/components/prioridade-form.svelte";
   import FormField from "$lib/components/ui/form-field.svelte";
   import Input from "$lib/components/ui/input.svelte";
   import { hasPapel } from "$lib/papel";
@@ -49,9 +50,7 @@
         </FormField>
         {#if !data.processo.prioridade && hasPapel(data.usuario, "GESTOR")}
           <div>
-            <button class="text-sm font-semibold px-4 py-2">
-              Solicitar Prioridade
-            </button>
+            <PrioridadeForm paId={data.processo.id} />
           </div>
         {/if}
       </div>
@@ -71,12 +70,7 @@
       </FormField>
 
       <FormField label="Score" id="score">
-        <Input
-          type="text"
-          readonly
-          id="score"
-          value={data.processo.score}
-        />
+        <Input type="text" readonly id="score" value={data.processo.score} />
       </FormField>
     </div>
   </div>
