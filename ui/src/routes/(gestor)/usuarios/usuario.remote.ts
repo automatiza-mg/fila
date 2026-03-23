@@ -1,4 +1,4 @@
-import { form, query } from "$app/server";
+import { command, form, getRequestEvent, query } from "$app/server";
 import { ApiError } from "$lib/api/client";
 import { getClient } from "$lib/server/util";
 import { invalid, redirect } from "@sveltejs/kit";
@@ -59,5 +59,23 @@ export const analistaQuery = query(
       }
       throw err;
     }
+  },
+);
+
+const deleteUsuarioSchema = z.object({
+  usuarioId: z.number().int(),
+});
+
+export const deleteUsuarioCmd = command(
+  deleteUsuarioSchema,
+  async ({ usuarioId }) => {
+    const client = getClient();
+    const { locals } = getRequestEvent();
+
+    if (usuarioId === locals.usuario?.id) {
+      throw new Error("Não é possível excluir sua própria conta.");
+    }
+
+    await client.deletarUsuario(usuarioId);
   },
 );

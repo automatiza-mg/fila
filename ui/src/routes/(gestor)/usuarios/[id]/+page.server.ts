@@ -2,9 +2,10 @@ import { ApiError } from "$lib/api/client.js";
 import type { Analista, Unidade } from "$lib/api/types.js";
 import { getClient } from "$lib/server/util";
 
-export const load = async ({ params }) => {
+export const load = async ({ params, parent }) => {
   const { id } = params;
   const client = getClient();
+  const { usuario: usuarioAtual } = await parent();
 
   const usuarioId = parseInt(id, 10);
 
@@ -27,6 +28,7 @@ export const load = async ({ params }) => {
 
   return {
     usuario,
+    usuarioAtual,
     analista,
     unidades,
   };

@@ -1,6 +1,10 @@
 <script lang="ts">
   import FormField from "$lib/components/ui/form-field.svelte";
   import Select from "$lib/components/ui/select.svelte";
+  import { toast } from "svelte-sonner";
+  import { deleteUsuarioCmd } from "../usuario.remote";
+  import { goto } from "$app/navigation";
+  import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
@@ -10,9 +14,32 @@
   <title>{data.usuario.nome} - Fila Aposentadoria</title>
 </svelte:head>
 
+<div class="flex justify-end">
+  <a href="/usuarios" class="flex flex-col items-center">
+    <ArrowElbowUpLeftIcon class="size-5" />
+    <span>Voltar</span>
+  </a>
+</div>
+
 <div>
   Nome: {data.usuario.nome}
 </div>
+
+{#if data.usuario.id !== data.usuarioAtual.id}
+  <button
+    onclick={async () => {
+      try {
+        await deleteUsuarioCmd({ usuarioId: data.usuario.id });
+        toast.success("Usuário excluído com sucesso!");
+        goto("/usuarios");
+      } catch (err) {
+        toast.error("Não foi possível excluir o usuário");
+      }
+    }}
+  >
+    Excluir
+  </button>
+{/if}
 
 {#if data.usuario.papel === "ANALISTA"}
   {#if data.analista}
