@@ -1,19 +1,37 @@
 <script lang="ts">
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
+  import { hasPapel } from "$lib/papel";
+  import { toast } from "svelte-sonner";
+  import { invalidateAll } from "$app/navigation";
+  import {
+    aprovarPrioridadeCmd,
+    negarPrioridadeCmd,
+  } from "./prioridade.remote";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
 
-  function prioridadeStatus(status: string) {
-    switch (status) {
-      case "pendente":
-        return "Pendente";
-      case "negado":
-        return "Negado";
-      case "aprovado":
-        return "Aprovado";
-      default:
-        return "Desconhecido";
+  let isSubsecretario = $derived(hasPapel(data.usuario, "SUBSECRETARIO"));
+
+  async function handleStatusChange(
+    event: Event & { currentTarget: HTMLSelectElement },
+    solicitacaoId: number,
+  ) {
+    const select = event.currentTarget;
+    const valor = select.value;
+
+    try {
+      if (valor === "aprovado") {
+        await aprovarPrioridadeCmd({ id: solicitacaoId });
+        toast.success("Solicitação aprovada com sucesso");
+      } else if (valor === "negado") {
+        await negarPrioridadeCmd({ id: solicitacaoId });
+        toast.success("Solicitação negada com sucesso");
+      }
+      await invalidateAll();
+    } catch {
+      select.value = "pendente";
+      toast.error("Não foi possível atualizar a solicitação");
     }
   }
 </script>
@@ -74,7 +92,26 @@
                 {new Date(solicitacao.criado_em).toLocaleDateString()}
               </td>
               <td class="p-2.5">
-                {prioridadeStatus(solicitacao.status)}
+                <select
+                  disabled={!isSubsecretario}
+                  class="rounded bg-white p-2 text-sm border border-stone-200 focus-visible:ring-3 outline-none disabled:bg-stone-100 focus-visible:ring-secondary/50 focus-visible:border-secondary w-full"
+                  onchange={(e) => handleStatusChange(e, solicitacao.id)}
+                >
+                  <option
+                    value="pendente"
+                    selected={solicitacao.status === "pendente"}
+                    disabled>Pendente</option
+                  >
+                  <option
+                    value="aprovado"
+                    selected={solicitacao.status === "aprovado"}
+                    >Aprovado</option
+                  >
+                  <option
+                    value="negado"
+                    selected={solicitacao.status === "negado"}>Negado</option
+                  >
+                </select>
               </td>
             </tr>
           {/each}

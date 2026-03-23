@@ -14,6 +14,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+const (
+	// O valor que deve ser adicionado / subtraído do score nos casos de prioridade.
+	prioScore = 6
+)
+
 type SolicitacaoPrioridade struct {
 	ID                      int64     `json:"id"`
 	NumeroProcesso          string    `json:"numero_processo"`
@@ -181,6 +186,10 @@ func (s *Service) AprovarSolicitacaoPrioridade(ctx context.Context, spID int64) 
 		return fmt.Errorf("failed to get processo: %w", err)
 	}
 
+	if !pa.Prioridade {
+		pa.Score += prioScore
+	}
+
 	pa.Prioridade = true
 	err = store.UpdateProcessoAposentadoria(ctx, pa)
 	if err != nil {
@@ -217,6 +226,9 @@ func (s *Service) NegarSolicitacaoPrioridade(ctx context.Context, spID int64) er
 		return err
 	}
 
+	if pa.Prioridade {
+		pa.Score -= prioScore
+	}
 	pa.Prioridade = false
 	err = store.UpdateProcessoAposentadoria(ctx, pa)
 	if err != nil {

@@ -91,6 +91,7 @@ func (s *Store) ListSolicitacoesPrioridade(ctx context.Context, params ListSolic
 	FROM solicitacoes_prioridade
 	WHERE (processo_aposentadoria_id = $1 OR $1 = 0)
 	AND (status = $2 OR $2 = '')
+	ORDER BY id
 	LIMIT $3 OFFSET $4`
 
 	totalCount := 0
