@@ -6,8 +6,10 @@
   import { goto } from "$app/navigation";
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
   import type { PageProps } from "./$types";
+  import AlertDialog from "$lib/components/ui/alert-dialog.svelte";
 
   let { data }: PageProps = $props();
+  let open = $state(false);
 </script>
 
 <svelte:head>
@@ -25,9 +27,13 @@
   Nome: {data.usuario.nome}
 </div>
 
+<!-- Excluir -->
 {#if data.usuario.id !== data.usuarioAtual.id}
-  <button
-    onclick={async () => {
+  <AlertDialog
+    bind:open
+    buttonText="Exlcuir Usuário"
+    variant="destructive"
+    onConfirmed={async () => {
       try {
         await deleteUsuarioCmd({ usuarioId: data.usuario.id });
         toast.success("Usuário excluído com sucesso!");
@@ -37,8 +43,14 @@
       }
     }}
   >
-    Excluir
-  </button>
+    {#snippet title()}
+      Excluir Usuário
+    {/snippet}
+    {#snippet description()}
+      Essa é uma ação irreversível e não poderá ser desfeita. Tem certeza que
+      deseja continuar?
+    {/snippet}
+  </AlertDialog>
 {/if}
 
 {#if data.usuario.papel === "ANALISTA"}
