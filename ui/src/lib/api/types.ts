@@ -159,6 +159,12 @@ export type SolicitacaoPrioridade = {
   atualizado_em: string;
 };
 
+export type ListSolicitacoesPrioridadeFilters = {
+  page?: number;
+  status?: string;
+  numero?: string;
+};
+
 export type SolicitarPrioridade = {
   justificativa: string;
 };

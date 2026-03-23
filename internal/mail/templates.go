@@ -59,6 +59,7 @@ func NewResetSenhaEmail(to string, params ResetSenhaEmailParams) (*Email, error)
 
 type PrioridadeEmailParams struct {
 	NumeroProcesso string
+	SolicitacaoURL string
 	Justificativa  string
 }
 

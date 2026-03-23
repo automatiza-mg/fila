@@ -6,6 +6,10 @@ Solicitação de Prioridade - Fila Aposentadoria
 Uma nova solicitação de prioridade foi criada para o processo {{.NumeroProcesso}} com a seguinte justificativa:
 
 {{.Justificativa}}
+
+{{with .SolicitacaoURL}}
+Acesse a solicitação: {{.}}
+{{end}}
 {{end}}
 
 {{define "html"}}

@@ -45,6 +45,7 @@ type SolicitarPrioridadeParams struct {
 	ProcessoAposentadoriaID int64
 	UsuarioID               int64
 	Justificativa           string
+	SolicitacaoURL          func(numero string) string
 }
 
 // CreateSolicitacaoPrioridade cria uma solicitação de priorização de um
@@ -75,7 +76,12 @@ func (s *Service) CreateSolicitacaoPrioridade(ctx context.Context, params Solici
 		return nil, err
 	}
 
-	if err := s.notifyPrioridadeCreated(ctx, tx, numero, sp.Justificativa); err != nil {
+	url := ""
+	if params.SolicitacaoURL != nil {
+		url = params.SolicitacaoURL(numero)
+	}
+
+	if err := s.notifyPrioridadeCreated(ctx, tx, numero, sp.Justificativa, url); err != nil {
 		return nil, err
 	}
 
@@ -88,7 +94,7 @@ func (s *Service) CreateSolicitacaoPrioridade(ctx context.Context, params Solici
 
 // Envia notificação ao(s) subsecretário(s) cadastrados no sistema de uma nova
 // solicitação de prioridade.
-func (s *Service) notifyPrioridadeCreated(ctx context.Context, tx pgx.Tx, numero, justificativa string) error {
+func (s *Service) notifyPrioridadeCreated(ctx context.Context, tx pgx.Tx, numero, justificativa, solicitacaoURL string) error {
 	store := s.store.WithTx(tx)
 
 	subs, err := store.ListEmailsByPapel(ctx, auth.PapelSubsecretario)
@@ -102,6 +108,7 @@ func (s *Service) notifyPrioridadeCreated(ctx context.Context, tx pgx.Tx, numero
 	email, err := mail.NewPrioridadeEmail(subs, mail.PrioridadeEmailParams{
 		NumeroProcesso: numero,
 		Justificativa:  justificativa,
+		SolicitacaoURL: solicitacaoURL,
 	})
 	if err != nil {
 		return err
@@ -136,6 +143,7 @@ func (s *Service) GetSolicitacaoPrioridade(ctx context.Context, spID int64) (*So
 type ListSolicitacoesPrioridadeParams struct {
 	ProcessoAposentadoriaID int64
 	Status                  string
+	Numero                  string
 	Page                    int
 	Limit                   int
 }
@@ -146,6 +154,7 @@ func (s *Service) ListSolicitacoesPrioridade(ctx context.Context, params ListSol
 	ssp, totalCount, err := s.store.ListSolicitacoesPrioridade(ctx, database.ListSolicitacoesPrioridadeParams{
 		ProcessoAposentadoriaID: params.ProcessoAposentadoriaID,
 		Status:                  params.Status,
+		Numero:                  params.Numero,
 		Limit:                   params.Limit,
 		Offset:                  pagination.Offset(params.Page, params.Limit),
 	})

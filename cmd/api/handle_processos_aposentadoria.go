@@ -2,7 +2,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/fila"
@@ -89,6 +91,11 @@ func (app *application) handleProcessoAposentadoriaSolicitarPrioridade(w http.Re
 		ProcessoAposentadoriaID: pa.ID,
 		UsuarioID:               app.getAuth(r.Context()).ID,
 		Justificativa:           input.Justificativa,
+		SolicitacaoURL: func(numero string) string {
+			q := make(url.Values)
+			q.Set("numero", numero)
+			return fmt.Sprintf("%s/processos/prioridades?%s", app.cfg.ClientURL, q.Encode())
+		},
 	})
 	if err != nil {
 		app.serverError(w, r, err)

@@ -9,6 +9,7 @@ import {
   type Documento,
   type ErrorResponse,
   type Escopo,
+  type ListSolicitacoesPrioridadeFilters,
   type Paginated,
   type Processo,
   type ProcessoAposentadoria,
@@ -225,7 +226,9 @@ export class Client {
     return this.request<Documento[]>(`/api/v1/processos/${id}/documentos`);
   }
 
-  async listarAposentadoria(page = 1): Promise<Paginated<ProcessoAposentadoria>> {
+  async listarAposentadoria(
+    page = 1,
+  ): Promise<Paginated<ProcessoAposentadoria>> {
     const q = new URLSearchParams({ page: String(page) });
     return this.request<Paginated<ProcessoAposentadoria>>(
       `/api/v1/aposentadoria?${q}`,
@@ -255,10 +258,17 @@ export class Client {
     );
   }
 
-  async listarSolicitacoesPrioridade(page = 1): Promise<
-    Paginated<SolicitacaoPrioridade>
-  > {
-    const q = new URLSearchParams({ page: String(page) });
+  async listarSolicitacoesPrioridade(
+    filters: ListSolicitacoesPrioridadeFilters = {},
+  ): Promise<Paginated<SolicitacaoPrioridade>> {
+    const q = new URLSearchParams({ page: String(filters.page ?? 1) });
+    if (filters.status) {
+      q.set("status", filters.status);
+    }
+    if (filters.numero) {
+      q.set("numero", filters.numero);
+    }
+
     return this.request<Paginated<SolicitacaoPrioridade>>(
       `/api/v1/solicitacoes-prioridade?${q}`,
     );

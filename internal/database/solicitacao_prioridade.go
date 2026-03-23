@@ -73,6 +73,7 @@ func (s *Store) GetSolicitacaoPrioridade(ctx context.Context, spID int64) (*Soli
 type ListSolicitacoesPrioridadeParams struct {
 	ProcessoAposentadoriaID int64
 	Status                  string
+	Numero                  string
 	Limit                   int
 	Offset                  int
 }
@@ -80,19 +81,22 @@ type ListSolicitacoesPrioridadeParams struct {
 func (s *Store) ListSolicitacoesPrioridade(ctx context.Context, params ListSolicitacoesPrioridadeParams) ([]*SolicitacaoPrioridade, int, error) {
 	q := `
 	SELECT 
-		id,
-		processo_aposentadoria_id,
-		justificativa,
-		status,
-		usuario_id,
-		criado_em,
-		atualizado_em,
+		sp.id,
+		sp.processo_aposentadoria_id,
+		sp.justificativa,
+		sp.status,
+		sp.usuario_id,
+		sp.criado_em,
+		sp.atualizado_em,
 		COUNT(*) OVER()
-	FROM solicitacoes_prioridade
-	WHERE (processo_aposentadoria_id = $1 OR $1 = 0)
-	AND (status = $2 OR $2 = '')
-	ORDER BY id
-	LIMIT $3 OFFSET $4`
+	FROM solicitacoes_prioridade sp
+	JOIN processos_aposentadoria pa ON pa.id = sp.processo_aposentadoria_id
+	JOIN processos p ON p.id = pa.processo_id
+	WHERE (sp.processo_aposentadoria_id = $1 OR $1 = 0)
+	AND (sp.status = $2 OR $2 = '')
+	AND (p.numero LIKE '%' || $3 || '%' OR $3 = '')
+	ORDER BY sp.id
+	LIMIT $4 OFFSET $5`
 
 	totalCount := 0
 	ssp := make([]*SolicitacaoPrioridade, 0)
@@ -100,6 +104,7 @@ func (s *Store) ListSolicitacoesPrioridade(ctx context.Context, params ListSolic
 	args := []any{
 		params.ProcessoAposentadoriaID,
 		params.Status,
+		params.Numero,
 		params.Limit,
 		params.Offset,
 	}
