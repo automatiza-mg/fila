@@ -159,6 +159,11 @@ export type SolicitacaoPrioridade = {
   atualizado_em: string;
 };
 
+export type ListProcessosAposentadoriaFilters = {
+  page?: number;
+  numero?: string;
+};
+
 export type ListSolicitacoesPrioridadeFilters = {
   page?: number;
   status?: string;

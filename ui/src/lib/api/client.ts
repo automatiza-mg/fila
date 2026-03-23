@@ -9,6 +9,7 @@ import {
   type Documento,
   type ErrorResponse,
   type Escopo,
+  type ListProcessosAposentadoriaFilters,
   type ListSolicitacoesPrioridadeFilters,
   type Paginated,
   type Processo,
@@ -227,9 +228,12 @@ export class Client {
   }
 
   async listarAposentadoria(
-    page = 1,
+    filters: ListProcessosAposentadoriaFilters = {},
   ): Promise<Paginated<ProcessoAposentadoria>> {
-    const q = new URLSearchParams({ page: String(page) });
+    const q = new URLSearchParams({ page: String(filters.page ?? 1) });
+    if (filters.numero) {
+      q.set("numero", filters.numero);
+    }
     return this.request<Paginated<ProcessoAposentadoria>>(
       `/api/v1/aposentadoria?${q}`,
     );

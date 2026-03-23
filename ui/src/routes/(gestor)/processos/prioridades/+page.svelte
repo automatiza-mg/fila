@@ -43,7 +43,7 @@
 <div class="space-y-6">
   <div class="flex items-center justify-between">
     <form method="GET" class="flex items-center gap-2">
-      <label for="numero-filter" class="text-sm font-medium">Processo:</label>
+      <label for="numero-filter" class="text-sm font-medium">Número:</label>
       <input
         id="numero-filter"
         name="numero"
@@ -85,7 +85,7 @@
   <div>
     {#if data.solicitacoes.data.length === 0}
       <div class="p-6 border border-stone-300">
-        <p class="text-center font-medium">
+        <p class="text-center font-semibold">
           Nenhuma solicitação de prioridade encontrada.
         </p>
         <p class="text-center text-sm text-muted-foreground">
