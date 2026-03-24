@@ -9,6 +9,7 @@ import (
 
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/pagination"
+	"github.com/automatiza-mg/fila/internal/tasks"
 	"github.com/google/uuid"
 )
 
@@ -81,7 +82,10 @@ func (s *Service) CreateProcesso(ctx context.Context, num string) (*Processo, er
 		return nil, err
 	}
 
-	if _, err := s.queue.EnqueueAnalyzeTx(ctx, tx, p.ID); err != nil {
+	_, err = s.queue.InsertTx(ctx, tx, tasks.DownloadProcessoArgs{
+		ProcessoID: p.ID,
+	}, nil)
+	if err != nil {
 		return nil, err
 	}
 

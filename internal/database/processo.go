@@ -25,6 +25,20 @@ type Processo struct {
 	AtualizadoEm        time.Time
 }
 
+func (p *Processo) SetAnalisadoEm() {
+	p.AnalisadoEm = sql.Null[time.Time]{
+		V:     time.Now(),
+		Valid: true,
+	}
+}
+
+func (p *Processo) SetAposentadoria(apos bool) {
+	p.Aposentadoria = sql.Null[bool]{
+		V:     apos,
+		Valid: true,
+	}
+}
+
 func (s *Store) SaveProcesso(ctx context.Context, p *Processo) error {
 	q := `
 	INSERT INTO processos (numero, status_processamento, link_acesso, sei_unidade_id, sei_unidade_sigla)

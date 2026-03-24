@@ -9,17 +9,15 @@ import (
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/postgres"
 	"github.com/automatiza-mg/fila/internal/sei"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/rivertype"
 )
 
 var (
 	ti *postgres.TestInstance
 
-	_ SeiClient        = (*fakeSeiClient)(nil)
-	_ AnalyzeEnqueuer  = (*fakeEnqueuer)(nil)
-	_ DocumentoFetcher = (*fakeFetcher)(nil)
-	_ AnalyzeHook      = (*fakeHook)(nil)
+	_ SeiClient = (*fakeSeiClient)(nil)
 )
 
 type fakeSeiClient struct {
@@ -41,24 +39,6 @@ func (m *fakeSeiClient) ListarDocumentos(ctx context.Context, linkAcesso string)
 	return nil, fmt.Errorf("ListarDocumentos not implemented")
 }
 
-type fakeEnqueuer struct {
-	inserted bool
-	err      error
-}
-
-func (m *fakeEnqueuer) EnqueueAnalyzeTx(_ context.Context, _ pgx.Tx, _ uuid.UUID) (bool, error) {
-	return m.inserted, m.err
-}
-
-type fakeFetcher struct {
-	docs []DocumentoSei
-	err  error
-}
-
-func (m *fakeFetcher) FetchDocumentos(_ context.Context, _ []string) ([]DocumentoSei, error) {
-	return m.docs, m.err
-}
-
 type fakeHook struct {
 	called     bool
 	processo   *Processo
@@ -73,10 +53,16 @@ func (m *fakeHook) OnAnalyzeCompleteTx(_ context.Context, _ pgx.Tx, p *Processo,
 }
 
 type newTestServiceResult struct {
-	svc     *Service
-	sei     *fakeSeiClient
-	queue   *fakeEnqueuer
-	fetcher *fakeFetcher
+	svc *Service
+	sei *fakeSeiClient
+}
+
+type fakeTaskInserter struct {
+	//
+}
+
+func (ti *fakeTaskInserter) InsertTx(ctx context.Context, tx pgx.Tx, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error) {
+	return nil, nil
 }
 
 func newTestService(t *testing.T) *newTestServiceResult {
@@ -84,22 +70,12 @@ func newTestService(t *testing.T) *newTestServiceResult {
 
 	pool := ti.NewDatabase(t)
 	seiTest := &fakeSeiClient{}
-	queue := &fakeEnqueuer{inserted: true}
-	fetcher := &fakeFetcher{}
 
-	svc := New(&ServiceOpts{
-		Pool:    pool,
-		Sei:     seiTest,
-		Cache:   cache.NewMemoryCache(),
-		Queue:   queue,
-		Fetcher: fetcher,
-	})
+	svc := New(pool, seiTest, cache.NewMemoryCache(), &fakeTaskInserter{})
 
 	return &newTestServiceResult{
-		svc:     svc,
-		sei:     seiTest,
-		queue:   queue,
-		fetcher: fetcher,
+		svc: svc,
+		sei: seiTest,
 	}
 }
 

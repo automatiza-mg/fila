@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"text/template"
 
-	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/responses"
 )
@@ -65,10 +64,22 @@ type AnaliseAposentadoria struct {
 	CPFDiligencia    string `json:"cpf_responsavel_diligencia" jsonschema:"not_required" jsonschema_description:"O CPF do responsável pelo envio da diligência, se houver, sem pontos e traços"`
 }
 
+type Assinatura struct {
+	Nome string
+	CPF  string
+}
+
+type Documento struct {
+	Tipo        string
+	Data        string
+	Conteudo    string
+	Assinaturas []Assinatura
+}
+
 // AnalisarAposentadoria faz o uso de Inteligência Artificial para analisar
 // uma lista de documentos para gerar um análise indicando os dados de
 // aposentadoria de um processo.
-func (c *Client) AnalisarAposentadoria(ctx context.Context, docs []*processos.Documento) (*AnaliseAposentadoria, error) {
+func (c *Client) AnalisarAposentadoriaV2(ctx context.Context, docs []Documento) (*AnaliseAposentadoria, error) {
 	tmpl := template.Must(template.New("prompt").Parse(promptAposentadoria))
 	buf := new(bytes.Buffer)
 	err := tmpl.Execute(buf, map[string]any{

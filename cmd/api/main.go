@@ -107,36 +107,22 @@ func run(ctx context.Context) error {
 	}
 
 	sei := sei.NewClient(&cfg.SEI)
-
 	cache := cache.NewRedisCache(rdb)
-
 	di := docintel.NewAzureDocIntel(&cfg.DocIntel)
-
 	ai := llm.New(&cfg.LLM)
-
-	proc := processos.New(&processos.ServiceOpts{
-		Pool:    pool,
-		Cache:   cache,
-		Sei:     sei,
-		Fetcher: processos.NewSeiFetcher(sei, di),
-		Queue: &tasks.ProcessoEnqueuer{
-			Client: queue,
-		},
-	})
-
+	proc := processos.New(pool, sei, cache, queue)
 	apos := aposentadoria.New(dl, cache)
-
 	auth := auth.New(pool, logger, queue)
+	fila := fila.New(pool, sei, cache, apos, queue)
 
-	fila := fila.New(pool, sei, cache, ai, apos, queue)
 	if err := auth.RegisterHook(fila); err != nil {
 		return err
 	}
-	proc.RegisterHook(fila)
 
 	workers := river.NewWorkers()
 	river.AddWorker(workers, tasks.NewSendEmailWorker(sender))
-	river.AddWorker(workers, tasks.NewAnalyzeProcessoWorker(logger, proc))
+	river.AddWorker(workers, tasks.NewDownloadProcessoWorker(pool, sei, di))
+	river.AddWorker(workers, tasks.NewAnalisarProcessoWorker(pool, ai))
 	worker, err := tasks.NewWorker(ctx, pool, workers)
 	if err != nil {
 		return err
