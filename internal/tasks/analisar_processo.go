@@ -45,6 +45,18 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 		return fmt.Errorf("failed to list docs: %w", err)
 	}
 
+	hashes := make([]string, 0, len(dd))
+	for _, d := range dd {
+		if d.ArquivoHash.Valid {
+			hashes = append(hashes, d.ArquivoHash.V)
+		}
+	}
+
+	arquivoMap, err := w.store.GetArquivosMap(ctx, hashes)
+	if err != nil {
+		return fmt.Errorf("failed to load arquivos: %w", err)
+	}
+
 	docs := make([]llm.Documento, 0, len(dd))
 
 	// Mapeia os dados do banco de dados para leitura da IA.
@@ -63,10 +75,17 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 			})
 		}
 
+		conteudo := d.OCR
+		if d.ArquivoHash.Valid {
+			if arq, ok := arquivoMap[d.ArquivoHash.V]; ok {
+				conteudo = arq.OCR
+			}
+		}
+
 		docs = append(docs, llm.Documento{
 			Tipo:        d.Tipo,
 			Data:        seiDoc.Data,
-			Conteudo:    d.OCR,
+			Conteudo:    conteudo,
 			Assinaturas: assinaturas,
 		})
 	}

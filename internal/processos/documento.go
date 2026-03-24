@@ -19,18 +19,23 @@ type Documento struct {
 	Numero          string       `json:"numero"`
 	Tipo            string       `json:"tipo"`
 	Conteudo        string       `json:"conteudo"`
-	LinkAcesso      string       `json:"link_acesso"`
+	LinkAcesso      string       `json:"-"`
 	Data            string       `json:"data"`
 	UnidadeGeradora string       `json:"unidade_geradora"`
 	Assinaturas     []Assinatura `json:"assinaturas"`
 }
 
-func mapDocumento(d *database.Documento) (*Documento, error) {
+func mapDocumento(d *database.Documento, arquivo *database.Arquivo) (*Documento, error) {
+	conteudo := d.OCR
+	if arquivo != nil {
+		conteudo = arquivo.OCR
+	}
+
 	doc := Documento{
 		ID:              d.ID,
 		Numero:          d.Numero,
 		Tipo:            d.Tipo,
-		Conteudo:        d.OCR,
+		Conteudo:        conteudo,
 		LinkAcesso:      d.LinkAcesso,
 		UnidadeGeradora: d.Unidade,
 	}
@@ -64,9 +69,19 @@ func (s *Service) listDocumentos(ctx context.Context, store *database.Store, pro
 		return nil, err
 	}
 
+	arquivoMap, err := s.loadArquivosMap(ctx, store, dd)
+	if err != nil {
+		return nil, err
+	}
+
 	docs := make([]*Documento, len(dd))
 	for i, d := range dd {
-		doc, err := mapDocumento(d)
+		var arq *database.Arquivo
+		if d.ArquivoHash.Valid {
+			arq = arquivoMap[d.ArquivoHash.V]
+		}
+
+		doc, err := mapDocumento(d, arq)
 		if err != nil {
 			return nil, err
 		}
@@ -74,4 +89,14 @@ func (s *Service) listDocumentos(ctx context.Context, store *database.Store, pro
 	}
 
 	return docs, nil
+}
+
+func (s *Service) loadArquivosMap(ctx context.Context, store *database.Store, dd []*database.Documento) (map[string]*database.Arquivo, error) {
+	hashes := make([]string, 0, len(dd))
+	for _, d := range dd {
+		if d.ArquivoHash.Valid {
+			hashes = append(hashes, d.ArquivoHash.V)
+		}
+	}
+	return store.GetArquivosMap(ctx, hashes)
 }

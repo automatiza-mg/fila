@@ -1,14 +1,20 @@
 package tasks
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/automatiza-mg/fila/internal/blob"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/docintel"
 	"github.com/automatiza-mg/fila/internal/sei"
@@ -37,20 +43,69 @@ func (args DownloadProcessoArgs) KindAliases() []string {
 }
 
 type DownloadProcessoWorker struct {
-	pool  *pgxpool.Pool
-	store *database.Store
-	sei   *sei.Client
-	cv    *docintel.AzureDocIntel
+	pool    *pgxpool.Pool
+	store   *database.Store
+	storage blob.Storage
+	sei     *sei.Client
+	cv      *docintel.AzureDocIntel
 	river.WorkerDefaults[DownloadProcessoArgs]
 }
 
-func NewDownloadProcessoWorker(pool *pgxpool.Pool, sei *sei.Client, cv *docintel.AzureDocIntel) *DownloadProcessoWorker {
+func NewDownloadProcessoWorker(pool *pgxpool.Pool, storage blob.Storage, sei *sei.Client, cv *docintel.AzureDocIntel) *DownloadProcessoWorker {
 	return &DownloadProcessoWorker{
-		pool:  pool,
-		store: database.New(pool),
-		sei:   sei,
-		cv:    cv,
+		pool:    pool,
+		store:   database.New(pool),
+		storage: storage,
+		sei:     sei,
+		cv:      cv,
 	}
+}
+
+// ProcessArquivo lê o conteúdo do reader, calcula o hash, armazena no storage,
+// extrai o texto via OCR e persiste o arquivo no banco de dados. Retorna o arquivo
+// existente caso o hash já exista.
+func (w *DownloadProcessoWorker) ProcessArquivo(ctx context.Context, r io.Reader, contentType string) (*database.Arquivo, error) {
+	body, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao ler conteúdo do arquivo: %w", err)
+	}
+
+	sum := sha256.Sum256(body)
+	hash := hex.EncodeToString(sum[:])
+
+	arq, err := w.store.GetArquivo(ctx, hash)
+	if err == nil {
+		return arq, nil
+	}
+	if !errors.Is(err, database.ErrNotFound) {
+		return nil, err
+	}
+
+	storageKey := fmt.Sprintf("arquivos/%s", hash)
+
+	err = w.storage.Put(ctx, storageKey, bytes.NewReader(body), contentType)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao armazenar arquivo: %w", err)
+	}
+
+	text, err := w.cv.ExtractText(ctx, bytes.NewReader(body), contentType)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao extrair texto: %w", err)
+	}
+
+	arq = &database.Arquivo{
+		Hash:         hash,
+		ChaveStorage: storageKey,
+		OCR:          text,
+		ContentType:  contentType,
+	}
+
+	err = w.store.SaveArquivo(ctx, arq)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao salvar arquivo: %w", err)
+	}
+
+	return arq, nil
 }
 
 func (w *DownloadProcessoWorker) Work(ctx context.Context, job *river.Job[DownloadProcessoArgs]) error {
@@ -83,14 +138,6 @@ func (w *DownloadProcessoWorker) Work(ctx context.Context, job *river.Job[Downlo
 
 	for _, doc := range docs {
 		g.Go(func() error {
-			_, err := w.store.GetDocumentoByNumero(ctx, doc.Numero)
-			if err == nil {
-				return nil
-			}
-			if !errors.Is(err, database.ErrNotFound) {
-				return fmt.Errorf("failed to get documento: %w", err)
-			}
-
 			resp, err := w.sei.ConsultarDocumento(ctx, doc.Numero)
 			if err != nil {
 				var soapErr *soap.Error
@@ -117,10 +164,9 @@ func (w *DownloadProcessoWorker) Work(ctx context.Context, job *river.Job[Downlo
 				return fmt.Errorf("failed to request documento: %d", res.StatusCode)
 			}
 
-			contentType := res.Header.Get("Content-Type")
-			text, err := w.cv.ExtractText(ctx, res.Body, contentType)
+			arq, err := w.ProcessArquivo(ctx, res.Body, res.Header.Get("Content-Type"))
 			if err != nil {
-				return fmt.Errorf("failed to extract text: %w", err)
+				return fmt.Errorf("failed to process arquivo: %w", err)
 			}
 
 			tipo := resp.Parametros.Serie.Nome
@@ -132,14 +178,16 @@ func (w *DownloadProcessoWorker) Work(ctx context.Context, job *river.Job[Downlo
 			defer mu.Unlock()
 
 			dd = append(dd, &database.Documento{
-				Numero:       resp.Parametros.Numero,
+				Numero:       doc.Numero,
 				ProcessoID:   p.ID,
 				LinkAcesso:   resp.Parametros.LinkAcesso,
-				OCR:          text,
 				Tipo:         tipo,
-				ContentType:  contentType,
 				Unidade:      resp.Parametros.UnidadeElaboradora.Sigla,
 				MetadadosAPI: b,
+				ArquivoHash: sql.Null[string]{
+					V:     arq.Hash,
+					Valid: true,
+				},
 			})
 			return nil
 		})
@@ -157,9 +205,9 @@ func (w *DownloadProcessoWorker) Work(ctx context.Context, job *river.Job[Downlo
 
 	store := w.store.WithTx(tx)
 	for _, d := range dd {
-		err = store.SaveDocumento(ctx, d)
+		err = store.UpsertDocumento(ctx, d)
 		if err != nil {
-			return fmt.Errorf("failed to save documento: %w", err)
+			return fmt.Errorf("failed to upsert documento: %w", err)
 		}
 	}
 
