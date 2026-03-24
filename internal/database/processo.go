@@ -15,6 +15,7 @@ type Processo struct {
 	ID                  uuid.UUID
 	Numero              string
 	StatusProcessamento string
+	Resumo              string
 	LinkAcesso          string
 	SeiUnidadeID        string
 	SeiUnidadeSigla     string
@@ -73,9 +74,9 @@ type ListProcessosParams struct {
 func (s *Store) ListProcessos(ctx context.Context, params ListProcessosParams) ([]*Processo, int, error) {
 	q := `
 	SELECT 
-		id, numero, status_processamento, link_acesso, sei_unidade_id,
-		sei_unidade_sigla, metadados_ia, aposentadoria, analisado_em, criado_em,
-		atualizado_em, COUNT(*) OVER()
+		id, numero, status_processamento, resumo, link_acesso,
+		sei_unidade_id, sei_unidade_sigla, metadados_ia, aposentadoria, analisado_em, 
+		criado_em, atualizado_em, COUNT(*) OVER()
 	FROM processos
 	WHERE (numero LIKE '%' || $1 || '%' OR $1 = '')
 	ORDER BY criado_em DESC
@@ -97,6 +98,7 @@ func (s *Store) ListProcessos(ctx context.Context, params ListProcessosParams) (
 			&p.ID,
 			&p.Numero,
 			&p.StatusProcessamento,
+			&p.Resumo,
 			&p.LinkAcesso,
 			&p.SeiUnidadeID,
 			&p.SeiUnidadeSigla,
@@ -123,7 +125,7 @@ func (s *Store) ListProcessos(ctx context.Context, params ListProcessosParams) (
 func (s *Store) GetProcessosMap(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]*Processo, error) {
 	q := `
 	SELECT 
-		id, numero, status_processamento, link_acesso, sei_unidade_id,
+		id, numero, status_processamento, resumo, link_acesso, sei_unidade_id,
 		sei_unidade_sigla, metadados_ia, aposentadoria, analisado_em, criado_em,
 		atualizado_em
 	FROM processos
@@ -143,6 +145,7 @@ func (s *Store) GetProcessosMap(ctx context.Context, ids []uuid.UUID) (map[uuid.
 			&p.ID,
 			&p.Numero,
 			&p.StatusProcessamento,
+			&p.Resumo,
 			&p.LinkAcesso,
 			&p.SeiUnidadeID,
 			&p.SeiUnidadeSigla,
@@ -168,7 +171,7 @@ func (s *Store) GetProcessosMap(ctx context.Context, ids []uuid.UUID) (map[uuid.
 func (s *Store) GetProcesso(ctx context.Context, id uuid.UUID) (*Processo, error) {
 	q := `
 	SELECT 
-		id, numero, status_processamento, link_acesso, sei_unidade_id,
+		id, numero, status_processamento, resumo, link_acesso, sei_unidade_id,
 		sei_unidade_sigla, metadados_ia, aposentadoria, analisado_em, criado_em,
 		atualizado_em
 	FROM processos
@@ -179,6 +182,7 @@ func (s *Store) GetProcesso(ctx context.Context, id uuid.UUID) (*Processo, error
 		&p.ID,
 		&p.Numero,
 		&p.StatusProcessamento,
+		&p.Resumo,
 		&p.LinkAcesso,
 		&p.SeiUnidadeID,
 		&p.SeiUnidadeSigla,
@@ -200,7 +204,7 @@ func (s *Store) GetProcesso(ctx context.Context, id uuid.UUID) (*Processo, error
 func (s *Store) GetProcessoByNumero(ctx context.Context, numero string) (*Processo, error) {
 	q := `
 	SELECT 
-		id, numero, status_processamento, link_acesso, sei_unidade_id,
+		id, numero, status_processamento, resumo, link_acesso, sei_unidade_id,
 		sei_unidade_sigla, metadados_ia, aposentadoria, analisado_em, criado_em,
 		atualizado_em
 	FROM processos
@@ -211,6 +215,7 @@ func (s *Store) GetProcessoByNumero(ctx context.Context, numero string) (*Proces
 		&p.ID,
 		&p.Numero,
 		&p.StatusProcessamento,
+		&p.Resumo,
 		&p.LinkAcesso,
 		&p.SeiUnidadeID,
 		&p.SeiUnidadeSigla,
@@ -233,15 +238,17 @@ func (s *Store) UpdateProcesso(ctx context.Context, p *Processo) error {
 	q := `
 	UPDATE processos SET
 		status_processamento = $2,
-		metadados_ia = $3,
-		aposentadoria = $4,
-		analisado_em = $5,
+		resumo = $3,
+		metadados_ia = $4,
+		aposentadoria = $5,
+		analisado_em = $6,
 		atualizado_em = CURRENT_TIMESTAMP
 	WHERE id = $1
 	RETURNING analisado_em, atualizado_em`
 	args := []any{
 		p.ID,
 		p.StatusProcessamento,
+		p.Resumo,
 		p.MetadadosIA,
 		p.Aposentadoria,
 		p.AnalisadoEm,

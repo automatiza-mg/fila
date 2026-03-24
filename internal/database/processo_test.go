@@ -44,6 +44,7 @@ func TestProcessoLifecycle(t *testing.T) {
 	}
 
 	p.StatusProcessamento = "CONCLUIDO"
+	p.Resumo = "Processo de aposentadoria do servidor"
 	p.Aposentadoria = sql.Null[bool]{
 		V:     true,
 		Valid: true,
@@ -63,6 +64,9 @@ func TestProcessoLifecycle(t *testing.T) {
 	}
 	if diff := cmp.Diff(p, p2); diff != "" {
 		t.Fatalf("mismatch:\n%s", diff)
+	}
+	if p2.Resumo != "Processo de aposentadoria do servidor" {
+		t.Fatalf("expected resumo to be updated, got %q", p2.Resumo)
 	}
 
 	err = store.DeleteProcesso(t.Context(), p.ID)

@@ -21,6 +21,7 @@ type Processo struct {
 	ID              uuid.UUID       `json:"id"`
 	Numero          string          `json:"numero"`
 	Status          string          `json:"status"`
+	Resumo          string          `json:"resumo"`
 	LinkAcesso      string          `json:"link_acesso"`
 	SeiUnidadeID    string          `json:"sei_unidade_id"`
 	SeiUnidadeSigla string          `json:"sei_unidade_sigla"`
@@ -36,6 +37,7 @@ func mapProcesso(p *database.Processo) *Processo {
 		ID:              p.ID,
 		Numero:          p.Numero,
 		Status:          p.StatusProcessamento,
+		Resumo:          p.Resumo,
 		LinkAcesso:      p.LinkAcesso,
 		SeiUnidadeID:    p.SeiUnidadeID,
 		SeiUnidadeSigla: p.SeiUnidadeSigla,
