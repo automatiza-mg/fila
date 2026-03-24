@@ -136,7 +136,7 @@ func (w *DownloadProcessoWorker) Work(ctx context.Context, job *river.Job[Downlo
 				ProcessoID:   p.ID,
 				LinkAcesso:   resp.Parametros.LinkAcesso,
 				OCR:          text,
-				Tipo:         text,
+				Tipo:         tipo,
 				ContentType:  contentType,
 				Unidade:      resp.Parametros.UnidadeElaboradora.Sigla,
 				MetadadosAPI: b,
