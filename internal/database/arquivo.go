@@ -9,25 +9,27 @@ import (
 )
 
 type Arquivo struct {
-	Hash         string
-	ChaveStorage string
-	OCR          string
-	ContentType  string
-	CriadoEm     time.Time
+	Hash            string
+	ChaveStorage    string
+	ContentType     string
+	Conteudo        string
+	FormatoConteudo string
+	CriadoEm        time.Time
 }
 
 // SaveArquivo insere um novo arquivo no banco de dados
 func (s *Store) SaveArquivo(ctx context.Context, a *Arquivo) error {
 	q := `
-	INSERT INTO arquivos (hash, chave_storage, ocr, content_type)
-	VALUES ($1, $2, $3, $4)
+	INSERT INTO arquivos (hash, chave_storage, content_type, conteudo, formato_conteudo)
+	VALUES ($1, $2, $3, $4, $5)
 	ON CONFLICT (hash) DO NOTHING
 	RETURNING criado_em`
 	args := []any{
 		a.Hash,
 		a.ChaveStorage,
-		a.OCR,
 		a.ContentType,
+		a.Conteudo,
+		a.FormatoConteudo,
 	}
 
 	err := s.db.QueryRow(ctx, q, args...).Scan(&a.CriadoEm)
@@ -43,7 +45,7 @@ func (s *Store) SaveArquivo(ctx context.Context, a *Arquivo) error {
 // GetArquivo retorna um arquivo pelo hash.
 func (s *Store) GetArquivo(ctx context.Context, hash string) (*Arquivo, error) {
 	q := `
-	SELECT hash, chave_storage, ocr, content_type, criado_em
+	SELECT hash, chave_storage, content_type, conteudo, formato_conteudo, criado_em
 	FROM arquivos
 	WHERE hash = $1`
 
@@ -51,8 +53,9 @@ func (s *Store) GetArquivo(ctx context.Context, hash string) (*Arquivo, error) {
 	err := s.db.QueryRow(ctx, q, hash).Scan(
 		&a.Hash,
 		&a.ChaveStorage,
-		&a.OCR,
 		&a.ContentType,
+		&a.Conteudo,
+		&a.FormatoConteudo,
 		&a.CriadoEm,
 	)
 	if err != nil {
@@ -71,7 +74,7 @@ func (s *Store) GetArquivosMap(ctx context.Context, hashes []string) (map[string
 	}
 
 	q := `
-	SELECT hash, chave_storage, ocr, content_type, criado_em
+	SELECT hash, chave_storage, content_type, conteudo, formato_conteudo, criado_em
 	FROM arquivos
 	WHERE hash = ANY($1)`
 
@@ -87,8 +90,9 @@ func (s *Store) GetArquivosMap(ctx context.Context, hashes []string) (map[string
 		err := rows.Scan(
 			&a.Hash,
 			&a.ChaveStorage,
-			&a.OCR,
 			&a.ContentType,
+			&a.Conteudo,
+			&a.FormatoConteudo,
 			&a.CriadoEm,
 		)
 		if err != nil {

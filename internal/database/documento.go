@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"time"
@@ -18,16 +17,8 @@ type Documento struct {
 	Tipo         string
 	Unidade      string
 	LinkAcesso   string
-	ArquivoHash  sql.Null[string]
+	ArquivoHash  string
 	MetadadosAPI json.RawMessage
-
-	// Deprecated: utilizar Arquivo.ContentType quando ArquivoHash estiver preenchido.
-	ContentType string
-	// Deprecated: utilizar Arquivo.ChaveStorage quando ArquivoHash estiver preenchido.
-	ChaveStorage string
-	// Deprecated: utilizar Arquivo.OCR quando ArquivoHash estiver preenchido.
-	OCR string
-
 	CriadoEm     time.Time
 	AtualizadoEm time.Time
 }
@@ -36,10 +27,9 @@ func (s *Store) SaveDocumento(ctx context.Context, d *Documento) error {
 	q := `
 	INSERT INTO documentos (
 		numero, processo_id, tipo, unidade,
-		link_acesso, content_type, chave_storage, ocr,
-		arquivo_hash, metadados_api
+		link_acesso, arquivo_hash, metadados_api
 	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	VALUES ($1, $2, $3, $4, $5, $6, $7)
 	RETURNING id, criado_em, atualizado_em`
 	args := []any{
 		d.Numero,
@@ -47,9 +37,6 @@ func (s *Store) SaveDocumento(ctx context.Context, d *Documento) error {
 		d.Tipo,
 		d.Unidade,
 		d.LinkAcesso,
-		d.ContentType,
-		d.ChaveStorage,
-		d.OCR,
 		d.ArquivoHash,
 		d.MetadadosAPI,
 	}
@@ -65,8 +52,8 @@ func (s *Store) GetDocumento(ctx context.Context, id int64) (*Documento, error) 
 	q := `
 	SELECT
 		id, numero, processo_id, tipo, unidade,
-		link_acesso, content_type, chave_storage, ocr, arquivo_hash,
-		metadados_api, criado_em, atualizado_em
+		link_acesso, arquivo_hash, metadados_api,
+		criado_em, atualizado_em
 	FROM documentos
 	WHERE id = $1`
 
@@ -78,9 +65,6 @@ func (s *Store) GetDocumento(ctx context.Context, id int64) (*Documento, error) 
 		&d.Tipo,
 		&d.Unidade,
 		&d.LinkAcesso,
-		&d.ContentType,
-		&d.ChaveStorage,
-		&d.OCR,
 		&d.ArquivoHash,
 		&d.MetadadosAPI,
 		&d.CriadoEm,
@@ -100,8 +84,8 @@ func (s *Store) GetDocumentoByNumero(ctx context.Context, numero string) (*Docum
 	q := `
 	SELECT
 		id, numero, processo_id, tipo, unidade,
-		link_acesso, content_type, chave_storage, ocr, arquivo_hash,
-		metadados_api, criado_em, atualizado_em
+		link_acesso, arquivo_hash, metadados_api,
+		criado_em, atualizado_em
 	FROM documentos
 	WHERE numero = $1`
 
@@ -113,9 +97,6 @@ func (s *Store) GetDocumentoByNumero(ctx context.Context, numero string) (*Docum
 		&d.Tipo,
 		&d.Unidade,
 		&d.LinkAcesso,
-		&d.ContentType,
-		&d.ChaveStorage,
-		&d.OCR,
 		&d.ArquivoHash,
 		&d.MetadadosAPI,
 		&d.CriadoEm,
@@ -135,8 +116,8 @@ func (s *Store) ListDocumentos(ctx context.Context, processoID uuid.UUID) ([]*Do
 	q := `
 	SELECT
 		id, numero, processo_id, tipo, unidade,
-		link_acesso, content_type, chave_storage, ocr, arquivo_hash,
-		metadados_api, criado_em, atualizado_em
+		link_acesso, arquivo_hash, metadados_api,
+		criado_em, atualizado_em
 	FROM documentos
 	WHERE processo_id = $1`
 
@@ -156,9 +137,6 @@ func (s *Store) ListDocumentos(ctx context.Context, processoID uuid.UUID) ([]*Do
 			&d.Tipo,
 			&d.Unidade,
 			&d.LinkAcesso,
-			&d.ContentType,
-			&d.ChaveStorage,
-			&d.OCR,
 			&d.ArquivoHash,
 			&d.MetadadosAPI,
 			&d.CriadoEm,
@@ -184,8 +162,8 @@ func (s *Store) GetDocumentosMap(ctx context.Context, processoIDs []uuid.UUID) (
 	q := `
 	SELECT
 		id, numero, processo_id, tipo, unidade,
-		link_acesso, content_type, chave_storage, ocr, arquivo_hash,
-		metadados_api, criado_em, atualizado_em
+		link_acesso, arquivo_hash, metadados_api,
+		criado_em, atualizado_em
 	FROM documentos
 	WHERE processo_id = ANY($1)`
 
@@ -205,9 +183,6 @@ func (s *Store) GetDocumentosMap(ctx context.Context, processoIDs []uuid.UUID) (
 			&d.Tipo,
 			&d.Unidade,
 			&d.LinkAcesso,
-			&d.ContentType,
-			&d.ChaveStorage,
-			&d.OCR,
 			&d.ArquivoHash,
 			&d.MetadadosAPI,
 			&d.CriadoEm,

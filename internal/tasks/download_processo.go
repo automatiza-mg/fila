@@ -4,16 +4,22 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/JohannesKaufmann/html-to-markdown/v2/converter"
+	"github.com/JohannesKaufmann/html-to-markdown/v2/plugin/base"
+	"github.com/JohannesKaufmann/html-to-markdown/v2/plugin/commonmark"
+	"github.com/JohannesKaufmann/html-to-markdown/v2/plugin/strikethrough"
+	"github.com/JohannesKaufmann/html-to-markdown/v2/plugin/table"
 	"github.com/automatiza-mg/fila/internal/blob"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/docintel"
@@ -23,11 +29,21 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
+	"golang.org/x/net/html/charset"
 	"golang.org/x/sync/errgroup"
 )
 
 const (
 	DownloadProcessoTimeout = 30 * time.Second
+)
+
+var htmlConverter = converter.NewConverter(
+	converter.WithPlugins(
+		base.NewBasePlugin(),
+		commonmark.NewCommonmarkPlugin(),
+		strikethrough.NewStrikethroughPlugin(),
+		table.NewTablePlugin(),
+	),
 )
 
 type DownloadProcessoArgs struct {
@@ -61,8 +77,38 @@ func NewDownloadProcessoWorker(pool *pgxpool.Pool, storage blob.Storage, sei *se
 	}
 }
 
+// Verifica se o Content-Type corresponde a um documento HTML.
+func isHTML(contentType string) bool {
+	mediaType, _, _ := mime.ParseMediaType(contentType)
+	return mediaType == "text/html" || strings.HasSuffix(mediaType, "+html")
+}
+
+// Extrai o conteúdo (texto) de um arquivo.
+func (w *DownloadProcessoWorker) extractContent(ctx context.Context, body []byte, contentType string) (string, string, error) {
+	if isHTML(contentType) {
+		rd, err := charset.NewReader(bytes.NewReader(body), contentType)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to detect charset: %w", err)
+		}
+
+		md, err := htmlConverter.ConvertReader(rd)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to convert html: %w", err)
+		}
+
+		return string(md), "markdown", nil
+	}
+
+	text, err := w.cv.ExtractText(ctx, bytes.NewReader(body), contentType)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to extract text: %w", err)
+	}
+
+	return text, "plain", nil
+}
+
 // ProcessArquivo lê o conteúdo do reader, calcula o hash, armazena no storage,
-// extrai o texto via OCR e persiste o arquivo no banco de dados. Retorna o arquivo
+// extrai o conteúdo textual e persiste o arquivo no banco de dados. Retorna o arquivo
 // existente caso o hash já exista.
 func (w *DownloadProcessoWorker) ProcessArquivo(ctx context.Context, r io.Reader, contentType string) (*database.Arquivo, error) {
 	body, err := io.ReadAll(r)
@@ -88,16 +134,17 @@ func (w *DownloadProcessoWorker) ProcessArquivo(ctx context.Context, r io.Reader
 		return nil, fmt.Errorf("falha ao armazenar arquivo: %w", err)
 	}
 
-	text, err := w.cv.ExtractText(ctx, bytes.NewReader(body), contentType)
+	conteudo, formato, err := w.extractContent(ctx, body, contentType)
 	if err != nil {
-		return nil, fmt.Errorf("falha ao extrair texto: %w", err)
+		return nil, err
 	}
 
 	arq = &database.Arquivo{
-		Hash:         hash,
-		ChaveStorage: storageKey,
-		OCR:          text,
-		ContentType:  contentType,
+		Hash:            hash,
+		ChaveStorage:    storageKey,
+		ContentType:     contentType,
+		Conteudo:        conteudo,
+		FormatoConteudo: formato,
 	}
 
 	err = w.store.SaveArquivo(ctx, arq)
@@ -184,10 +231,7 @@ func (w *DownloadProcessoWorker) Work(ctx context.Context, job *river.Job[Downlo
 				Tipo:         tipo,
 				Unidade:      resp.Parametros.UnidadeElaboradora.Sigla,
 				MetadadosAPI: b,
-				ArquivoHash: sql.Null[string]{
-					V:     arq.Hash,
-					Valid: true,
-				},
+				ArquivoHash:  arq.Hash,
 			})
 			return nil
 		})

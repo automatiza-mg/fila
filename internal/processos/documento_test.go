@@ -1,7 +1,6 @@
 package processos
 
 import (
-	"database/sql"
 	"encoding/json"
 	"testing"
 
@@ -14,6 +13,18 @@ import (
 func seedDocumento(t *testing.T, svc *Service, proc *database.Processo, numero string, apiData sei.RetornoConsultaDocumento) *database.Documento {
 	t.Helper()
 
+	arq := &database.Arquivo{
+		Hash:            "hash-" + numero,
+		ChaveStorage:    "processos/hash-" + numero + ".pdf",
+		ContentType:     "application/pdf",
+		Conteudo:        "conteudo do documento " + numero,
+		FormatoConteudo: "plain",
+	}
+	err := svc.store.SaveArquivo(t.Context(), arq)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	metadados, err := json.Marshal(apiData)
 	if err != nil {
 		t.Fatal(err)
@@ -24,8 +35,7 @@ func seedDocumento(t *testing.T, svc *Service, proc *database.Processo, numero s
 		ProcessoID:   proc.ID,
 		Tipo:         apiData.Serie.Nome,
 		Unidade:      apiData.UnidadeElaboradora.Sigla,
-		ContentType:  "application/pdf",
-		OCR:          "conteudo do documento " + numero,
+		ArquivoHash:  arq.Hash,
 		LinkAcesso:   apiData.LinkAcesso,
 		MetadadosAPI: metadados,
 	}
@@ -104,6 +114,7 @@ func TestListDocumentos(t *testing.T) {
 		Tipo:            "Oficio",
 		Conteudo:        "conteudo do documento DOC-001",
 		LinkAcesso:      "https://sei.example.com/doc/001",
+		ContentType:     "application/pdf",
 		Data:            "10/01/2026",
 		UnidadeGeradora: "SEPLAG/AP01",
 		Assinaturas: []Assinatura{
@@ -119,6 +130,7 @@ func TestListDocumentos(t *testing.T) {
 		Tipo:            "Despacho",
 		Conteudo:        "conteudo do documento DOC-002",
 		LinkAcesso:      "https://sei.example.com/doc/002",
+		ContentType:     "application/pdf",
 		Data:            "11/01/2026",
 		UnidadeGeradora: "SEPLAG/AP02",
 		Assinaturas: []Assinatura{
@@ -160,15 +172,12 @@ func seedDocumentoComArquivo(t *testing.T, svc *Service, proc *database.Processo
 	}
 
 	d := &database.Documento{
-		Numero:     numero,
-		ProcessoID: proc.ID,
-		Tipo:       apiData.Serie.Nome,
-		Unidade:    apiData.UnidadeElaboradora.Sigla,
-		LinkAcesso: apiData.LinkAcesso,
-		ArquivoHash: sql.Null[string]{
-			V:     arq.Hash,
-			Valid: true,
-		},
+		Numero:       numero,
+		ProcessoID:   proc.ID,
+		Tipo:         apiData.Serie.Nome,
+		Unidade:      apiData.UnidadeElaboradora.Sigla,
+		LinkAcesso:   apiData.LinkAcesso,
+		ArquivoHash:  arq.Hash,
 		MetadadosAPI: metadados,
 	}
 	err = svc.store.SaveDocumento(t.Context(), d)
@@ -203,15 +212,16 @@ func TestListDocumentos_ComArquivo(t *testing.T) {
 	}
 
 	arq := &database.Arquivo{
-		Hash:         "hash-arquivo-001",
-		ChaveStorage: "arquivos/hash-arquivo-001",
-		OCR:          "conteudo extraido do arquivo",
-		ContentType:  "application/pdf",
+		Hash:            "hash-arquivo-001",
+		ChaveStorage:    "arquivos/hash-arquivo-001",
+		ContentType:     "application/pdf",
+		Conteudo:        "conteudo extraido do arquivo",
+		FormatoConteudo: "plain",
 	}
 
 	seedDocumentoComArquivo(t, ts.svc, proc, "DOC-ARQ-001", api1, arq)
 
-	// Também cria um documento legado (sem arquivo) no mesmo processo.
+	// Cria um segundo documento no mesmo processo via seedDocumento.
 	api2 := sei.RetornoConsultaDocumento{
 		Data: "16/03/2026",
 		Serie: sei.Serie{
@@ -246,12 +256,13 @@ func TestListDocumentos_ComArquivo(t *testing.T) {
 
 	ignore := cmpopts.IgnoreFields(Documento{}, "ID")
 
-	// Documento com arquivo: conteudo vem do Arquivo.OCR.
+	// Documento com arquivo explícito: conteudo vem do Arquivo.Conteudo.
 	wantArq := &Documento{
 		Numero:          "DOC-ARQ-001",
 		Tipo:            "Certidao",
 		Conteudo:        "conteudo extraido do arquivo",
 		LinkAcesso:      "https://sei.example.com/doc/003",
+		ContentType:     "application/pdf",
 		Data:            "15/03/2026",
 		UnidadeGeradora: "SEPLAG/AP03",
 		Assinaturas: []Assinatura{
@@ -262,19 +273,20 @@ func TestListDocumentos_ComArquivo(t *testing.T) {
 		t.Fatalf("DOC-ARQ-001 mismatch (-want +got):\n%s", diff)
 	}
 
-	// Documento legado: conteudo vem do campo OCR do documento.
-	wantLegacy := &Documento{
+	// Segundo documento: conteudo vem do Arquivo.Conteudo criado pelo seedDocumento.
+	wantDoc2 := &Documento{
 		Numero:          "DOC-LEGACY-001",
 		Tipo:            "Despacho",
 		Conteudo:        "conteudo do documento DOC-LEGACY-001",
 		LinkAcesso:      "https://sei.example.com/doc/004",
+		ContentType:     "application/pdf",
 		Data:            "16/03/2026",
 		UnidadeGeradora: "SEPLAG/AP04",
 		Assinaturas: []Assinatura{
 			{Nome: "Carlos Dias", CPF: "999.888.777-66"},
 		},
 	}
-	if diff := cmp.Diff(wantLegacy, byNumero["DOC-LEGACY-001"], ignore); diff != "" {
+	if diff := cmp.Diff(wantDoc2, byNumero["DOC-LEGACY-001"], ignore); diff != "" {
 		t.Fatalf("DOC-LEGACY-001 mismatch (-want +got):\n%s", diff)
 	}
 }

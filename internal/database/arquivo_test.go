@@ -13,10 +13,11 @@ func TestArquivoLifecycle(t *testing.T) {
 	store := newTestStore(t)
 
 	a := &Arquivo{
-		Hash:         "abc123hash",
-		ChaveStorage: "processos/abc123hash.pdf",
-		OCR:          "conteúdo do documento",
-		ContentType:  "application/pdf",
+		Hash:            "abc123hash",
+		ChaveStorage:    "processos/abc123hash.pdf",
+		ContentType:     "application/pdf",
+		Conteudo:        "conteúdo do documento",
+		FormatoConteudo: "plain",
 	}
 	err := store.SaveArquivo(t.Context(), a)
 	if err != nil {
@@ -51,10 +52,11 @@ func TestArquivo_SaveConflict(t *testing.T) {
 	store := newTestStore(t)
 
 	a := &Arquivo{
-		Hash:         "conflict-hash",
-		ChaveStorage: "processos/conflict-hash.pdf",
-		OCR:          "texto original",
-		ContentType:  "application/pdf",
+		Hash:            "conflict-hash",
+		ChaveStorage:    "processos/conflict-hash.pdf",
+		ContentType:     "application/pdf",
+		Conteudo:        "texto original",
+		FormatoConteudo: "plain",
 	}
 	err := store.SaveArquivo(t.Context(), a)
 	if err != nil {
@@ -63,10 +65,11 @@ func TestArquivo_SaveConflict(t *testing.T) {
 
 	// Segundo insert com mesmo hash deve ser ignorado sem erro.
 	a2 := &Arquivo{
-		Hash:         "conflict-hash",
-		ChaveStorage: "processos/outro.pdf",
-		OCR:          "texto diferente",
-		ContentType:  "image/png",
+		Hash:            "conflict-hash",
+		ChaveStorage:    "processos/outro.pdf",
+		ContentType:     "image/png",
+		Conteudo:        "texto diferente",
+		FormatoConteudo: "plain",
 	}
 	err = store.SaveArquivo(t.Context(), a2)
 	if err != nil {
@@ -84,8 +87,8 @@ func TestArquivo_SaveConflict(t *testing.T) {
 	if got.ChaveStorage != "processos/conflict-hash.pdf" {
 		t.Fatalf("expected original chave_storage, got %q", got.ChaveStorage)
 	}
-	if got.OCR != "texto original" {
-		t.Fatalf("expected original ocr, got %q", got.OCR)
+	if got.Conteudo != "texto original" {
+		t.Fatalf("expected original conteudo, got %q", got.Conteudo)
 	}
 }
 
@@ -94,8 +97,8 @@ func TestArquivo_GetArquivosMap(t *testing.T) {
 
 	store := newTestStore(t)
 
-	a1 := &Arquivo{Hash: "map-hash-1", ChaveStorage: "arquivos/map-hash-1", OCR: "texto 1", ContentType: "application/pdf"}
-	a2 := &Arquivo{Hash: "map-hash-2", ChaveStorage: "arquivos/map-hash-2", OCR: "texto 2", ContentType: "image/png"}
+	a1 := &Arquivo{Hash: "map-hash-1", ChaveStorage: "arquivos/map-hash-1", ContentType: "application/pdf", Conteudo: "texto 1", FormatoConteudo: "plain"}
+	a2 := &Arquivo{Hash: "map-hash-2", ChaveStorage: "arquivos/map-hash-2", ContentType: "image/png", Conteudo: "texto 2", FormatoConteudo: "plain"}
 	err := store.SaveArquivo(t.Context(), a1)
 	if err != nil {
 		t.Fatal(err)

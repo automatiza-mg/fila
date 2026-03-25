@@ -47,9 +47,7 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 
 	hashes := make([]string, 0, len(dd))
 	for _, d := range dd {
-		if d.ArquivoHash.Valid {
-			hashes = append(hashes, d.ArquivoHash.V)
-		}
+		hashes = append(hashes, d.ArquivoHash)
 	}
 
 	arquivoMap, err := w.store.GetArquivosMap(ctx, hashes)
@@ -75,11 +73,9 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 			})
 		}
 
-		conteudo := d.OCR
-		if d.ArquivoHash.Valid {
-			if arq, ok := arquivoMap[d.ArquivoHash.V]; ok {
-				conteudo = arq.OCR
-			}
+		var conteudo string
+		if arq, ok := arquivoMap[d.ArquivoHash]; ok {
+			conteudo = arq.Conteudo
 		}
 
 		docs = append(docs, llm.Documento{

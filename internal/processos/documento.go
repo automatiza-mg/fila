@@ -20,23 +20,20 @@ type Documento struct {
 	Tipo            string       `json:"tipo"`
 	Conteudo        string       `json:"conteudo"`
 	LinkAcesso      string       `json:"-"`
+	ContentType     string       `json:"content_type"`
 	Data            string       `json:"data"`
 	UnidadeGeradora string       `json:"unidade_geradora"`
 	Assinaturas     []Assinatura `json:"assinaturas"`
 }
 
-func mapDocumento(d *database.Documento, arquivo *database.Arquivo) (*Documento, error) {
-	conteudo := d.OCR
-	if arquivo != nil {
-		conteudo = arquivo.OCR
-	}
-
+func mapDocumento(d *database.Documento, a *database.Arquivo) (*Documento, error) {
 	doc := Documento{
 		ID:              d.ID,
 		Numero:          d.Numero,
 		Tipo:            d.Tipo,
-		Conteudo:        conteudo,
+		Conteudo:        a.Conteudo,
 		LinkAcesso:      d.LinkAcesso,
+		ContentType:     a.ContentType,
 		UnidadeGeradora: d.Unidade,
 	}
 
@@ -76,11 +73,7 @@ func (s *Service) listDocumentos(ctx context.Context, store *database.Store, pro
 
 	docs := make([]*Documento, len(dd))
 	for i, d := range dd {
-		var arq *database.Arquivo
-		if d.ArquivoHash.Valid {
-			arq = arquivoMap[d.ArquivoHash.V]
-		}
-
+		arq := arquivoMap[d.ArquivoHash]
 		doc, err := mapDocumento(d, arq)
 		if err != nil {
 			return nil, err
@@ -94,9 +87,7 @@ func (s *Service) listDocumentos(ctx context.Context, store *database.Store, pro
 func (s *Service) loadArquivosMap(ctx context.Context, store *database.Store, dd []*database.Documento) (map[string]*database.Arquivo, error) {
 	hashes := make([]string, 0, len(dd))
 	for _, d := range dd {
-		if d.ArquivoHash.Valid {
-			hashes = append(hashes, d.ArquivoHash.V)
-		}
+		hashes = append(hashes, d.ArquivoHash)
 	}
 	return store.GetArquivosMap(ctx, hashes)
 }

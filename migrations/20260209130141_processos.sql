@@ -4,6 +4,7 @@ CREATE TABLE "processos" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "numero" TEXT NOT NULL UNIQUE,
     "status_processamento" TEXT NOT NULL DEFAULT 'PENDENTE',
+    "resumo" TEXT NOT NULL DEFAULT '',
     "link_acesso" TEXT NOT NULL,
     "sei_unidade_id" TEXT NOT NULL,
     "sei_unidade_sigla" TEXT NOT NULL,
@@ -21,13 +22,12 @@ CREATE TABLE "documentos" (
     "tipo" TEXT NOT NULL,
     "unidade" TEXT NOT NULL,
     "link_acesso" TEXT NOT NULL,
-    "content_type" TEXT NOT NULL,
-    "chave_storage" TEXT NOT NULL,
-    "ocr" TEXT NOT NULL,
+    "arquivo_hash" TEXT NOT NULL REFERENCES "arquivos" ON DELETE CASCADE,
     "metadados_api" JSONB NOT NULL DEFAULT '{}'::jsonb,
     "criado_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "atualizado_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE UNIQUE INDEX "documentos_numero_processo_id_key" ON "documentos" ("numero", "processo_id");
 -- +goose StatementEnd
 
 -- +goose Down

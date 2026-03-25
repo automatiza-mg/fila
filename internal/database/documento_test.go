@@ -9,6 +9,22 @@ import (
 	"github.com/google/uuid"
 )
 
+func seedArquivoForDoc(t *testing.T, store *Store, hash string) *Arquivo {
+	t.Helper()
+	a := &Arquivo{
+		Hash:            hash,
+		ChaveStorage:    "processos/" + hash + ".pdf",
+		ContentType:     "application/pdf",
+		Conteudo:        "conteudo do arquivo " + hash,
+		FormatoConteudo: "plain",
+	}
+	err := store.SaveArquivo(t.Context(), a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return a
+}
+
 func TestDocumentoLifecycle(t *testing.T) {
 	t.Parallel()
 
@@ -22,9 +38,12 @@ func TestDocumentoLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	arq := seedArquivoForDoc(t, store, "doc-lifecycle-hash")
+
 	d := &Documento{
 		Numero:       "123123",
 		ProcessoID:   p.ID,
+		ArquivoHash:  arq.Hash,
 		MetadadosAPI: []byte("{}"),
 	}
 	err = store.SaveDocumento(t.Context(), d)
@@ -80,9 +99,11 @@ func TestDocumento_ListDocumentos(t *testing.T) {
 
 	docs := make([]*Documento, 3)
 	for i := range docs {
+		arq := seedArquivoForDoc(t, store, fmt.Sprintf("list-doc-hash-%d", i))
 		docs[i] = &Documento{
 			Numero:       fmt.Sprintf("list-doc-%d", i),
 			ProcessoID:   p.ID,
+			ArquivoHash:  arq.Hash,
 			MetadadosAPI: []byte("{}"),
 		}
 		err := store.SaveDocumento(t.Context(), docs[i])
@@ -127,9 +148,11 @@ func TestDocumento_GetDocumentosMap(t *testing.T) {
 
 	// 2 documentos under p1
 	for i := range 2 {
+		arq := seedArquivoForDoc(t, store, fmt.Sprintf("map-doc-p1-hash-%d", i))
 		d := &Documento{
 			Numero:       fmt.Sprintf("map-doc-p1-%d", i),
 			ProcessoID:   p1.ID,
+			ArquivoHash:  arq.Hash,
 			MetadadosAPI: []byte("{}"),
 		}
 		err := store.SaveDocumento(t.Context(), d)
@@ -139,9 +162,11 @@ func TestDocumento_GetDocumentosMap(t *testing.T) {
 	}
 
 	// 1 documento under p2
+	arq := seedArquivoForDoc(t, store, "map-doc-p2-hash-0")
 	d := &Documento{
 		Numero:       "map-doc-p2-0",
 		ProcessoID:   p2.ID,
+		ArquivoHash:  arq.Hash,
 		MetadadosAPI: []byte("{}"),
 	}
 	err = store.SaveDocumento(t.Context(), d)
