@@ -15,35 +15,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/JohannesKaufmann/html-to-markdown/v2/converter"
-	"github.com/JohannesKaufmann/html-to-markdown/v2/plugin/base"
-	"github.com/JohannesKaufmann/html-to-markdown/v2/plugin/commonmark"
-	"github.com/JohannesKaufmann/html-to-markdown/v2/plugin/strikethrough"
-	"github.com/JohannesKaufmann/html-to-markdown/v2/plugin/table"
 	"github.com/automatiza-mg/fila/internal/blob"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/docintel"
+	"github.com/automatiza-mg/fila/internal/markdown"
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/automatiza-mg/fila/internal/soap"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
-	"golang.org/x/net/html/charset"
 	"golang.org/x/sync/errgroup"
 )
 
 const (
 	DownloadProcessoTimeout = 30 * time.Second
-)
-
-var htmlConverter = converter.NewConverter(
-	converter.WithPlugins(
-		base.NewBasePlugin(),
-		commonmark.NewCommonmarkPlugin(),
-		strikethrough.NewStrikethroughPlugin(),
-		table.NewTablePlugin(),
-	),
 )
 
 type DownloadProcessoArgs struct {
@@ -83,20 +69,14 @@ func isHTML(contentType string) bool {
 	return mediaType == "text/html" || strings.HasSuffix(mediaType, "+html")
 }
 
-// Extrai o conteúdo (texto) de um arquivo.
+// Extrai e retorna o conteúdo e formato (plain / markdown) de um arquivo.
 func (w *DownloadProcessoWorker) extractContent(ctx context.Context, body []byte, contentType string) (string, string, error) {
 	if isHTML(contentType) {
-		rd, err := charset.NewReader(bytes.NewReader(body), contentType)
+		md, err := markdown.ConvertHTML(bytes.NewReader(body), contentType)
 		if err != nil {
-			return "", "", fmt.Errorf("failed to detect charset: %w", err)
+			return "", "", nil
 		}
-
-		md, err := htmlConverter.ConvertReader(rd)
-		if err != nil {
-			return "", "", fmt.Errorf("failed to convert html: %w", err)
-		}
-
-		return string(md), "markdown", nil
+		return md, "markdown", nil
 	}
 
 	text, err := w.cv.ExtractText(ctx, bytes.NewReader(body), contentType)
