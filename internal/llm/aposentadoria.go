@@ -79,7 +79,7 @@ type Documento struct {
 // AnalisarAposentadoria faz o uso de Inteligência Artificial para analisar
 // uma lista de documentos para gerar um análise indicando os dados de
 // aposentadoria de um processo.
-func (c *Client) AnalisarAposentadoriaV2(ctx context.Context, docs []Documento) (*AnaliseAposentadoria, error) {
+func (c *Client) AnalisarAposentadoria(ctx context.Context, docs []Documento) (*AnaliseAposentadoria, error) {
 	tmpl := template.Must(template.New("prompt").Parse(promptAposentadoria))
 	buf := new(bytes.Buffer)
 	err := tmpl.Execute(buf, map[string]any{

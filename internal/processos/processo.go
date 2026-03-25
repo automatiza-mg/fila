@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"strings"
 	"time"
 
@@ -11,10 +12,12 @@ import (
 	"github.com/automatiza-mg/fila/internal/pagination"
 	"github.com/automatiza-mg/fila/internal/tasks"
 	"github.com/google/uuid"
+	"github.com/riverqueue/river"
 )
 
 var (
-	ErrProcessoExists = errors.New("processo already exists")
+	ErrProcessoExists     = errors.New("processo already exists")
+	ErrPreviewUnavailable = errors.New("preview não disponível para este processo")
 )
 
 type Processo struct {
@@ -26,6 +29,7 @@ type Processo struct {
 	SeiUnidadeID    string          `json:"sei_unidade_id"`
 	SeiUnidadeSigla string          `json:"sei_unidade_sigla"`
 	Aposentadoria   *bool           `json:"aposentadoria"`
+	PreviewHash     *string         `json:"preview_hash"`
 	AnalisadoEm     *time.Time      `json:"analisado_em"`
 	MetadadosIA     json.RawMessage `json:"metadados_ia"`
 	CriadoEm        time.Time       `json:"criado_em"`
@@ -42,6 +46,7 @@ func mapProcesso(p *database.Processo) *Processo {
 		SeiUnidadeID:    p.SeiUnidadeID,
 		SeiUnidadeSigla: p.SeiUnidadeSigla,
 		Aposentadoria:   database.Ptr(p.Aposentadoria),
+		PreviewHash:     database.Ptr(p.PreviewHash),
 		AnalisadoEm:     database.Ptr(p.AnalisadoEm),
 		MetadadosIA:     p.MetadadosIA,
 		CriadoEm:        p.CriadoEm,
@@ -84,12 +89,10 @@ func (s *Service) CreateProcesso(ctx context.Context, num string) (*Processo, er
 		return nil, err
 	}
 
-	_, err = s.queue.InsertTx(ctx, tx, tasks.DownloadProcessoArgs{
-		ProcessoID: p.ID,
-	}, nil)
-	if err != nil {
-		return nil, err
-	}
+	_, err = s.queue.InsertManyTx(ctx, tx, []river.InsertManyParams{
+		{Args: tasks.DownloadPreviewArgs{ProcessoID: p.ID}},
+		{Args: tasks.DownloadProcessoArgs{ProcessoID: p.ID}},
+	})
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
@@ -141,4 +144,97 @@ func (s *Service) ListProcessos(ctx context.Context, params ListProcessosParams)
 	}
 
 	return pagination.NewResult(processos, params.Page, totalCount, params.Limit), nil
+}
+
+// SyncPreviews adiciona uma tarefa na fila para atualizar os previews de
+// todos os processos.
+func (s *Service) SyncPreviews(ctx context.Context) (int, error) {
+	ids, err := s.store.ListProcessoIDs(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(ids) == 0 {
+		return 0, nil
+	}
+
+	params := make([]river.InsertManyParams, len(ids))
+	for i, id := range ids {
+		params[i] = river.InsertManyParams{
+			Args: tasks.DownloadPreviewArgs{ProcessoID: id},
+		}
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = s.queue.InsertManyTx(ctx, tx, params)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+
+	return len(ids), nil
+}
+
+// Preview retorna um conteúdo do preview associado ao processo.
+type Preview struct {
+	Body        io.ReadCloser
+	ContentType string
+}
+
+// GetPreview retorna o PDF de preview de um processo.
+func (s *Service) GetPreview(ctx context.Context, processoID uuid.UUID) (*Preview, error) {
+	p, err := s.store.GetProcesso(ctx, processoID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !p.PreviewHash.Valid {
+		return nil, ErrPreviewUnavailable
+	}
+
+	arq, err := s.store.GetArquivo(ctx, p.PreviewHash.V)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := s.storage.Get(ctx, arq.ChaveStorage)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Preview{
+		Body:        body,
+		ContentType: arq.ContentType,
+	}, nil
+}
+
+// SyncPreview enfileira o download do preview para um processo específico.
+func (s *Service) SyncPreview(ctx context.Context, processoID uuid.UUID) error {
+	_, err := s.store.GetProcesso(ctx, processoID)
+	if err != nil {
+		return err
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = s.queue.InsertManyTx(ctx, tx, []river.InsertManyParams{
+		{Args: tasks.DownloadPreviewArgs{ProcessoID: processoID}},
+	})
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }

@@ -11,11 +11,10 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
-// OptionFunc permite configurar o comportamento da conversão HTML para Markdown.
 type OptionFunc func(*converter.Converter)
 
-// WithoutImages remove todas as tags <img> do HTML antes de converter para Markdown.
-func WithoutImages() OptionFunc {
+// WithoutImg remove todas as tags <img> do HTML antes de converter para Markdown.
+func WithoutImg() OptionFunc {
 	return func(conv *converter.Converter) {
 		conv.Register.TagType("img", converter.TagTypeRemove, converter.PriorityStandard)
 	}

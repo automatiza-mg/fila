@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	ignoreProcessoFields   = cmpopts.IgnoreFields(Processo{}, "Aposentadoria", "AnalisadoEm", "CriadoEm", "AtualizadoEm", "MetadadosIA")
-	ignoreProcessoIDFields = cmpopts.IgnoreFields(Processo{}, "ID", "Aposentadoria", "AnalisadoEm", "CriadoEm", "AtualizadoEm", "MetadadosIA")
+	ignoreProcessoFields   = cmpopts.IgnoreFields(Processo{}, "Aposentadoria", "PreviewHash", "AnalisadoEm", "CriadoEm", "AtualizadoEm", "MetadadosIA")
+	ignoreProcessoIDFields = cmpopts.IgnoreFields(Processo{}, "ID", "Aposentadoria", "PreviewHash", "AnalisadoEm", "CriadoEm", "AtualizadoEm", "MetadadosIA")
 )
 
 func consultarProcedimentoOK(_ context.Context, protocolo string) (*sei.ConsultarProcedimentoResponse, error) {

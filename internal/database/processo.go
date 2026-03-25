@@ -21,9 +21,17 @@ type Processo struct {
 	SeiUnidadeSigla     string
 	MetadadosIA         json.RawMessage
 	Aposentadoria       sql.Null[bool]
+	PreviewHash         sql.Null[string]
 	AnalisadoEm         sql.Null[time.Time]
 	CriadoEm            time.Time
 	AtualizadoEm        time.Time
+}
+
+func (p *Processo) SetPreviewHash(hash string) {
+	p.PreviewHash = sql.Null[string]{
+		V:     hash,
+		Valid: true,
+	}
 }
 
 func (p *Processo) SetAnalisadoEm() {
@@ -75,8 +83,9 @@ func (s *Store) ListProcessos(ctx context.Context, params ListProcessosParams) (
 	q := `
 	SELECT 
 		id, numero, status_processamento, resumo, link_acesso,
-		sei_unidade_id, sei_unidade_sigla, metadados_ia, aposentadoria, analisado_em, 
-		criado_em, atualizado_em, COUNT(*) OVER()
+		sei_unidade_id, sei_unidade_sigla, metadados_ia, aposentadoria,
+		preview_hash, analisado_em, criado_em, atualizado_em,
+		COUNT(*) OVER()
 	FROM processos
 	WHERE (numero LIKE '%' || $1 || '%' OR $1 = '')
 	ORDER BY criado_em DESC
@@ -104,6 +113,7 @@ func (s *Store) ListProcessos(ctx context.Context, params ListProcessosParams) (
 			&p.SeiUnidadeSigla,
 			&p.MetadadosIA,
 			&p.Aposentadoria,
+			&p.PreviewHash,
 			&p.AnalisadoEm,
 			&p.CriadoEm,
 			&p.AtualizadoEm,
@@ -126,8 +136,8 @@ func (s *Store) GetProcessosMap(ctx context.Context, ids []uuid.UUID) (map[uuid.
 	q := `
 	SELECT 
 		id, numero, status_processamento, resumo, link_acesso, sei_unidade_id,
-		sei_unidade_sigla, metadados_ia, aposentadoria, analisado_em, criado_em,
-		atualizado_em
+		sei_unidade_sigla, metadados_ia, aposentadoria, preview_hash,
+		analisado_em, criado_em, atualizado_em
 	FROM processos
 	WHERE id = ANY($1)`
 
@@ -151,6 +161,7 @@ func (s *Store) GetProcessosMap(ctx context.Context, ids []uuid.UUID) (map[uuid.
 			&p.SeiUnidadeSigla,
 			&p.MetadadosIA,
 			&p.Aposentadoria,
+			&p.PreviewHash,
 			&p.AnalisadoEm,
 			&p.CriadoEm,
 			&p.AtualizadoEm,
@@ -172,8 +183,8 @@ func (s *Store) GetProcesso(ctx context.Context, id uuid.UUID) (*Processo, error
 	q := `
 	SELECT 
 		id, numero, status_processamento, resumo, link_acesso, sei_unidade_id,
-		sei_unidade_sigla, metadados_ia, aposentadoria, analisado_em, criado_em,
-		atualizado_em
+		sei_unidade_sigla, metadados_ia, aposentadoria, preview_hash,
+		analisado_em, criado_em, atualizado_em
 	FROM processos
 	WHERE id = $1`
 
@@ -188,6 +199,7 @@ func (s *Store) GetProcesso(ctx context.Context, id uuid.UUID) (*Processo, error
 		&p.SeiUnidadeSigla,
 		&p.MetadadosIA,
 		&p.Aposentadoria,
+		&p.PreviewHash,
 		&p.AnalisadoEm,
 		&p.CriadoEm,
 		&p.AtualizadoEm,
@@ -205,8 +217,8 @@ func (s *Store) GetProcessoByNumero(ctx context.Context, numero string) (*Proces
 	q := `
 	SELECT 
 		id, numero, status_processamento, resumo, link_acesso, sei_unidade_id,
-		sei_unidade_sigla, metadados_ia, aposentadoria, analisado_em, criado_em,
-		atualizado_em
+		sei_unidade_sigla, metadados_ia, aposentadoria, preview_hash,
+		analisado_em, criado_em, atualizado_em
 	FROM processos
 	WHERE numero = $1`
 
@@ -221,6 +233,7 @@ func (s *Store) GetProcessoByNumero(ctx context.Context, numero string) (*Proces
 		&p.SeiUnidadeSigla,
 		&p.MetadadosIA,
 		&p.Aposentadoria,
+		&p.PreviewHash,
 		&p.AnalisadoEm,
 		&p.CriadoEm,
 		&p.AtualizadoEm,
@@ -263,6 +276,38 @@ func (s *Store) UpdateProcesso(ctx context.Context, p *Processo) error {
 	}
 
 	return nil
+}
+
+// UpdateProcessoPreviewHash atualiza apenas o preview_hash de um processo.
+func (s *Store) UpdateProcessoPreviewHash(ctx context.Context, id uuid.UUID, hash string) error {
+	q := `UPDATE processos SET preview_hash = $2, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`
+	_, err := s.db.Exec(ctx, q, id, hash)
+	return err
+}
+
+// ListProcessoIDs retorna todos os IDs de processos.
+func (s *Store) ListProcessoIDs(ctx context.Context) ([]uuid.UUID, error) {
+	q := `SELECT id FROM processos`
+
+	rows, err := s.db.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return ids, nil
 }
 
 func (s *Store) DeleteProcesso(ctx context.Context, id uuid.UUID) error {

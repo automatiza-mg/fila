@@ -110,7 +110,7 @@ func run(ctx context.Context) error {
 	cache := cache.NewRedisCache(rdb)
 	di := docintel.NewAzureDocIntel(&cfg.DocIntel)
 	ai := llm.New(&cfg.LLM)
-	proc := processos.New(pool, sei, cache, queue)
+	proc := processos.New(pool, storage, sei, cache, queue)
 	apos := aposentadoria.New(dl, cache)
 	auth := auth.New(pool, logger, queue)
 	fila := fila.New(pool, sei, cache, apos, queue)
@@ -122,6 +122,7 @@ func run(ctx context.Context) error {
 	workers := river.NewWorkers()
 	river.AddWorker(workers, tasks.NewSendEmailWorker(sender))
 	river.AddWorker(workers, tasks.NewDownloadProcessoWorker(pool, storage, sei, di))
+	river.AddWorker(workers, tasks.NewDownloadPreviewWorker(pool, storage, sei, di))
 	river.AddWorker(workers, tasks.NewAnalisarProcessoWorker(pool, ai))
 	worker, err := tasks.NewWorker(ctx, pool, workers)
 	if err != nil {

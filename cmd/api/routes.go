@@ -60,6 +60,7 @@ func (app *application) routes() http.Handler {
 
 			r.Get("/", app.handleProcessoList)
 			r.Post("/", app.handleProcessoCreate)
+			r.Post("/sync-previews", app.handleProcessoSyncPreviews)
 			r.Get("/{processoID}", app.handleProcessoDetail)
 			r.Get("/{processoID}/documentos", app.handleProcessoDetailDocumentos)
 		})
@@ -67,13 +68,15 @@ func (app *application) routes() http.Handler {
 		r.Route("/aposentadoria", func(r chi.Router) {
 			r.Use(
 				app.requireAuth,
-				app.requirePapel(auth.PapelGestor, auth.PapelSubsecretario),
+				app.requirePapel(auth.PapelGestor, auth.PapelSubsecretario, auth.PapelAnalista),
 			)
 
 			r.Get("/", app.handleProcessoAposentadoriaList)
 			r.Get("/{paID}", app.handleProcessoAposentadoriaDetail)
 			r.Get("/{paID}/historico", app.handleProcessoAposentadoriaHistorico)
 			r.Post("/{paID}/prioridade", app.handleProcessoAposentadoriaSolicitarPrioridade)
+			r.Get("/{paID}/preview", app.handleAposentadoriaPreview)
+			r.Post("/{paID}/sync-preview", app.handleAposentadoriaSyncPreview)
 		})
 
 		r.Route("/analistas", func(r chi.Router) {

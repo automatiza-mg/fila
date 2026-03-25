@@ -86,7 +86,7 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 		})
 	}
 
-	analise, err := w.llm.AnalisarAposentadoriaV2(ctx, docs)
+	analise, err := w.llm.AnalisarAposentadoria(ctx, docs)
 	if err != nil {
 		return fmt.Errorf("failed to run analyses: %w", err)
 	}

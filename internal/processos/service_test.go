@@ -65,13 +65,17 @@ func (ti *fakeTaskInserter) InsertTx(ctx context.Context, tx pgx.Tx, args river.
 	return nil, nil
 }
 
+func (ti *fakeTaskInserter) InsertManyTx(ctx context.Context, tx pgx.Tx, params []river.InsertManyParams) ([]*rivertype.JobInsertResult, error) {
+	return nil, nil
+}
+
 func newTestService(t *testing.T) *newTestServiceResult {
 	t.Helper()
 
 	pool := ti.NewDatabase(t)
 	seiTest := &fakeSeiClient{}
 
-	svc := New(pool, seiTest, cache.NewMemoryCache(), &fakeTaskInserter{})
+	svc := New(pool, nil, seiTest, cache.NewMemoryCache(), &fakeTaskInserter{})
 
 	return &newTestServiceResult{
 		svc: svc,

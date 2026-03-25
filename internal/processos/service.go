@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 
+	"github.com/automatiza-mg/fila/internal/blob"
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/sei"
@@ -23,23 +24,25 @@ type SeiClient interface {
 }
 
 type TaskInserter interface {
-	InsertTx(ctx context.Context, tx pgx.Tx, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error)
+	InsertManyTx(ctx context.Context, tx pgx.Tx, params []river.InsertManyParams) ([]*rivertype.JobInsertResult, error)
 }
 
 type Service struct {
-	pool  *pgxpool.Pool
-	store *database.Store
-	sei   SeiClient
-	cache cache.Cache
-	queue TaskInserter
+	pool    *pgxpool.Pool
+	store   *database.Store
+	storage blob.Storage
+	sei     SeiClient
+	cache   cache.Cache
+	queue   TaskInserter
 }
 
-func New(pool *pgxpool.Pool, sei SeiClient, cache cache.Cache, queue TaskInserter) *Service {
+func New(pool *pgxpool.Pool, storage blob.Storage, sei SeiClient, cache cache.Cache, queue TaskInserter) *Service {
 	return &Service{
-		pool:  pool,
-		store: database.New(pool),
-		sei:   sei,
-		cache: cache,
-		queue: queue,
+		pool:    pool,
+		store:   database.New(pool),
+		storage: storage,
+		sei:     sei,
+		cache:   cache,
+		queue:   queue,
 	}
 }

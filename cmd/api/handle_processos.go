@@ -75,6 +75,16 @@ func (app *application) handleProcessoDetail(w http.ResponseWriter, r *http.Requ
 	app.writeJSON(w, http.StatusOK, p)
 }
 
+func (app *application) handleProcessoSyncPreviews(w http.ResponseWriter, r *http.Request) {
+	count, err := app.processos.SyncPreviews(r.Context())
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, map[string]int{"enqueued": count})
+}
+
 func (app *application) handleProcessoDetailDocumentos(w http.ResponseWriter, r *http.Request) {
 	processoID, err := uuid.Parse(r.PathValue("processoID"))
 	if err != nil {

@@ -23,7 +23,7 @@ func TestConvertHTML(t *testing.T) {
 	}
 }
 
-func TestConvertHTML_WithoutImages(t *testing.T) {
+func TestConvertHTML_WithoutImg(t *testing.T) {
 	t.Parallel()
 
 	html := `<html><body><p>Texto</p><img src="foto.png" alt="foto"><p>Fim</p></body></html>`
@@ -36,14 +36,14 @@ func TestConvertHTML_WithoutImages(t *testing.T) {
 		t.Fatalf("expected image reference in default output, got:\n%s", withImages)
 	}
 
-	withoutImages, err := ConvertHTML(strings.NewReader(html), "text/html; charset=utf-8", WithoutImages())
+	WithoutImg, err := ConvertHTML(strings.NewReader(html), "text/html; charset=utf-8", WithoutImg())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(withoutImages, "foto") {
-		t.Fatalf("expected no image reference with WithoutImages, got:\n%s", withoutImages)
+	if strings.Contains(WithoutImg, "foto") {
+		t.Fatalf("expected no image reference with WithoutImg, got:\n%s", WithoutImg)
 	}
-	if !strings.Contains(withoutImages, "Texto") || !strings.Contains(withoutImages, "Fim") {
-		t.Fatalf("expected text content preserved, got:\n%s", withoutImages)
+	if !strings.Contains(WithoutImg, "Texto") || !strings.Contains(WithoutImg, "Fim") {
+		t.Fatalf("expected text content preserved, got:\n%s", WithoutImg)
 	}
 }
