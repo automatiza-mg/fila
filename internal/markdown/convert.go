@@ -11,24 +11,37 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
-var htmlConverter = converter.NewConverter(
-	converter.WithPlugins(
-		base.NewBasePlugin(),
-		commonmark.NewCommonmarkPlugin(),
-		strikethrough.NewStrikethroughPlugin(),
-		table.NewTablePlugin(),
-	),
-)
+// OptionFunc permite configurar o comportamento da conversão HTML para Markdown.
+type OptionFunc func(*converter.Converter)
+
+// WithoutImages remove todas as tags <img> do HTML antes de converter para Markdown.
+func WithoutImages() OptionFunc {
+	return func(conv *converter.Converter) {
+		conv.Register.TagType("img", converter.TagTypeRemove, converter.PriorityStandard)
+	}
+}
 
 // ConvertHTML converte um [io.Reader] de HTML para Markdown. Content-Type deve
-// ser informado uma vez que o conversor presume que o input é UTF-8.
-func ConvertHTML(r io.Reader, contentType string) (string, error) {
+// ser informado uma vez que o conversor utiliza [charset.NewReader] para detectar a codificação.
+func ConvertHTML(r io.Reader, contentType string, opts ...OptionFunc) (string, error) {
+	conv := converter.NewConverter(
+		converter.WithPlugins(
+			base.NewBasePlugin(),
+			commonmark.NewCommonmarkPlugin(),
+			strikethrough.NewStrikethroughPlugin(),
+			table.NewTablePlugin(),
+		),
+	)
+	for _, fn := range opts {
+		fn(conv)
+	}
+
 	rd, err := charset.NewReader(r, contentType)
 	if err != nil {
 		return "", err
 	}
 
-	md, err := htmlConverter.ConvertReader(rd)
+	md, err := conv.ConvertReader(rd)
 	if err != nil {
 		return "", err
 	}

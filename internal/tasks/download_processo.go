@@ -72,7 +72,7 @@ func isHTML(contentType string) bool {
 // Extrai e retorna o conteúdo e formato (plain / markdown) de um arquivo.
 func (w *DownloadProcessoWorker) extractContent(ctx context.Context, body []byte, contentType string) (string, string, error) {
 	if isHTML(contentType) {
-		md, err := markdown.ConvertHTML(bytes.NewReader(body), contentType)
+		md, err := markdown.ConvertHTML(bytes.NewReader(body), contentType, markdown.WithoutImages())
 		if err != nil {
 			return "", "", nil
 		}
