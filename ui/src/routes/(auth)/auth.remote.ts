@@ -30,7 +30,7 @@ export const entrarForm = form(entrarSchema, async ({ cpf, _senha }, issue) => {
     redirect(303, "/painel");
   }
 
-  invalid(issue("Não foi possível autenticar, confira suas credenciais."));
+  invalid("Não foi possível autenticar, confira suas credenciais.");
 });
 
 export const sairForm = form("unchecked", async () => {

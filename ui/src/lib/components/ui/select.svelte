@@ -11,7 +11,7 @@
 
 <select
   {...rest}
-  class="p-2 rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
+  class="p-2 text-sm rounded-xl border border-stone-200 focus-visible:ring-3 outline-none focus-visible:ring-secondary/50 focus-visible:border-secondary"
 >
   {@render children()}
 </select>

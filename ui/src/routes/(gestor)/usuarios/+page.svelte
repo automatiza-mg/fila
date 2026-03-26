@@ -1,6 +1,6 @@
 <script lang="ts">
   import Pendencias from "$lib/components/pendencias.svelte";
-  import Button from "$lib/components/ui/button.svelte";
+  import UsuarioForm from "$lib/components/usuario-form.svelte";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
@@ -12,7 +12,7 @@
 
 <div class="space-y-4">
   <div class="flex">
-    <Button href="/usuarios/criar">Novo Cadastro</Button>
+    <UsuarioForm />
   </div>
 
   <div>

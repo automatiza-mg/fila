@@ -1,7 +1,7 @@
 import { command, form, getRequestEvent, query } from "$app/server";
 import { ApiError } from "$lib/api/client";
 import { getClient } from "$lib/server/util";
-import { invalid, redirect } from "@sveltejs/kit";
+import { invalid } from "@sveltejs/kit";
 import { z } from "zod";
 
 const createUsuarioSchema = z.object({
@@ -37,8 +37,6 @@ export const createUsuarioForm = form(
       }
       invalid("Não foi possível criar o usuário, tente novamente mais tarde");
     }
-
-    redirect(303, "/usuarios");
   },
 );
 

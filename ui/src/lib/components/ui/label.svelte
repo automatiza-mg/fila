@@ -9,6 +9,6 @@
   let { children, ...rest }: Props = $props();
 </script>
 
-<label class="font-medium w-fit" {...rest}>
+<label class="text-sm font-medium w-fit" {...rest}>
   {@render children()}
 </label>

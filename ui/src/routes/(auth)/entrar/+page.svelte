@@ -4,11 +4,19 @@
   import FormField from "$lib/components/ui/form-field.svelte";
   import Input from "$lib/components/ui/input.svelte";
   import { formatCpf } from "$lib/formatter";
+  import { toast } from "svelte-sonner";
   import { entrarForm } from "../auth.remote";
 
   $effect(() => {
     const value = entrarForm.fields.cpf.value() ?? "";
     entrarForm.fields.cpf.set(formatCpf(value));
+  });
+
+  $effect(() => {
+    const issues = entrarForm.fields.issues();
+    if (issues) {
+      toast.error(issues[0].message);
+    }
   });
 </script>
 
@@ -18,11 +26,16 @@
 
 <h1 class="text-3xl font-bold text-center">Entrar</h1>
 
-{#each entrarForm.fields.issues() as issue}
-  <Alert message={issue.message} variant="danger" />
-{/each}
-
-<form class="flex flex-col gap-8" {...entrarForm}>
+<form
+  class="flex flex-col gap-8"
+  {...entrarForm.enhance(async ({ form, data, submit }) => {
+    try {
+      await submit();
+    } catch (err) {
+      console.log(err);
+    }
+  })}
+>
   <div class="flex flex-col gap-4">
     <FormField label="CPF" id="cpf" issues={entrarForm.fields.cpf.issues()}>
       <Input id="cpf" {...entrarForm.fields.cpf.as("text")} required />
