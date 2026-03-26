@@ -1,5 +1,6 @@
 <script lang="ts">
   import Pendencias from "$lib/components/pendencias.svelte";
+  import Button from "$lib/components/ui/button.svelte";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
@@ -11,12 +12,7 @@
 
 <div class="space-y-4">
   <div class="flex">
-    <a
-      href="/usuarios/criar"
-      class="px-4 py-2 font-semibold bg-primary text-white rounded-xl border border-transparent"
-    >
-      Novo Cadastro
-    </a>
+    <Button href="/usuarios/criar">Novo Cadastro</Button>
   </div>
 
   <div>

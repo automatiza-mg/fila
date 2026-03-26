@@ -1,5 +1,6 @@
 <script lang="ts">
   import Alert from "$lib/components/ui/alert.svelte";
+  import Button from "$lib/components/ui/button.svelte";
   import FormField from "$lib/components/ui/form-field.svelte";
   import Input from "$lib/components/ui/input.svelte";
   import { formatCpf } from "$lib/formatter";
@@ -24,7 +25,7 @@
 <form class="flex flex-col gap-8" {...entrarForm}>
   <div class="flex flex-col gap-4">
     <FormField label="CPF" id="cpf" issues={entrarForm.fields.cpf.issues()}>
-      <Input {...entrarForm.fields.cpf.as("text")} />
+      <Input id="cpf" {...entrarForm.fields.cpf.as("text")} required />
     </FormField>
 
     <div class="space-y-1">
@@ -33,7 +34,11 @@
         id="senha"
         issues={entrarForm.fields._senha.issues()}
       >
-        <Input {...entrarForm.fields._senha.as("password")} />
+        <Input
+          id="senha"
+          {...entrarForm.fields._senha.as("password")}
+          required
+        />
       </FormField>
 
       <div class="flex justify-end">
@@ -44,9 +49,5 @@
     </div>
   </div>
 
-  <button
-    class="px-4 py-2 font-semibold bg-primary text-white rounded-2xl border border-transparent"
-  >
-    Enviar
-  </button>
+  <Button>Enviar</Button>
 </form>

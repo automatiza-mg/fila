@@ -69,10 +69,12 @@ export type Processo = {
   id: string;
   numero: string;
   status: string;
+  resumo: string;
   link_acesso: string;
   sei_unidade_id: string;
   sei_unidade_sigla: string;
   aposentadoria: boolean | null;
+  preview_hash: string | null;
   analisado_em: string | null;
   metadados_ia: MetadadoIA | null;
   criado_em: string;
@@ -135,7 +137,7 @@ export type Documento = {
   numero: string;
   tipo: string;
   conteudo: string;
-  link_acesso: string;
+  content_type: string;
   data: string;
   unidade_geradora: string;
   assinaturas: Assinatura[];

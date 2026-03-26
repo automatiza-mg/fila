@@ -1,5 +1,6 @@
 <script lang="ts">
   import PrioridadeForm from "$lib/components/prioridade-form.svelte";
+  import Button from "$lib/components/ui/button.svelte";
   import FormField from "$lib/components/ui/form-field.svelte";
   import Input from "$lib/components/ui/input.svelte";
   import { hasPapel } from "$lib/papel";
@@ -81,5 +82,15 @@
         <Input type="text" readonly id="score" value={data.processo.score} />
       </FormField>
     </div>
+  </div>
+
+  <div>
+    <Button
+      href="/processos/{data.processo.id}/preview"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Visualizar PDF
+    </Button>
   </div>
 </div>

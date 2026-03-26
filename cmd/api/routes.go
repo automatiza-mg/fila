@@ -60,7 +60,6 @@ func (app *application) routes() http.Handler {
 
 			r.Get("/", app.handleProcessoList)
 			r.Post("/", app.handleProcessoCreate)
-			r.Post("/sync-previews", app.handleProcessoSyncPreviews)
 			r.Get("/{processoID}", app.handleProcessoDetail)
 			r.Get("/{processoID}/documentos", app.handleProcessoDetailDocumentos)
 		})

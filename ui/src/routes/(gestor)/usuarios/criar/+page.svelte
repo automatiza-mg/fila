@@ -1,5 +1,6 @@
 <script lang="ts">
   import Alert from "$lib/components/ui/alert.svelte";
+  import Button from "$lib/components/ui/button.svelte";
   import FormField from "$lib/components/ui/form-field.svelte";
   import Input from "$lib/components/ui/input.svelte";
   import Select from "$lib/components/ui/select.svelte";
@@ -64,10 +65,6 @@
       </Select>
     </FormField>
 
-    <button
-      class="px-4 py-2 font-semibold bg-primary text-white rounded-2xl border border-transparent"
-    >
-      Enviar
-    </button>
+    <Button>Enviar</Button>
   </form>
 </div>

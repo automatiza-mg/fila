@@ -1,5 +1,6 @@
 <script lang="ts">
   import { criarPrioridadeForm } from "../../routes/(gestor)/processos/[id]/processo.remote";
+  import Button from "./ui/button.svelte";
   import Dialog from "./ui/dialog.svelte";
   import FormField from "./ui/form-field.svelte";
   import Textarea from "./ui/textarea.svelte";
@@ -65,11 +66,7 @@
       </FormField>
 
       <div class="flex justify-end">
-        <button
-          class="px-4 py-2 font-semibold bg-primary text-white rounded-2xl border border-transparent"
-        >
-          Enviar
-        </button>
+        <Button>Enviar</Button>
       </div>
     </form>
   </div>

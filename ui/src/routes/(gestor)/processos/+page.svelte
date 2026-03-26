@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Button from "$lib/components/ui/button.svelte";
+  import Input from "$lib/components/ui/input.svelte";
   import { statusColor, statusText } from "$lib/processo";
   import type { PageProps } from "./$types";
 
@@ -12,27 +14,16 @@
 <div class="space-y-6">
   <div class="flex items-center justify-between">
     <form method="GET" class="flex items-center gap-2">
-      <input
+      <Input
         name="numero"
         type="text"
         value={data.numero}
         placeholder="Número do processo"
-        class="rounded-md border border-stone-200 bg-white p-2 text-sm outline-none focus-visible:border-secondary focus-visible:ring-3 focus-visible:ring-secondary/50"
       />
-      <button
-        type="submit"
-        class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
-      >
-        Buscar
-      </button>
+      <Button type="submit">Buscar</Button>
     </form>
 
-    <a
-      class="px-4 py-2 font-semibold bg-primary text-white rounded-md border border-transparent text-sm"
-      href="/processos/prioridades"
-    >
-      Solicitações de Prioridade
-    </a>
+    <Button href="/processos/prioridades">Solicitações de Prioridade</Button>
   </div>
 
   <div>

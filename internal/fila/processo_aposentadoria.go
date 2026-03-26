@@ -24,15 +24,16 @@ type ProcessoAposentadoria struct {
 	Status                   string    `json:"status"`
 	Analista                 *string   `json:"analista"`
 	AnalistaID               *int64    `json:"analista_id"`
+	PossuiPreview            bool      `json:"possui_preview"`
 	CriadoEm                 time.Time `json:"criado_em"`
 	AtualizadoEm             time.Time `json:"atualizado_em"`
 }
 
-func mapProcesso(pa *database.ProcessoAposentadoria, numero string, analista *string) *ProcessoAposentadoria {
+func mapProcesso(pa *database.ProcessoAposentadoria, p *database.Processo, analista *string) *ProcessoAposentadoria {
 	return &ProcessoAposentadoria{
 		ID:                       pa.ID,
 		ProcessoID:               pa.ProcessoID,
-		Numero:                   numero,
+		Numero:                   p.Numero,
 		DataRequerimento:         pa.DataRequerimento,
 		CPFRequerente:            pa.CPFRequerente,
 		DataNascimentoRequerente: pa.DataNascimentoRequerente,
@@ -43,6 +44,7 @@ func mapProcesso(pa *database.ProcessoAposentadoria, numero string, analista *st
 		Status:                   string(pa.Status),
 		Analista:                 analista,
 		AnalistaID:               database.Ptr(pa.AnalistaID),
+		PossuiPreview:            p.PreviewHash.Valid,
 		CriadoEm:                 pa.CriadoEm,
 		AtualizadoEm:             pa.AtualizadoEm,
 	}
@@ -55,7 +57,7 @@ func (s *Service) GetProcessoAposentadoria(ctx context.Context, id int64) (*Proc
 		return nil, err
 	}
 
-	numero, err := s.store.GetNumeroProcessoAposentadoria(ctx, pa.ID)
+	p, err := s.store.GetProcesso(ctx, pa.ProcessoID)
 	if err != nil {
 		return nil, err
 	}
@@ -69,12 +71,17 @@ func (s *Service) GetProcessoAposentadoria(ctx context.Context, id int64) (*Proc
 		analista = &nome
 	}
 
-	return mapProcesso(pa, numero, analista), nil
+	return mapProcesso(pa, p, analista), nil
 }
 
 // GetProcessoAposentadoriaByNumero retorna um processo de aposentadoria pelo
 // número do processo SEI.
 func (s *Service) GetProcessoAposentadoriaByNumero(ctx context.Context, numero string) (*ProcessoAposentadoria, error) {
+	p, err := s.store.GetProcessoByNumero(ctx, numero)
+	if err != nil {
+		return nil, err
+	}
+
 	pa, err := s.store.GetProcessoAposentadoriaByNumero(ctx, numero)
 	if err != nil {
 		return nil, err
@@ -89,7 +96,7 @@ func (s *Service) GetProcessoAposentadoriaByNumero(ctx context.Context, numero s
 		analista = &nome
 	}
 
-	return mapProcesso(pa, numero, analista), nil
+	return mapProcesso(pa, p, analista), nil
 }
 
 type ListProcessoAposentadoriaParams struct {
@@ -121,7 +128,7 @@ func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentad
 
 	// Busca os números dos processos.
 	for _, pa := range paa {
-		numero, err := s.store.GetNumeroProcessoAposentadoria(ctx, pa.ID)
+		p, err := s.store.GetProcesso(ctx, pa.ProcessoID)
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +142,7 @@ func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentad
 			analista = &nome
 		}
 
-		processos = append(processos, mapProcesso(pa, numero, analista))
+		processos = append(processos, mapProcesso(pa, p, analista))
 	}
 
 	return pagination.NewResult(processos, params.Page, totalCount, params.Limit), nil
@@ -163,5 +170,5 @@ func (s *Service) GetProcessoAtribuido(ctx context.Context, analistaID int64) (*
 		analista = &nome
 	}
 
-	return mapProcesso(pa, p.Numero, analista), nil
+	return mapProcesso(pa, p, analista), nil
 }

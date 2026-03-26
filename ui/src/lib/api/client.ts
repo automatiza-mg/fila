@@ -134,6 +134,27 @@ export class Client {
     }
   }
 
+  private async requestBlob(
+    endpoint: string,
+    options?: RequestInit,
+  ): Promise<Blob> {
+    const url = `${env.PUBLIC_API_URL}${endpoint}`;
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        ...options?.headers,
+        Authorization: `Bearer ${this.authToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      const body = (await res.json()) as ErrorResponse;
+      throw new ApiError(body.message, res.status, body);
+    }
+
+    return res.blob();
+  }
+
   async usuarioAtual(): Promise<Usuario> {
     return this.request<Usuario>("/api/v1/auth/me");
   }
@@ -302,5 +323,15 @@ export class Client {
 
   async meuProcessoAtribuido(): Promise<ProcessoAposentadoria> {
     return this.request<ProcessoAposentadoria>("/api/v1/meu-processo");
+  }
+
+  async getAposentadoriaPreview(paId: number): Promise<Blob> {
+    return this.requestBlob(`/api/v1/aposentadoria/${paId}/preview`);
+  }
+
+  async syncAposentadoriaPreview(paId: number): Promise<void> {
+    return this.requestVoid(`/api/v1/aposentadoria/${paId}/sync-preview`, {
+      method: "POST",
+    });
   }
 }

@@ -235,5 +235,5 @@ func (app *application) handleAposentadoriaSyncPreview(w http.ResponseWriter, r 
 		return
 	}
 
-	app.writeJSON(w, http.StatusAccepted, map[string]string{"status": "enqueued"})
+	w.WriteHeader(http.StatusAccepted)
 }

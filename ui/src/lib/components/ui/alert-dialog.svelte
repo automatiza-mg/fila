@@ -1,13 +1,13 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { AlertDialog, type WithoutChild } from "bits-ui";
-  import { cn } from "$lib/cn";
+  import Button from "./button.svelte";
 
   type Props = AlertDialog.RootProps & {
     buttonText: string;
     title: Snippet;
     description: Snippet;
-    variant?: "base" | "destructive";
+    variant?: "default" | "destructive";
     contentProps?: WithoutChild<AlertDialog.ContentProps>;
     onConfirmed?: () => void;
     onCancelled?: () => void;
@@ -15,7 +15,7 @@
 
   let {
     open = $bindable(false),
-    variant = "base",
+    variant = "default",
     children,
     buttonText,
     contentProps,
@@ -49,22 +49,15 @@
       {@render children?.()}
 
       <div class="flex justify-end gap-2 items-center mt-4">
-        <AlertDialog.Cancel
-          onclick={onCancelled}
-          class="text-sm px-4 py-2 hover:bg-stone-100 font-medium border rounded-md border-stone-300 outline-none focus-visible:ring-3 focus-visible:ring-secondary/50 focus-visible:border-secondary"
-        >
-          Cancelar
+        <AlertDialog.Cancel onclick={onCancelled}>
+          {#snippet child({ props })}
+            <Button variant="outline" {...props}>Cancelar</Button>
+          {/snippet}
         </AlertDialog.Cancel>
-        <AlertDialog.Action
-          onclick={onConfirmed}
-          class={cn(
-            "text-sm px-4 py-2 font-medium text-white rounded-md border border-transparent outline-none focus-visible:ring-3",
-            variant === "destructive"
-              ? "bg-red-700 focus-visible:ring-red-400/50 hover:bg-red-700/90"
-              : "bg-primary focus-visible:ring-secondary/50 hover:bg-primary/90",
-          )}
-        >
-          Continuar
+        <AlertDialog.Action onclick={onConfirmed}>
+          {#snippet child({ props })}
+            <Button {variant} {...props}>Continuar</Button>
+          {/snippet}
         </AlertDialog.Action>
       </div>
     </AlertDialog.Content>
