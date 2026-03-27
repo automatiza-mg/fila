@@ -8,7 +8,7 @@ export const load = async ({ url }) => {
   }
 
   try {
-    const usuario = await tokenInfo(token, "setup");
+    const usuario = await tokenInfo(token, "reset-senha");
     return { token, usuario };
   } catch (e) {
     if (e instanceof ApiError) {

@@ -1,5 +1,6 @@
 import { form, getRequestEvent } from "$app/server";
 import { env } from "$env/dynamic/public";
+import { recuperarSenha, redefinirSenha, ApiError } from "$lib/api/client";
 import { error, invalid, redirect } from "@sveltejs/kit";
 import { z } from "zod/v4";
 
@@ -32,6 +33,50 @@ export const entrarForm = form(entrarSchema, async ({ cpf, _senha }, issue) => {
 
   invalid("Não foi possível autenticar, confira suas credenciais.");
 });
+
+const recuperarSenhaSchema = z.object({
+  cpf: z.string(),
+});
+
+export const recuperarSenhaForm = form(
+  recuperarSenhaSchema,
+  async ({ cpf }) => {
+    await recuperarSenha({ cpf });
+  },
+);
+
+const redefinirSenhaSchema = z.object({
+  token: z.string(),
+  _senha: z.string(),
+  _confirmar_senha: z.string(),
+});
+
+export const redefinirSenhaForm = form(
+  redefinirSenhaSchema,
+  async ({ token, _senha, _confirmar_senha }, issue) => {
+    try {
+      await redefinirSenha({
+        token,
+        senha: _senha,
+        confirmar_senha: _confirmar_senha,
+      });
+    } catch (e) {
+      if (e instanceof ApiError && e.response?.errors) {
+        for (const [, message] of Object.entries(e.response.errors)) {
+          issue(message);
+        }
+        return;
+      }
+      if (e instanceof ApiError) {
+        issue(e.message);
+        return;
+      }
+      throw e;
+    }
+
+    redirect(303, "/entrar");
+  },
+);
 
 export const sairForm = form("unchecked", async () => {
   const { locals, cookies } = getRequestEvent();
