@@ -237,3 +237,53 @@ func (app *application) handleAposentadoriaSyncPreview(w http.ResponseWriter, r 
 
 	w.WriteHeader(http.StatusAccepted)
 }
+
+type LeituraInvalidaRequest struct {
+	Motivo string `json:"motivo"`
+
+	validator.Validator `json:"-"`
+}
+
+func (app *application) handleProcessoAposentadoriaLeituraInvalida(w http.ResponseWriter, r *http.Request) {
+	paID, err := app.intParam(r, "paID")
+	if err != nil || paID < 1 {
+		app.notFound(w, r)
+		return
+	}
+
+	var input LeituraInvalidaRequest
+	err = app.decodeJSON(w, r, &input)
+	if err != nil {
+		app.decodeError(w, r, err)
+		return
+	}
+
+	input.Check(validator.NotBlank(input.Motivo), "motivo", "Campo obrigatório")
+	if !input.Valid() {
+		app.validationFailed(w, r, input.FieldErrors)
+		return
+	}
+
+	usuario := app.getAuth(r.Context())
+
+	err = app.fila.MarcarLeituraInvalida(r.Context(), fila.MarcarLeituraInvalidaParams{
+		AnalistaID: usuario.ID,
+		ProcessoID: paID,
+		Motivo:     input.Motivo,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrNotFound):
+			app.notFound(w, r)
+		case errors.Is(err, fila.ErrNotAssigned):
+			app.writeError(w, http.StatusForbidden, "Você não possui permissão para alterar este processo")
+		case errors.Is(err, fila.ErrInvalidStatus):
+			app.writeError(w, http.StatusConflict, "O processo não está no status esperado para esta ação")
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

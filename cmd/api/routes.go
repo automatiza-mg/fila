@@ -76,6 +76,7 @@ func (app *application) routes() http.Handler {
 			r.Post("/{paID}/prioridade", app.handleProcessoAposentadoriaSolicitarPrioridade)
 			r.Get("/{paID}/preview", app.handleAposentadoriaPreview)
 			r.Post("/{paID}/sync-preview", app.handleAposentadoriaSyncPreview)
+			r.Post("/{paID}/leitura-invalida", app.handleProcessoAposentadoriaLeituraInvalida)
 		})
 
 		r.Route("/analistas", func(r chi.Router) {

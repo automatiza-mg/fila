@@ -109,17 +109,14 @@ func (s *Service) Cleanup(ctx context.Context, tx pgx.Tx, trigger auth.CleanupTr
 	pa.AnalistaID = sql.Null[int64]{}
 	pa.UltimoAnalistaID = sql.Null[int64]{}
 
-	store.SaveHistoricoStatusProcesso(ctx, &database.HistoricoStatusProcesso{
+	if err := s.saveHistorico(ctx, store, saveHistoricoParams{
 		ProcessoAposentadoriaID: pa.ID,
-		StatusAnterior: sql.Null[database.StatusProcesso]{
-			V:     pa.Status,
-			Valid: true,
-		},
-		StatusNovo: database.StatusProcessoAnalisePendente,
-		Observacao: sql.Null[string]{
-			V: "Processo desatribuído em razão de alteração do usuário",
-		},
-	})
+		StatusAnterior:          &pa.Status,
+		StatusNovo:              database.StatusProcessoAnalisePendente,
+		Observacao:              "Processo desatribuído em razão de alteração do usuário",
+	}); err != nil {
+		return err
+	}
 
 	return nil
 }

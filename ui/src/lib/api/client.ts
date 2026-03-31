@@ -345,4 +345,17 @@ export class Client {
       method: "POST",
     });
   }
+
+  async marcarLeituraInvalida(
+    paId: number,
+    motivo: string,
+  ): Promise<void> {
+    return this.requestVoid(
+      `/api/v1/aposentadoria/${paId}/leitura-invalida`,
+      {
+        method: "POST",
+        body: JSON.stringify({ motivo }),
+      },
+    );
+  }
 }

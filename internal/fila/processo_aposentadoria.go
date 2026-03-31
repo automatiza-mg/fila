@@ -2,11 +2,20 @@ package fila
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/pagination"
 	"github.com/google/uuid"
+)
+
+var (
+	// ErrNotAssigned é o erro retornado quando o processo não está atribuído ao analista.
+	ErrNotAssigned = errors.New("processo não está atribuído ao analista")
+	// ErrInvalidStatus é o erro retornado quando o processo não está no status esperado.
+	ErrInvalidStatus = errors.New("processo não está no status esperado para esta ação")
 )
 
 // Processo é um processo de aposentadoria processado pelo sistema.
@@ -148,8 +157,60 @@ func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentad
 	return pagination.NewResult(processos, params.Page, totalCount, params.Limit), nil
 }
 
+type MarcarLeituraInvalidaParams struct {
+	AnalistaID int64
+	ProcessoID int64
+	Motivo     string
+}
+
+// MarcarLeituraInvalida marca um processo de aposentadoria como leitura inválida,
+// desatribuindo o analista. Retorna [ErrNotAssigned] caso o processo não esteja
+// atribuído ao analista informado e [ErrInvalidStatus] caso o processo não esteja em análise.
+func (s *Service) MarcarLeituraInvalida(ctx context.Context, params MarcarLeituraInvalidaParams) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	store := s.store.WithTx(tx)
+
+	pa, err := store.GetProcessoAposentadoria(ctx, params.ProcessoID)
+	if err != nil {
+		return err
+	}
+
+	if !pa.AnalistaID.Valid || pa.AnalistaID.V != params.AnalistaID {
+		return ErrNotAssigned
+	}
+
+	if pa.Status != database.StatusProcessoEmAnalise {
+		return ErrInvalidStatus
+	}
+
+	if err := s.saveHistorico(ctx, store, saveHistoricoParams{
+		ProcessoAposentadoriaID: pa.ID,
+		StatusAnterior:          &pa.Status,
+		StatusNovo:              database.StatusProcessoLeituraInvalid,
+		UsuarioID:               &params.AnalistaID,
+		Observacao:              params.Motivo,
+	}); err != nil {
+		return err
+	}
+
+	pa.Status = database.StatusProcessoLeituraInvalid
+	pa.UltimoAnalistaID = pa.AnalistaID
+	pa.AnalistaID = sql.Null[int64]{}
+
+	if err := store.UpdateProcessoAposentadoria(ctx, pa); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
 // GetProcessoAtribuido retorna o processo de aposentadoria atribuído a um analista.
-// Retorna database.ErrNotFound se o analista não tiver um processo EM_ANALISE.
+// Retorna [database.ErrNotFound] se o analista não tiver um processo EM_ANALISE.
 func (s *Service) GetProcessoAtribuido(ctx context.Context, analistaID int64) (*ProcessoAposentadoria, error) {
 	pa, err := s.store.GetProcessoAtribuido(ctx, analistaID)
 	if err != nil {
