@@ -1,4 +1,5 @@
 <script lang="ts">
+  import NumeroProcesso from "$lib/components/numero-processo.svelte";
   import PrioridadeForm from "$lib/components/prioridade-form.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import FormField from "$lib/components/ui/form-field.svelte";
@@ -17,10 +18,7 @@
 
 <div class="space-y-6">
   <div class="flex justify-between items-center">
-    <div>
-      <span>Nº processo SEI:</span>
-      <span>{data.processo.numero}</span>
-    </div>
+    <NumeroProcesso numero={data.processo.numero} />
 
     <a href="/processos" class="flex flex-col items-center">
       <ArrowElbowUpLeftIcon class="size-5" />

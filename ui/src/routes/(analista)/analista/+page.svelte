@@ -1,4 +1,5 @@
 <script lang="ts">
+  import NumeroProcesso from "$lib/components/numero-processo.svelte";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
@@ -9,7 +10,11 @@
 </svelte:head>
 
 {#if data.processo}
-  <pre class="text-xs">
-    {JSON.stringify(data.processo, null, 4)}
-</pre>
+  <NumeroProcesso numero={data.processo.numero} />
+{:else}
+  <div class="flex grow items-center justify-center">
+    <p class="text-muted-foreground text-sm">
+      Nenhum processo atribuído no momento.
+    </p>
+  </div>
 {/if}
