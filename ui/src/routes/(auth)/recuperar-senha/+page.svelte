@@ -28,19 +28,17 @@
 <h1 class="text-3xl font-bold text-center">Recuperar Senha</h1>
 
 {#if enviado}
-  <p class="text-center text-muted-foreground">
+  <p class="text-muted-foreground text-sm">
     Se o CPF informado estiver cadastrado, você receberá um e-mail com
     instruções para redefinir sua senha.
   </p>
-
-  <Button href="/entrar" variant="outline">Voltar para login</Button>
 {:else}
-  <p class="text-center text-muted-foreground">
+  <p class="text-sm text-muted-foreground">
     Informe seu CPF para receber um e-mail de recuperação de senha.
   </p>
 
   <form
-    class="flex flex-col gap-8"
+    class="flex flex-col gap-6"
     {...recuperarSenhaForm.enhance(async ({ submit }) => {
       try {
         await submit();
@@ -66,7 +64,16 @@
 
     <div class="flex flex-col gap-2">
       <Button>Enviar</Button>
-      <Button href="/entrar" variant="outline">Voltar para login</Button>
     </div>
   </form>
 {/if}
+
+<hr class="border-stone-300" />
+
+<div>
+  <p class="text-center">
+    <a href="/entrar" class="text-sm text-muted-foreground underline"
+      >Entrar em minha conta</a
+    >
+  </p>
+</div>

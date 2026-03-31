@@ -25,7 +25,8 @@
 
   const base = "px-4 py-2 text-sm font-medium rounded-lg";
   const variants = {
-    default: "bg-primary text-white hover:bg-primary/90",
+    default:
+      "bg-primary text-white hover:bg-primary/90 border border-transparent",
     destructive: "bg-red-700 text-white hover:bg-red-700/90",
     outline: "border border-stone-300 hover:bg-stone-100",
   };

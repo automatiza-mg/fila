@@ -26,16 +26,7 @@
 
 <h1 class="text-3xl font-bold text-center">Entrar</h1>
 
-<form
-  class="flex flex-col gap-8"
-  {...entrarForm.enhance(async ({ form, data, submit }) => {
-    try {
-      await submit();
-    } catch (err) {
-      console.log(err);
-    }
-  })}
->
+<form class="flex flex-col gap-6" {...entrarForm}>
   <div class="flex flex-col gap-4">
     <FormField label="CPF" id="cpf" issues={entrarForm.fields.cpf.issues()}>
       <Input id="cpf" {...entrarForm.fields.cpf.as("text")} required />
@@ -55,7 +46,10 @@
       </FormField>
 
       <div class="flex justify-end">
-        <a href="/recuperar-senha" class="text-muted-foreground underline">
+        <a
+          href="/recuperar-senha"
+          class="text-muted-foreground underline text-sm"
+        >
           Esqueci minha senha
         </a>
       </div>

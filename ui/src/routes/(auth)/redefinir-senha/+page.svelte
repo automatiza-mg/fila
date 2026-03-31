@@ -21,8 +21,9 @@
 
 <h1 class="text-3xl font-bold text-center">Redefinir Senha</h1>
 
-<p class="text-center text-muted-foreground">
-  Olá, {data.usuario.nome}. Defina sua nova senha abaixo.
+<p class="text-sm text-muted-foreground">
+  Olá, <span class="font-semibold">{data.usuario.nome}</span>. Defina sua nova
+  senha abaixo.
 </p>
 
 <form
@@ -63,5 +64,5 @@
     </FormField>
   </div>
 
-  <Button>Redefinir Senha</Button>
+  <Button>Enviar</Button>
 </form>
