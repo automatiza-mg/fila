@@ -8,6 +8,13 @@
   --color-secondary: #59a1ba;
   --color-muted: #d4e7ed;
   --color-muted-foreground: #44403b;
+  --color-foreground: #1c1917;
 
   --font-sans: "Inter", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply text-foreground;
+  }
 }

@@ -19,13 +19,13 @@
   }
 </script>
 
-<div class="flex items-center gap-2 text-sm">
+<div class="flex items-center gap-2 text-sm sm:text-base">
   <span>Nº processo SEI: <strong>{numero}</strong></span>
   <Tooltip.Provider>
     <Tooltip.Root>
       <Tooltip.Trigger
         onclick={copy}
-        class="text-muted-foreground hover:text-foreground"
+        class="text-muted-foreground hover:text-foreground cursor-pointer"
       >
         {#if copied}
           <CheckIcon class="size-4" />
@@ -38,7 +38,7 @@
           class="bg-stone-900/90 text-stone-50 text-xs rounded-md px-2 py-1 shadow-sm"
           sideOffset={4}
         >
-          {copied ? "Copiado!" : "Copiar número"}
+          {copied ? "Copiado!" : "Copiar Número"}
         </Tooltip.Content>
       </Tooltip.Portal>
     </Tooltip.Root>
