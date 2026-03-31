@@ -8,7 +8,7 @@
 
   type BaseProps = {
     children: Snippet;
-    variant?: "default" | "destructive" | "outline";
+    variant?: "default" | "destructive" | "outline" | "link";
     class?: string;
   };
 
@@ -29,6 +29,7 @@
       "bg-primary text-white hover:bg-primary/90 border border-transparent",
     destructive: "bg-red-700 text-white hover:bg-red-700/90",
     outline: "border border-stone-300 hover:bg-stone-100",
+    link: "text-muted-foreground underline hover:text-foreground p-0 rounded-none",
   };
 </script>
 

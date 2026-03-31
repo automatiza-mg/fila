@@ -1,6 +1,12 @@
 import { form, getRequestEvent } from "$app/server";
 import { env } from "$env/dynamic/public";
-import { recuperarSenha, redefinirSenha, ApiError } from "$lib/api/client";
+import {
+  cadastrar,
+  entrar,
+  recuperarSenha,
+  redefinirSenha,
+  ApiError,
+} from "$lib/api/client";
 import { error, invalid, redirect } from "@sveltejs/kit";
 import { z } from "zod/v4";
 
@@ -75,6 +81,60 @@ export const redefinirSenhaForm = form(
     }
 
     redirect(303, "/entrar");
+  },
+);
+
+const cadastrarSchema = z.object({
+  token: z.string(),
+  cpf: z.string(),
+  _senha: z.string(),
+  _confirmar_senha: z.string(),
+});
+
+export const cadastrarForm = form(
+  cadastrarSchema,
+  async ({ token, cpf, _senha, _confirmar_senha }, issue) => {
+    try {
+      await cadastrar({
+        token,
+        senha: _senha,
+        confirmar_senha: _confirmar_senha,
+      });
+    } catch (e) {
+      if (e instanceof ApiError && e.response?.errors) {
+        for (const [, message] of Object.entries(e.response.errors)) {
+          issue(message);
+        }
+        return;
+      }
+      if (e instanceof ApiError) {
+        issue(e.message);
+        return;
+      }
+      throw e;
+    }
+
+    // Autenticar automaticamente após o cadastro.
+    try {
+      const { cookies } = getRequestEvent();
+      const { token: authToken, expira } = await entrar({
+        cpf,
+        senha: _senha,
+      });
+
+      console.log(token, expira);
+      cookies.set("auth", authToken, {
+        path: "/",
+        expires: new Date(expira),
+        httpOnly: true,
+      });
+    } catch (e) {
+      console.log(e);
+      // Cadastro concluído, mas login falhou — redirecionar para entrar.
+      redirect(303, "/entrar");
+    }
+
+    redirect(303, "/");
   },
 );
 

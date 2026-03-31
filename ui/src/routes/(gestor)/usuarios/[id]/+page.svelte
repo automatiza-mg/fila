@@ -1,8 +1,8 @@
 <script lang="ts">
-  import FormField from "$lib/components/ui/form-field.svelte";
-  import Select from "$lib/components/ui/select.svelte";
+  import AnalistaForm from "$lib/components/analista-form.svelte";
+  import Button from "$lib/components/ui/button.svelte";
   import { toast } from "svelte-sonner";
-  import { deleteUsuarioCmd } from "../usuario.remote";
+  import { deleteUsuarioCmd, enviarCadastroCmd } from "../usuario.remote";
   import { goto } from "$app/navigation";
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
   import type { PageProps } from "./$types";
@@ -26,6 +26,22 @@
 <div>
   Nome: {data.usuario.nome}
 </div>
+
+<!-- Reenviar Email de Cadastro -->
+{#if !data.usuario.email_verificado}
+  <Button
+    onclick={async () => {
+      try {
+        await enviarCadastroCmd({ usuarioId: data.usuario.id });
+        toast.success("Email de cadastro reenviado com sucesso!");
+      } catch {
+        toast.error("Não foi possível reenviar o email de cadastro");
+      }
+    }}
+  >
+    Reenviar Email de Cadastro
+  </Button>
+{/if}
 
 <!-- Excluir -->
 {#if data.usuario.id !== data.usuarioAtual.id}
@@ -57,21 +73,6 @@
   {#if data.analista}
     Dados Analista
   {:else}
-    <div class="flex flex-col gap-4 max-w-sm">
-      <FormField label="Órgao de Exercício" id="orgao">
-        <Select name="orgao" id="orgao">
-          <option value="SEPLAG">SEPLAG</option>
-          <option value="SEE">SEE</option>
-        </Select>
-      </FormField>
-
-      <FormField label="Caixa do SEI" id="sei_unidade_id">
-        <Select name="sei_unidade_id" id="sei_unidade_id">
-          {#each data.unidades as unidade}
-            <option value={unidade.id}>{unidade.sigla}</option>
-          {/each}
-        </Select>
-      </FormField>
-    </div>
+    <AnalistaForm usuarioId={data.usuario.id} />
   {/if}
 {/if}

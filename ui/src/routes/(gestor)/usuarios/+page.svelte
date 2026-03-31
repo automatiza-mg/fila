@@ -47,6 +47,7 @@
                 <Pendencias
                   usuarioId={usuario.id}
                   pendencias={usuario.pendencias}
+                  papel={usuario.papel}
                 />
               {/if}
             </td>

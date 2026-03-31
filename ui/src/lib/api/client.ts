@@ -66,12 +66,15 @@ export async function entrar(data: Credenciais): Promise<Token> {
   return await handleResponse<Token>(res);
 }
 
-export async function cadastrar(data: Cadastrar) {
+export async function cadastrar(data: Cadastrar): Promise<void> {
   const res = await fetch(`${env.PUBLIC_API_URL}/api/v1/auth/cadastrar`, {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return await handleResponse(res);
+  if (!res.ok) {
+    const body = (await res.json()) as ErrorResponse;
+    throw new ApiError(body.message, res.status, body);
+  }
 }
 
 export async function recuperarSenha(data: RecuperarSenha): Promise<void> {

@@ -1,5 +1,5 @@
 import { ApiError } from "$lib/api/client.js";
-import type { Analista, Unidade } from "$lib/api/types.js";
+import type { Analista } from "$lib/api/types.js";
 import { getClient } from "$lib/server/util";
 
 export const load = async ({ params, parent }) => {
@@ -12,10 +12,8 @@ export const load = async ({ params, parent }) => {
   const usuario = await client.getUsuario(usuarioId);
 
   let analista: Analista | null = null;
-  let unidades: Unidade[] | null = null;
 
   if (usuario.papel === "ANALISTA") {
-    unidades = await client.listarUnidadesSei();
     try {
       analista = await client.getAnalista(usuario.id);
     } catch (err) {
@@ -30,6 +28,5 @@ export const load = async ({ params, parent }) => {
     usuario,
     usuarioAtual,
     analista,
-    unidades,
   };
 };

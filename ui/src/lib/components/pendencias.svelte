@@ -1,13 +1,15 @@
 <script lang="ts">
-  import type { Pendencia } from "$lib/api/types";
+  import type { Papel, Pendencia } from "$lib/api/types";
   import { Popover } from "bits-ui";
+  import AnalistaForm from "./analista-form.svelte";
 
   type Props = {
     usuarioId: number;
     pendencias: Pendencia[];
+    papel?: Papel;
   };
 
-  let { pendencias, usuarioId }: Props = $props();
+  let { pendencias, usuarioId, papel }: Props = $props();
 </script>
 
 {#if pendencias.length === 0}
@@ -26,10 +28,26 @@
         <ul class="text-sm text-muted-foreground space-y-0.5 list-disc">
           {#each pendencias as pendencia}
             <li class="ml-6">
-              <p class="tracking-tight">{pendencia.titulo}</p>
+              <p class="tracking-tight">
+                {pendencia.titulo}
+                {#if pendencia.slug === "dados-analista"}
+                  - <AnalistaForm
+                    {usuarioId}
+                    buttonText="Resolver"
+                    buttonVariant="link"
+                  />
+                {/if}
+              </p>
             </li>
           {/each}
         </ul>
+        {#if papel === "ANALISTA"}
+          <hr class="border-stone-200 mt-2" />
+          <p class="text-xs text-muted-foreground mt-2">
+            Todas as pendências precisam ser resolvidas antes do usuário começar
+            a receber processos.
+          </p>
+        {/if}
       </Popover.Content>
     </Popover.Portal>
   </Popover.Root>

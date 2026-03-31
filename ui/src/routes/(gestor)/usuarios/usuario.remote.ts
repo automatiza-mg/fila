@@ -77,3 +77,44 @@ export const deleteUsuarioCmd = command(
     await client.deletarUsuario(usuarioId);
   },
 );
+
+const enviarCadastroSchema = z.object({
+  usuarioId: z.number().int(),
+});
+
+export const enviarCadastroCmd = command(
+  enviarCadastroSchema,
+  async ({ usuarioId }) => {
+    const client = getClient();
+    await client.enviarCadastro(usuarioId);
+  },
+);
+
+export const unidadesQuery = query(async () => {
+  const client = getClient();
+  return await client.listarUnidadesSei();
+});
+
+const criarAnalistaSchema = z.object({
+  usuarioId: z.coerce.number().int(),
+  orgao: z.string().min(1, "Campo obrigatório"),
+  sei_unidade_id: z.string().min(1, "Campo obrigatório"),
+});
+
+export const criarAnalistaForm = form(
+  criarAnalistaSchema,
+  async ({ usuarioId, orgao, sei_unidade_id }, issue) => {
+    const client = getClient();
+
+    try {
+      await client.criarAnalista(usuarioId, { sei_unidade_id, orgao });
+    } catch (err) {
+      if (err instanceof ApiError) {
+        invalid(err.message);
+      }
+      invalid(
+        "Não foi possível cadastrar o analista, tente novamente mais tarde",
+      );
+    }
+  },
+);
