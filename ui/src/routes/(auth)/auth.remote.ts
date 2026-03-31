@@ -34,7 +34,7 @@ export const entrarForm = form(entrarSchema, async ({ cpf, _senha }, issue) => {
       httpOnly: true,
     });
 
-    redirect(303, "/painel");
+    redirect(303, "/");
   }
 
   invalid("Não foi possível autenticar, confira suas credenciais.");
