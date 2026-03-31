@@ -23,7 +23,8 @@
     ...restProps
   }: Props = $props();
 
-  const base = "px-4 py-2 text-sm font-medium rounded-lg";
+  const base =
+    "px-4 py-2 text-sm font-medium rounded-lg inline-flex items-center gap-2 [&>svg]:size-5 [&>svg]:pointer-events-none [&>svg]:shrink-0";
   const variants = {
     default:
       "bg-primary text-white hover:bg-primary/90 border border-transparent",

@@ -84,7 +84,7 @@
 
   <div>
     <Button
-      href="/processos/{data.processo.id}/preview"
+      href="/preview/{data.processo.id}"
       target="_blank"
       rel="noopener noreferrer"
     >
