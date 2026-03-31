@@ -16,9 +16,9 @@
   </div>
 
   <div>
-    <table class="w-full border border-stone-200 text-sm">
+    <table class="w-full border border-border text-sm">
       <thead>
-        <tr class="border-y border-stone-200 bg-stone-100">
+        <tr class="border-y border-border bg-surface-alt">
           <th class="text-left font-semibold p-2.5">Nome</th>
           <th class="text-left font-semibold p-2.5">CPF</th>
           <th class="text-left font-semibold p-2.5">Email</th>

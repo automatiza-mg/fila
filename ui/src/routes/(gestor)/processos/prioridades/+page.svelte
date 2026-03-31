@@ -50,13 +50,13 @@
         type="text"
         value={data.numero}
         placeholder="Número do processo"
-        class="rounded border border-stone-200 bg-white p-2 text-sm outline-none focus-visible:border-secondary focus-visible:ring-3 focus-visible:ring-secondary/50"
+        class="rounded border border-border bg-surface p-2 text-sm outline-none focus-visible:border-secondary focus-visible:ring-3 focus-visible:ring-secondary/50"
       />
       <label for="status-filter" class="text-sm font-medium">Status:</label>
       <select
         id="status-filter"
         name="status"
-        class="rounded border border-stone-200 bg-white p-2 min-w-30 text-sm outline-none focus-visible:border-secondary focus-visible:ring-3 focus-visible:ring-secondary/50"
+        class="rounded border border-border bg-surface p-2 min-w-30 text-sm outline-none focus-visible:border-secondary focus-visible:ring-3 focus-visible:ring-secondary/50"
       >
         <option value="" selected={data.status === ""}>Todos</option>
         <option value="pendente" selected={data.status === "pendente"}
@@ -71,7 +71,7 @@
       </select>
       <button
         type="submit"
-        class="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+        class="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
       >
         Buscar
       </button>
@@ -84,7 +84,7 @@
 
   <div>
     {#if data.solicitacoes.data.length === 0}
-      <div class="p-6 border border-stone-300">
+      <div class="p-6 border border-border-strong">
         <p class="text-center font-semibold">
           Nenhuma solicitação de prioridade encontrada.
         </p>
@@ -93,9 +93,9 @@
         </p>
       </div>
     {:else}
-      <table class="w-full border border-stone-200 text-sm">
+      <table class="w-full border border-border text-sm">
         <thead>
-          <tr class="border-y border-stone-200 bg-stone-100">
+          <tr class="border-y border-border bg-surface-alt">
             <th scope="col" class="text-left font-semibold p-2.5">
               Número Processo
             </th>
@@ -110,7 +110,7 @@
         </thead>
         <tbody>
           {#each data.solicitacoes.data as solicitacao}
-            <tr class="border-b border-stone-200 hover:bg-stone-50">
+            <tr class="border-b border-border hover:bg-surface-subtle">
               <td class="p-2.5">
                 <a
                   href={`/processos/${solicitacao.processo_aposentadoria_id}`}
@@ -128,7 +128,7 @@
               <td class="p-2.5">
                 <select
                   disabled={!isSubsecretario}
-                  class="rounded bg-white p-2 text-sm border border-stone-200 focus-visible:ring-3 outline-none disabled:bg-stone-100 focus-visible:ring-secondary/50 focus-visible:border-secondary w-full"
+                  class="rounded bg-surface p-2 text-sm border border-border focus-visible:ring-3 outline-none disabled:bg-surface-alt focus-visible:ring-secondary/50 focus-visible:border-secondary w-full"
                   onchange={(e) => handleStatusChange(e, solicitacao.id)}
                 >
                   <option

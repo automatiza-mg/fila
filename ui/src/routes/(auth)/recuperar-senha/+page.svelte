@@ -68,7 +68,7 @@
   </form>
 {/if}
 
-<hr class="border-stone-300" />
+<hr class="border-border-strong" />
 
 <div>
   <p class="text-center">

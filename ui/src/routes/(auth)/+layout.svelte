@@ -6,7 +6,7 @@
   class="bg-linear-to-b from-secondary flex flex-col items-center justify-center p-4 to-primary min-h-svh"
 >
   <section
-    class="max-w-95 w-full bg-white px-6 py-8 rounded-3xl shadow-sm space-y-4"
+    class="max-w-95 w-full bg-surface px-6 py-8 rounded-3xl shadow-sm space-y-4"
   >
     {@render children()}
   </section>

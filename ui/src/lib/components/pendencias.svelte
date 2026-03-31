@@ -21,7 +21,7 @@
     </Popover.Trigger>
     <Popover.Portal>
       <Popover.Content
-        class="border border-stone-300 shadow-sm z-30 max-w-80 rounded-xl p-4 w-full bg-white space-y-1"
+        class="border border-border-strong shadow-sm z-30 max-w-80 rounded-xl p-4 w-full bg-surface space-y-1"
         sideOffset={8}
       >
         <p class="text-sm">Pendências do usuário:</p>
@@ -42,7 +42,7 @@
           {/each}
         </ul>
         {#if papel === "ANALISTA"}
-          <hr class="border-stone-200 mt-2" />
+          <hr class="border-border mt-2" />
           <p class="text-xs text-muted-foreground mt-2">
             Todas as pendências precisam ser resolvidas antes do usuário começar
             a receber processos.

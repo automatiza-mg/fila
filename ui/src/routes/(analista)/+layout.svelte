@@ -25,7 +25,7 @@
 {/snippet}
 
 <div class="from-secondary to-primary flex min-h-svh flex-col bg-linear-to-b">
-  <header class="bg-white flex p-6 justify-between items-center">
+  <header class="bg-surface flex p-6 justify-between items-center">
     <div>
       <p class="text-xl font-bold">Fila Aposentadoria</p>
     </div>
@@ -46,7 +46,7 @@
         class="bg-muted flex h-full grow flex-col rounded-tr-2xl rounded-b-2xl p-4 sm:p-8"
       >
         <div
-          class="grow overflow-y-auto rounded-xl bg-white p-6 shadow border border-secondary"
+          class="grow overflow-y-auto rounded-xl bg-surface p-6 shadow border border-secondary"
         >
           {@render children()}
         </div>

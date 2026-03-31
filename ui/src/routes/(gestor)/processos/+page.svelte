@@ -19,6 +19,7 @@
         type="text"
         value={data.numero}
         placeholder="Número do processo"
+        required
       />
       <Button type="submit">Buscar</Button>
     </form>
@@ -27,9 +28,9 @@
   </div>
 
   <div>
-    <table class="w-full border border-stone-200 text-sm">
+    <table class="w-full border border-border text-sm">
       <thead>
-        <tr class="border-y border-stone-200 bg-stone-100">
+        <tr class="border-y border-border bg-surface-alt">
           <th scope="col" class="text-left font-semibold p-2.5">Numero</th>
           <th scope="col" class="text-left font-semibold p-2.5">Status</th>
           <th scope="col" class="text-left font-semibold p-2.5">
@@ -42,7 +43,7 @@
       </thead>
       <tbody>
         {#each data.processos.data as processo}
-          <tr class="border-b border-stone-200 hover:bg-stone-50">
+          <tr class="border-b border-border hover:bg-surface-subtle">
             <td class="p-2.5">
               <a
                 class="text-primary underline"
@@ -64,7 +65,18 @@
             >
             <td class="p-2.5">{processo.score}</td>
             <td class="p-2.5">{processo.prioridade ? "Sim" : "Não"}</td>
-            <td class="p-2.5">{processo.analista ?? "Não possui"}</td>
+            <td class="p-2.5">
+              {#if processo.analista}
+                <a
+                  class="text-primary underline"
+                  href="/usuarios/{processo.analista_id}"
+                >
+                  {processo.analista}
+                </a>
+              {:else}
+                Não possui
+              {/if}
+            </td>
           </tr>
         {/each}
       </tbody>

@@ -7,6 +7,6 @@
   let { message, variant }: Props = $props();
 </script>
 
-<div role="alert" class="p-4 bg-red-50 border border-red-300 rounded-2xl">
+<div role="alert" class="p-4 bg-error-bg border border-error-border rounded-2xl">
   {message}
 </div>

@@ -22,16 +22,16 @@ export function statusText(status: StatusProcessoAposentadoria): string {
 export function statusColor(status: StatusProcessoAposentadoria): string {
   switch (status) {
     case "ANALISE_PENDENTE":
-      return "bg-[#E5DFD7]/50";
+      return "bg-status-pending/50";
     case "CONCLUIDO":
-      return "bg-[#B9DEB4]/50";
+      return "bg-status-completed/50";
     case "EM_ANALISE":
-      return "bg-[#A8DCEE]/50";
+      return "bg-status-analyzing/50";
     case "EM_DILIGENCIA":
-      return "bg-[#FAF8BF]/50";
+      return "bg-status-diligence/50";
     case "LEITURA_INVALIDA":
-      return "bg-[#FFBCBC]/50";
+      return "bg-status-invalid/50";
     case "RETORNO_DILIGENCIA":
-      return "bg-[#BAC8F6]/50";
+      return "bg-status-return/50";
   }
 }

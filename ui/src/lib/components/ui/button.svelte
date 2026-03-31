@@ -27,11 +27,11 @@
     "px-4 py-2 text-sm font-medium rounded-lg inline-flex justify-center items-center gap-2 [&>svg]:size-4 [&>svg]:-ml-1 [&>svg]:pointer-events-none [&>svg]:shrink-0 outline-none focus-visible:ring-3 focus-visible:ring-secondary/50";
   const variants = {
     default:
-      "bg-primary text-white hover:bg-primary/90 border border-transparent",
+      "bg-primary text-primary-foreground hover:bg-primary/90 border border-transparent",
     destructive:
-      "bg-red-700 text-white hover:bg-red-700/90 focus-visible:ring-red-500/50",
+      "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/50",
     outline:
-      "border border-stone-300 hover:bg-stone-100 focus-visible:border-secondary",
+      "border border-border-strong hover:bg-surface-alt focus-visible:border-secondary",
     link: "text-muted-foreground underline hover:text-foreground p-0 rounded-none",
   };
 </script>

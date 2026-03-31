@@ -14,7 +14,7 @@
 <select
   {...rest}
   class={cn(
-    "rounded-lg border border-stone-200 bg-white p-2 text-sm outline-none focus-visible:border-secondary focus-visible:ring-3 focus-visible:ring-secondary/50",
+    "rounded-lg border border-border bg-surface p-2 text-sm outline-none focus-visible:border-secondary focus-visible:ring-3 focus-visible:ring-secondary/50",
     className,
   )}
 >

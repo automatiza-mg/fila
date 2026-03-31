@@ -35,7 +35,7 @@
       </Tooltip.Trigger>
       <Tooltip.Portal>
         <Tooltip.Content
-          class="bg-stone-900/90 text-stone-50 text-xs rounded-md px-2 py-1 shadow-sm"
+          class="bg-tooltip-bg text-tooltip-fg text-xs rounded-md px-2 py-1 shadow-sm"
           sideOffset={4}
         >
           {copied ? "Copiado!" : "Copiar Número"}

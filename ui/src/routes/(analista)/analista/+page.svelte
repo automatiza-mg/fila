@@ -58,10 +58,10 @@
 
     <div class="space-y-2">
       <div
-        class="rounded-xl border border-stone-200 shadow-xs divide-y divide-stone-200 text-sm sm:text-base"
+        class="rounded-xl border border-border shadow-xs divide-y divide-border text-sm sm:text-base"
       >
         <div
-          class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-stone-200"
+          class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border"
         >
           <div class="px-4 py-3">
             <p
@@ -109,7 +109,7 @@
         </div>
 
         <div
-          class="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-stone-200"
+          class="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border"
         >
           <div class="px-4 py-3">
             <p

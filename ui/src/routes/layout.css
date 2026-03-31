@@ -5,10 +5,35 @@
 
 @theme {
   --color-primary: #00183b;
+  --color-primary-foreground: #ffffff;
   --color-secondary: #59a1ba;
+  --color-foreground: #1c1917;
   --color-muted: #d4e7ed;
   --color-muted-foreground: #44403b;
-  --color-foreground: #1c1917;
+
+  --color-surface: #ffffff;
+  --color-surface-subtle: #fafaf9;
+  --color-surface-alt: #f5f5f4;
+
+  --color-border: #e7e5e4;
+  --color-border-strong: #d6d3d1;
+
+  --color-overlay: #000000cc;
+  --color-tooltip-bg: #1c1917e6;
+  --color-tooltip-fg: #fafaf9;
+
+  --color-destructive: #b91c1c;
+  --color-destructive-foreground: #ffffff;
+  --color-error: #dc2626;
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fca5a5;
+
+  --color-status-pending: #e5dfd7;
+  --color-status-completed: #b9deb4;
+  --color-status-analyzing: #a8dcee;
+  --color-status-diligence: #faf8bf;
+  --color-status-invalid: #ffbcbc;
+  --color-status-return: #bac8f6;
 
   --font-sans: "Inter", sans-serif;
 }

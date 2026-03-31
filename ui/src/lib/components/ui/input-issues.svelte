@@ -11,5 +11,5 @@
 </script>
 
 {#each issues as issue}
-  <p class="text-sm text-red-600">{issue.message}</p>
+  <p class="text-sm text-error">{issue.message}</p>
 {/each}
