@@ -1,5 +1,6 @@
 import { env } from "$env/dynamic/public";
 import {
+  type AlterarSenha,
   type Analista,
   type Cadastrar,
   type Credenciais,
@@ -164,6 +165,13 @@ export class Client {
 
   async analistaAtual(): Promise<Analista> {
     return this.request<Analista>("/api/v1/auth/me/analista");
+  }
+
+  async alterarSenha(data: AlterarSenha): Promise<void> {
+    return this.requestVoid("/api/v1/auth/alterar-senha", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
   async listarUsuarios(): Promise<Usuario[]> {

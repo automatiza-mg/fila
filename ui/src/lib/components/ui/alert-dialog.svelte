@@ -5,9 +5,10 @@
 
   type Props = AlertDialog.RootProps & {
     buttonText: string;
+    buttonIcon?: Snippet;
     title: Snippet;
     description: Snippet;
-    variant?: "default" | "destructive";
+    variant?: "default" | "destructive" | "outline";
     contentProps?: WithoutChild<AlertDialog.ContentProps>;
     onConfirmed?: () => void;
     onCancelled?: () => void;
@@ -18,6 +19,7 @@
     variant = "default",
     children,
     buttonText,
+    buttonIcon,
     contentProps,
     title,
     description,
@@ -29,7 +31,12 @@
 
 <AlertDialog.Root bind:open {...restProps}>
   <AlertDialog.Trigger>
-    {buttonText}
+    {#snippet child({ props })}
+      <Button {variant} {...props}>
+        {#if buttonIcon}{@render buttonIcon()}{/if}
+        {buttonText}
+      </Button>
+    {/snippet}
   </AlertDialog.Trigger>
   <AlertDialog.Portal>
     <AlertDialog.Overlay
@@ -56,7 +63,7 @@
         </AlertDialog.Cancel>
         <AlertDialog.Action onclick={onConfirmed}>
           {#snippet child({ props })}
-            <Button {variant} {...props}>Continuar</Button>
+            <Button variant={variant === "destructive" ? "destructive" : "default"} {...props}>Continuar</Button>
           {/snippet}
         </AlertDialog.Action>
       </div>

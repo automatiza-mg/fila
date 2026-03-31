@@ -261,6 +261,41 @@ func (s *Service) SendResetSenha(ctx context.Context, cpf string, tokenFn func(t
 	return tx.Commit(ctx)
 }
 
+type AlterarSenhaParams struct {
+	UsuarioID  int64
+	SenhaAtual string
+	NovaSenha  string
+}
+
+// AlterarSenha altera a senha de um usuário autenticado, verificando a senha atual.
+// Retorna [ErrInvalidCredentials] se a senha atual estiver incorreta.
+func (s *Service) AlterarSenha(ctx context.Context, params AlterarSenhaParams) error {
+	r, err := s.store.GetUsuario(ctx, params.UsuarioID)
+	if err != nil {
+		return err
+	}
+
+	u := MapUsuario(r)
+	if !u.HasSenha() {
+		return ErrNoPassword
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(u.hashSenha), []byte(params.SenhaAtual))
+	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+		return ErrInvalidCredentials
+	}
+	if err != nil {
+		return err
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(params.NovaSenha), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return s.store.UpdateUsuarioSenha(ctx, params.UsuarioID, string(hash))
+}
+
 // ResetSenhaParams são os parâmetros para redefinição de senha.
 type ResetSenhaParams struct {
 	Token string

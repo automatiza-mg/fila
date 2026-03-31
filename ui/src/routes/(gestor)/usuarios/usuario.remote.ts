@@ -118,3 +118,27 @@ export const criarAnalistaForm = form(
     }
   },
 );
+
+const afastarAnalistaSchema = z.object({
+  usuarioId: z.number().int(),
+});
+
+export const afastarAnalistaCmd = command(
+  afastarAnalistaSchema,
+  async ({ usuarioId }) => {
+    const client = getClient();
+    await client.afastarAnalista(usuarioId);
+  },
+);
+
+const retornarAnalistaSchema = z.object({
+  usuarioId: z.number().int(),
+});
+
+export const retornarAnalistaCmd = command(
+  retornarAnalistaSchema,
+  async ({ usuarioId }) => {
+    const client = getClient();
+    await client.retornarAnalista(usuarioId);
+  },
+);

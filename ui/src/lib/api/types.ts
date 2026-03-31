@@ -186,6 +186,12 @@ export type RedefinirSenha = {
   confirmar_senha: string;
 };
 
+export type AlterarSenha = {
+  senha_atual: string;
+  nova_senha: string;
+  confirmar_nova_senha: string;
+};
+
 export type CriarProcesso = {
   numero: string;
 };

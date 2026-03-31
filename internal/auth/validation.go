@@ -40,6 +40,17 @@ func ValidateCreateUsuario(v *validator.Validator, params CreateUsuarioParams) {
 		fmt.Sprintf("Deve ser um dos valores: %s", strings.Join(AllowedPapeis, ", ")))
 }
 
+// ValidateAlterarSenha valida os parâmetros para alteração de senha pelo próprio usuário.
+func ValidateAlterarSenha(v *validator.Validator, senhaAtual, novaSenha, confirmarNovaSenha string) {
+	v.Check(validator.NotBlank(senhaAtual), "senha_atual", "Campo obrigatório")
+	v.Check(validator.NotBlank(novaSenha), "nova_senha", "Campo obrigatório")
+	v.Check(validator.MinLength(novaSenha, 8), "nova_senha", "Deve possuir no mínimo 8 caracteres")
+	v.Check(validator.MaxLength(novaSenha, 60), "nova_senha", "Deve possuir no máximo 60 caracteres")
+	v.Check(validator.StrongPassword(novaSenha), "nova_senha", "Deve possuir pelo menos um número e um caractere especial")
+	v.Check(validator.NotBlank(confirmarNovaSenha), "confirmar_nova_senha", "Campo obrigatório")
+	v.Check(novaSenha == confirmarNovaSenha, "confirmar_nova_senha", "Senhas devem ser idênticas")
+}
+
 // ValidateResetSenha valida os parâmetros para redefinição de senha.
 func ValidateResetSenha(v *validator.Validator, senha, confirmarSenha string) {
 	v.Check(validator.NotBlank(senha), "senha", "Campo obrigatório")

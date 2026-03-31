@@ -24,12 +24,14 @@
   }: Props = $props();
 
   const base =
-    "px-4 py-2 text-sm font-medium rounded-lg inline-flex justify-center items-center gap-2 [&>svg]:size-4 [&>svg]:pointer-events-none [&>svg]:shrink-0 outline-none focus-visible:ring-3 focus-visible:ring-secondary/50";
+    "px-4 py-2 text-sm font-medium rounded-lg inline-flex justify-center items-center gap-2 [&>svg]:size-4 [&>svg]:-ml-1 [&>svg]:pointer-events-none [&>svg]:shrink-0 outline-none focus-visible:ring-3 focus-visible:ring-secondary/50";
   const variants = {
     default:
       "bg-primary text-white hover:bg-primary/90 border border-transparent",
-    destructive: "bg-red-700 text-white hover:bg-red-700/90",
-    outline: "border border-stone-300 hover:bg-stone-100 focus-visible:border-secondary",
+    destructive:
+      "bg-red-700 text-white hover:bg-red-700/90 focus-visible:ring-red-500/50",
+    outline:
+      "border border-stone-300 hover:bg-stone-100 focus-visible:border-secondary",
     link: "text-muted-foreground underline hover:text-foreground p-0 rounded-none",
   };
 </script>

@@ -173,6 +173,51 @@ func (app *application) handleAuthAnalistaAtual(w http.ResponseWriter, r *http.R
 	app.writeJSON(w, http.StatusOK, analista)
 }
 
+type AlterarSenhaRequest struct {
+	SenhaAtual         string `json:"senha_atual"`
+	NovaSenha          string `json:"nova_senha"`
+	ConfirmarNovaSenha string `json:"confirmar_nova_senha"`
+
+	validator.Validator `json:"-"`
+}
+
+// Altera a senha do usuário autenticado.
+func (app *application) handleAuthAlterarSenha(w http.ResponseWriter, r *http.Request) {
+	var input AlterarSenhaRequest
+	err := app.decodeJSON(w, r, &input)
+	if err != nil {
+		app.decodeError(w, r, err)
+		return
+	}
+
+	auth.ValidateAlterarSenha(&input.Validator, input.SenhaAtual, input.NovaSenha, input.ConfirmarNovaSenha)
+	if !input.Valid() {
+		app.validationFailed(w, r, input.FieldErrors)
+		return
+	}
+
+	usuario := app.getAuth(r.Context())
+
+	err = app.auth.AlterarSenha(r.Context(), auth.AlterarSenhaParams{
+		UsuarioID:  usuario.ID,
+		SenhaAtual: input.SenhaAtual,
+		NovaSenha:  input.NovaSenha,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, auth.ErrInvalidCredentials):
+			app.writeError(w, http.StatusUnauthorized, "Senha atual incorreta")
+		case errors.Is(err, auth.ErrNoPassword):
+			app.badRequest(w, r, "O usuário não possui uma senha cadastrada")
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 type RecuperarSenhaRequest struct {
 	CPF string `json:"cpf"`
 

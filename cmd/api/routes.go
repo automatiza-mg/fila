@@ -109,6 +109,7 @@ func (app *application) routes() http.Handler {
 
 				r.Get("/me", app.handleAuthUsuarioAtual)
 				r.Get("/me/analista", app.handleAuthAnalistaAtual)
+				r.Post("/alterar-senha", app.handleAuthAlterarSenha)
 			})
 		})
 
