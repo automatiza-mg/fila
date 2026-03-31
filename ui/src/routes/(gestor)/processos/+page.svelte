@@ -36,6 +36,7 @@
             Data Requerimento
           </th>
           <th scope="col" class="text-left font-semibold p-2.5">Score</th>
+          <th scope="col" class="text-left font-semibold p-2.5">Prioritário</th>
           <th scope="col" class="text-left font-semibold p-2.5">Analista</th>
         </tr>
       </thead>
@@ -62,6 +63,7 @@
               )}</td
             >
             <td class="p-2.5">{processo.score}</td>
+            <td class="p-2.5">{processo.prioridade ? "Sim" : "Não"}</td>
             <td class="p-2.5">{processo.analista ?? "Não possui"}</td>
           </tr>
         {/each}

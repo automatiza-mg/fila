@@ -9,5 +9,5 @@ export const load = async ({ locals }) => {
     redirect(302, "/analista");
   }
 
-  redirect(302, "/painel");
+  redirect(302, "/processos");
 };

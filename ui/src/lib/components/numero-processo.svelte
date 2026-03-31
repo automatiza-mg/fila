@@ -25,7 +25,7 @@
     <Tooltip.Root>
       <Tooltip.Trigger
         onclick={copy}
-        class="text-muted-foreground hover:text-foreground cursor-pointer"
+        class="text-muted-foreground hover:text-foreground cursor-pointer p-1"
       >
         {#if copied}
           <CheckIcon class="size-4" />
