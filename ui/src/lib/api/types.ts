@@ -147,6 +147,7 @@ export type ProcessoHistorico = {
   status_anterior: StatusProcessoAposentadoria | null;
   status_novo: StatusProcessoAposentadoria;
   usuario_id: number | null;
+  usuario: string | null;
   observacao: string | null;
   alterado_em: string;
 };

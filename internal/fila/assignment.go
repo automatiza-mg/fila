@@ -46,11 +46,22 @@ func (s *Service) assignProcessoAposentadoria(ctx context.Context) error {
 		return fmt.Errorf("erro ao obter processo prioritário: %w", err)
 	}
 
+	statusAnterior := processo.Status
+
 	processo.AnalistaID = sql.Null[int64]{Valid: true, V: analistaID}
 	processo.Status = database.StatusProcessoEmAnalise
 
 	if err := store.UpdateProcessoAposentadoria(ctx, processo); err != nil {
 		return fmt.Errorf("erro ao atualizar processo: %w", err)
+	}
+
+	if err := s.saveHistorico(ctx, store, saveHistoricoParams{
+		ProcessoAposentadoriaID: processo.ID,
+		StatusAnterior:          &statusAnterior,
+		StatusNovo:              database.StatusProcessoEmAnalise,
+		Observacao:              "Processo atribuído para análise",
+	}); err != nil {
+		return fmt.Errorf("erro ao salvar histórico: %w", err)
 	}
 
 	analista, err := store.GetAnalista(ctx, analistaID)

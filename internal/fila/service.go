@@ -106,9 +106,6 @@ func (s *Service) Cleanup(ctx context.Context, tx pgx.Tx, trigger auth.CleanupTr
 		return err
 	}
 
-	pa.AnalistaID = sql.Null[int64]{}
-	pa.UltimoAnalistaID = sql.Null[int64]{}
-
 	if err := s.saveHistorico(ctx, store, saveHistoricoParams{
 		ProcessoAposentadoriaID: pa.ID,
 		StatusAnterior:          &pa.Status,
@@ -118,5 +115,9 @@ func (s *Service) Cleanup(ctx context.Context, tx pgx.Tx, trigger auth.CleanupTr
 		return err
 	}
 
-	return nil
+	pa.Status = database.StatusProcessoAnalisePendente
+	pa.AnalistaID = sql.Null[int64]{}
+	pa.UltimoAnalistaID = sql.Null[int64]{}
+
+	return store.UpdateProcessoAposentadoria(ctx, pa)
 }

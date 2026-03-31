@@ -7,8 +7,9 @@
   import { calcularIdade } from "$lib/date";
   import { formatCpf } from "$lib/formatter";
   import { hasPapel } from "$lib/papel";
-  import { statusText } from "$lib/processo";
+  import { statusText, statusColor } from "$lib/processo";
   import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
+  import ArrowRightIcon from "phosphor-svelte/lib/ArrowRightIcon";
   import type { PageProps } from "./$types";
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
 
@@ -128,4 +129,41 @@
       <PrioridadeForm paId={data.processo.id} />
     {/if}
   </div>
+
+  <!-- Histórico -->
+  {#if data.historico.length > 0}
+    <div class="space-y-4">
+      <h2 class="text-base font-semibold">Histórico</h2>
+
+      <div class="divide-y divide-stone-200">
+        {#each data.historico as entry}
+          <div class="py-2 flex items-center gap-3 text-sm">
+            <span class="text-muted-foreground text-xs shrink-0">
+              {new Date(entry.alterado_em).toLocaleString("pt-BR")}
+            </span>
+
+            <div class="flex items-center gap-1.5">
+              {#if entry.status_anterior}
+                <span
+                  class="inline-block rounded-md px-2 py-1 text-xs font-medium {statusColor(
+                    entry.status_anterior,
+                  )}"
+                >
+                  {statusText(entry.status_anterior)}
+                </span>
+                <ArrowRightIcon class="size-4 text-muted-foreground" />
+              {/if}
+              <span
+                class="inline-block rounded-md px-2 py-1 text-xs font-medium {statusColor(
+                  entry.status_novo,
+                )}"
+              >
+                {statusText(entry.status_novo)}
+              </span>
+            </div>
+          </div>
+        {/each}
+      </div>
+    </div>
+  {/if}
 </div>

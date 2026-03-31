@@ -12,11 +12,12 @@ type HistoricoStatusProcesso struct {
 	StatusAnterior *string   `json:"status_anterior"`
 	StatusNovo     string    `json:"status_novo"`
 	UsuarioID      *int64    `json:"usuario_id"`
+	Usuario        *string   `json:"usuario"`
 	Observacao     *string   `json:"observacao"`
 	AlteradoEm     time.Time `json:"alterado_em"`
 }
 
-func mapHistoricoStatusProcesso(h *database.HistoricoStatusProcesso) *HistoricoStatusProcesso {
+func mapHistoricoStatusProcesso(h *database.HistoricoStatusProcesso, usuario *string) *HistoricoStatusProcesso {
 	statusAnterior := (*string)(nil)
 	if h.StatusAnterior.Valid {
 		s := string(h.StatusAnterior.V)
@@ -27,6 +28,7 @@ func mapHistoricoStatusProcesso(h *database.HistoricoStatusProcesso) *HistoricoS
 		StatusAnterior: statusAnterior,
 		StatusNovo:     string(h.StatusNovo),
 		UsuarioID:      database.Ptr(h.UsuarioID),
+		Usuario:        usuario,
 		Observacao:     database.Ptr(h.Observacao),
 		AlteradoEm:     h.AlteradoEm,
 	}
@@ -65,7 +67,14 @@ func (s *Service) ListHistorico(ctx context.Context, paID int64) ([]*HistoricoSt
 
 	historico := make([]*HistoricoStatusProcesso, len(hh))
 	for i, h := range hh {
-		historico[i] = mapHistoricoStatusProcesso(h)
+		var usuario *string
+		if h.UsuarioID.Valid {
+			nome, err := s.store.GetNomeAnalista(ctx, h.UsuarioID.V)
+			if err == nil {
+				usuario = &nome
+			}
+		}
+		historico[i] = mapHistoricoStatusProcesso(h, usuario)
 	}
 
 	return historico, nil
