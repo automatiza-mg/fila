@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/automatiza-mg/fila/internal/analistas"
 	"github.com/automatiza-mg/fila/internal/database"
-	"github.com/automatiza-mg/fila/internal/fila"
 	"github.com/automatiza-mg/fila/internal/validator"
 )
 
@@ -37,7 +37,7 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	unidadesMap, err := app.fila.GetUnidadesMap(r.Context())
+	unidadesMap, err := app.analistas.GetUnidadesMap(r.Context())
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -51,7 +51,7 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	a, err := app.fila.CreateAnalista(r.Context(), fila.CreateAnalistaParams{
+	a, err := app.analistas.CreateAnalista(r.Context(), analistas.CreateAnalistaParams{
 		UsuarioID:    usuario.ID,
 		SeiUnidadeID: unidade.ID,
 		Orgao:        input.Orgao,
@@ -71,7 +71,7 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) handleAnalistaList(w http.ResponseWriter, r *http.Request) {
-	analistas, err := app.fila.ListAnalistas(r.Context())
+	analistas, err := app.analistas.ListAnalistas(r.Context())
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -87,7 +87,7 @@ func (app *application) handleAnalistaDetail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	analista, err := app.fila.GetAnalista(r.Context(), usuario.ID)
+	analista, err := app.analistas.GetAnalista(r.Context(), usuario.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrNotFound):
@@ -108,7 +108,7 @@ func (app *application) handleAnalistaAfastar(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	analista, err := app.fila.GetAnalista(r.Context(), usuario.ID)
+	analista, err := app.analistas.GetAnalista(r.Context(), usuario.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrNotFound):
@@ -119,7 +119,7 @@ func (app *application) handleAnalistaAfastar(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = app.fila.AfastarAnalista(r.Context(), analista.UsuarioID)
+	err = app.analistas.AfastarAnalista(r.Context(), analista.UsuarioID)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -135,7 +135,7 @@ func (app *application) handleAnalistaRetornar(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	analista, err := app.fila.GetAnalista(r.Context(), usuario.ID)
+	analista, err := app.analistas.GetAnalista(r.Context(), usuario.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrNotFound):
@@ -146,7 +146,7 @@ func (app *application) handleAnalistaRetornar(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = app.fila.RetornarAnalista(r.Context(), analista.UsuarioID)
+	err = app.analistas.RetornarAnalista(r.Context(), analista.UsuarioID)
 	if err != nil {
 		app.serverError(w, r, err)
 		return

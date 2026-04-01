@@ -159,7 +159,7 @@ func (app *application) handleAuthUsuarioAtual(w http.ResponseWriter, r *http.Re
 func (app *application) handleAuthAnalistaAtual(w http.ResponseWriter, r *http.Request) {
 	usuario := app.getAuth(r.Context())
 
-	analista, err := app.fila.GetAnalista(r.Context(), usuario.ID)
+	analista, err := app.analistas.GetAnalista(r.Context(), usuario.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrNotFound):

@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/automatiza-mg/fila/internal/analistas"
 	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/blob"
@@ -52,6 +53,7 @@ type application struct {
 	dev       bool
 	cfg       *config.Config
 	logger    *slog.Logger
+	analistas *analistas.Service
 	apos      *aposentadoria.Service
 	auth      *auth.Service
 	fila      *fila.Service
@@ -113,7 +115,8 @@ func run(ctx context.Context) error {
 	proc := processos.New(pool, storage, sei, cache, queue)
 	apos := aposentadoria.New(dl, cache)
 	auth := auth.New(pool, logger, queue)
-	fila := fila.New(pool, sei, cache, apos, queue)
+	anal := analistas.New(pool, logger, sei, cache)
+	fila := fila.New(pool, queue)
 
 	if err := auth.RegisterHook(fila); err != nil {
 		return err
@@ -136,13 +139,14 @@ func run(ctx context.Context) error {
 		dev:       *dev,
 		cfg:       cfg,
 		logger:    logger,
+		analistas: anal,
 		apos:      apos,
 		fila:      fila,
 		auth:      auth,
 		processos: proc,
 	}
 
-	fila.StartAssignmentWorker(ctx, 30*time.Second)
+	fila.StartAtribuicaoWorker(ctx, 30*time.Second)
 
 	srv := &http.Server{
 		Addr:         *addr,

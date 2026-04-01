@@ -39,8 +39,12 @@ type PendingAction struct {
 type UsuarioHook interface {
 	// Label retorna um ID do provider registrado.
 	Label() string
+
 	// GetActions retorna pendenciais específicas de um usuário.
 	GetActions(ctx context.Context, u *Usuario) ([]PendingAction, error)
+
+	// TODO: Marcar como depecrated e usar uma task para essa finalidade.
+	//
 	// Cleanup executa ações de limpeza durante a exclusão ou alteração de papel
 	// de um usuário. O campo Pendencias pode ou não estar carregado.
 	Cleanup(ctx context.Context, tx pgx.Tx, trigger CleanupTrigger, usuario *Usuario) error

@@ -59,8 +59,9 @@ func (s *Store) SaveToken(ctx context.Context, token *Token) error {
 	return nil
 }
 
-// GetUsuarioForToken retorna um usuário dono de um token válido
-func (s *Store) GetUsuarioForToken(ctx context.Context, token string, escopo string) (*Usuario, error) {
+// GetUsuarioIDForToken retorna o ID do usuário dono de um token válido.
+// Retorna [ErrNotFound] caso o token seja inválido ou tenha expirado.
+func (s *Store) GetUsuarioIDForToken(ctx context.Context, token string, escopo string) (int64, error) {
 	q := `
 	SELECT usuario_id
 	FROM tokens
@@ -72,16 +73,12 @@ func (s *Store) GetUsuarioForToken(ctx context.Context, token string, escopo str
 	err := s.db.QueryRow(ctx, q, hashToken(token), escopo).Scan(&usuarioID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return 0, ErrNotFound
 		}
-		return nil, err
+		return 0, err
 	}
 
-	usuario, err := s.GetUsuario(ctx, usuarioID)
-	if err != nil {
-		return nil, err
-	}
-	return usuario, nil
+	return usuarioID, nil
 }
 
 // DeleteTokensUsuario exclui todos os tokens de um usuário com determinado escopo do banco de dados.

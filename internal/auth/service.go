@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -89,23 +90,23 @@ func (s *Service) Authenticate(ctx context.Context, cpf, senha string) (*Usuario
 		return nil, err
 	}
 
-	// Carrega os dados do usuário.
-	u := MapUsuario(record)
-	u.Pendencias = s.getPendingActions(ctx, u)
-
 	// Verifica se o usuário possui uma senha.
-	if !u.HasSenha() {
+	if !record.HasSenha() {
 		return nil, ErrNoPassword
 	}
 
 	// Compara o hash com a senha.
-	err = bcrypt.CompareHashAndPassword([]byte(u.hashSenha), []byte(senha))
+	err = bcrypt.CompareHashAndPassword([]byte(record.HashSenha.V), []byte(senha))
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return nil, ErrInvalidCredentials
 	}
 	if err != nil {
 		return nil, err
 	}
+
+	// Carrega os dados do usuário.
+	u := MapUsuario(record)
+	u.Pendencias = s.getPendingActions(ctx, u)
 
 	return u, nil
 }
@@ -116,17 +117,20 @@ type SetupUsuarioParams struct {
 }
 
 func (s *Service) SetupUsuario(ctx context.Context, params SetupUsuarioParams) error {
-	r, err := s.store.GetUsuarioForToken(ctx, params.Token, EscopoSetup.String())
+	usuarioID, err := s.store.GetUsuarioIDForToken(ctx, params.Token, EscopoSetup.String())
 	if err != nil {
-		switch {
-		case errors.Is(err, database.ErrNotFound):
+		if errors.Is(err, database.ErrNotFound) {
 			return ErrInvalidToken
-		default:
-			return err
 		}
+		return err
 	}
 
-	if r.EmailVerificado {
+	record, err := s.store.GetUsuario(ctx, usuarioID)
+	if err != nil {
+		return err
+	}
+
+	if record.EmailVerificado {
 		return ErrAlreadySetup
 	}
 
@@ -143,17 +147,17 @@ func (s *Service) SetupUsuario(ctx context.Context, params SetupUsuarioParams) e
 
 	store := s.store.WithTx(tx)
 
-	r.EmailVerificado = true
-	r.HashSenha = sql.Null[string]{
+	record.EmailVerificado = true
+	record.HashSenha = sql.Null[string]{
 		V:     string(hash),
 		Valid: true,
 	}
-	err = store.UpdateUsuario(ctx, r)
+	err = store.UpdateUsuario(ctx, record)
 	if err != nil {
 		return err
 	}
 
-	err = store.DeleteTokensUsuario(ctx, r.ID, EscopoSetup.String())
+	err = store.DeleteTokensUsuario(ctx, record.ID, EscopoSetup.String())
 	if err != nil {
 		return err
 	}
@@ -164,14 +168,17 @@ func (s *Service) SetupUsuario(ctx context.Context, params SetupUsuarioParams) e
 // GetTokenOwner retorna o usuário dono de um token com o escopo especificado.
 // Retorna [ErrInvalidToken] caso o token seja inválido ou tenha expirado.
 func (s *Service) GetTokenOwner(ctx context.Context, token string, escopo Escopo) (*Usuario, error) {
-	r, err := s.store.GetUsuarioForToken(ctx, token, escopo.String())
+	usuarioID, err := s.store.GetUsuarioIDForToken(ctx, token, escopo.String())
 	if err != nil {
-		switch {
-		case errors.Is(err, database.ErrNotFound):
+		if errors.Is(err, database.ErrNotFound) {
 			return nil, ErrInvalidToken
-		default:
-			return nil, err
 		}
+		return nil, err
+	}
+
+	r, err := s.store.GetUsuario(ctx, usuarioID)
+	if err != nil {
+		return nil, err
 	}
 
 	u := MapUsuario(r)
@@ -278,30 +285,35 @@ type AlterarSenhaParams struct {
 // AlterarSenha altera a senha de um usuário autenticado, verificando a senha atual.
 // Retorna [ErrInvalidCredentials] se a senha atual estiver incorreta.
 func (s *Service) AlterarSenha(ctx context.Context, params AlterarSenhaParams) error {
-	r, err := s.store.GetUsuario(ctx, params.UsuarioID)
+	record, err := s.store.GetUsuario(ctx, params.UsuarioID)
 	if err != nil {
 		return err
 	}
 
-	u := MapUsuario(r)
-	if !u.HasSenha() {
+	if !record.HasSenha() {
 		return ErrNoPassword
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(u.hashSenha), []byte(params.SenhaAtual))
+	err = bcrypt.CompareHashAndPassword([]byte(record.HashSenha.V), []byte(params.SenhaAtual))
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return ErrInvalidCredentials
 	}
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to verify user password: %w", err)
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(params.NovaSenha), bcrypt.DefaultCost)
 	if err != nil {
+		return fmt.Errorf("failed to generate password hash: %w", err)
+	}
+
+	record.SetHashSenha(string(hash))
+	err = s.store.UpdateUsuario(ctx, record)
+	if err != nil {
 		return err
 	}
 
-	return s.store.UpdateUsuarioSenha(ctx, params.UsuarioID, string(hash))
+	return nil
 }
 
 // ResetSenhaParams são os parâmetros para redefinição de senha.
@@ -313,7 +325,7 @@ type ResetSenhaParams struct {
 // ResetSenha redefine a senha do usuário utilizando um token de recuperação válido.
 // Retorna [ErrInvalidToken] se o token for inválido ou expirado.
 func (s *Service) ResetSenha(ctx context.Context, params ResetSenhaParams) error {
-	r, err := s.store.GetUsuarioForToken(ctx, params.Token, EscopoResetSenha.String())
+	usuarioID, err := s.store.GetUsuarioIDForToken(ctx, params.Token, EscopoResetSenha.String())
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
 			return ErrInvalidToken
@@ -321,10 +333,16 @@ func (s *Service) ResetSenha(ctx context.Context, params ResetSenhaParams) error
 		return err
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(params.Senha), bcrypt.DefaultCost)
+	record, err := s.store.GetUsuario(ctx, usuarioID)
 	if err != nil {
 		return err
 	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(params.Senha), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to generate password hash: %w", err)
+	}
+	record.SetHashSenha(string(hash))
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -334,12 +352,12 @@ func (s *Service) ResetSenha(ctx context.Context, params ResetSenhaParams) error
 
 	store := s.store.WithTx(tx)
 
-	err = store.UpdateUsuarioSenha(ctx, r.ID, string(hash))
+	err = store.UpdateUsuario(ctx, record)
 	if err != nil {
 		return err
 	}
 
-	err = store.DeleteTokensUsuario(ctx, r.ID, EscopoResetSenha.String())
+	err = store.DeleteTokensUsuario(ctx, record.ID, EscopoResetSenha.String())
 	if err != nil {
 		return err
 	}

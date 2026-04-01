@@ -50,7 +50,7 @@ func TestUsuarioLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !u.HasSenha() || !u.EmailVerificado {
+	if !u.EmailVerificado {
 		t.Fatal("expected user setup to be done")
 	}
 	if counter.actions != 2 {

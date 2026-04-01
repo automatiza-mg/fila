@@ -25,10 +25,6 @@ func (s *Service) assignProcessoAposentadoria(ctx context.Context) error {
 	analistaID, err := store.GetAnalistaDisponivel(ctx)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
-			logger := logging.FromContext(ctx)
-			if logger != nil {
-				logger.Debug("Nenhum analista disponível para atribuição")
-			}
 			return nil
 		}
 		return fmt.Errorf("erro ao obter analista disponível: %w", err)
@@ -37,10 +33,6 @@ func (s *Service) assignProcessoAposentadoria(ctx context.Context) error {
 	processo, err := store.GetProcessoPrioriatario(ctx, analistaID)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
-			logger := logging.FromContext(ctx)
-			if logger != nil {
-				logger.Debug("nenhum processo disponível para atribuição", slog.Int64("analista_id", analistaID))
-			}
 			return nil
 		}
 		return fmt.Errorf("erro ao obter processo prioritário: %w", err)
@@ -55,12 +47,13 @@ func (s *Service) assignProcessoAposentadoria(ctx context.Context) error {
 		return fmt.Errorf("erro ao atualizar processo: %w", err)
 	}
 
-	if err := s.saveHistorico(ctx, store, saveHistoricoParams{
+	err = s.saveHistorico(ctx, store, saveHistoricoParams{
 		ProcessoAposentadoriaID: processo.ID,
 		StatusAnterior:          &statusAnterior,
 		StatusNovo:              database.StatusProcessoEmAnalise,
 		Observacao:              "Processo atribuído para análise",
-	}); err != nil {
+	})
+	if err != nil {
 		return fmt.Errorf("erro ao salvar histórico: %w", err)
 	}
 
@@ -81,9 +74,9 @@ func (s *Service) assignProcessoAposentadoria(ctx context.Context) error {
 	return nil
 }
 
-// StartAssignmentWorker inicia uma goroutine que atribui processos a analistas periodicamente.
+// StartAtribuicaoWorker inicia uma goroutine que atribui processos a analistas periodicamente.
 // A goroutine será cancelada quando o contexto for fechado.
-func (s *Service) StartAssignmentWorker(ctx context.Context, interval time.Duration) {
+func (s *Service) StartAtribuicaoWorker(ctx context.Context, interval time.Duration) {
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()

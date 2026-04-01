@@ -1,19 +1,25 @@
-package fila
+package analistas
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/auth"
+	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/sei"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
+	// ErrInvalidUnidade é o erro retornado quando a unidade SEI informada não é válida.
 	ErrInvalidUnidade = errors.New("invalid unidade id")
-	ErrInvalidPapel   = errors.New("invalid usuario papel: expected ANALISTA")
+	// ErrInvalidPapel é o erro retornado quando o usuário não possui papel de analista.
+	ErrInvalidPapel = errors.New("invalid usuario papel: expected ANALISTA")
 
 	// AllowedOrgaos são os órgãos permitidos para o cadastro de analistas.
 	AllowedOrgaos = []string{
@@ -22,6 +28,12 @@ var (
 	}
 )
 
+// SeiClient define a interface para comunicação com o SEI.
+type SeiClient interface {
+	ListarUnidades(ctx context.Context) (*sei.ListarUnidadesResponse, error)
+}
+
+// Analista representa os dados complementares de um usuário analista.
 type Analista struct {
 	UsuarioID          int64      `json:"usuario_id"`
 	Orgao              string     `json:"orgao"`
@@ -42,6 +54,27 @@ func mapAnalista(a *database.Analista) *Analista {
 	}
 }
 
+// Service gerencia operações de analistas.
+type Service struct {
+	pool   *pgxpool.Pool
+	store  *database.Store
+	logger *slog.Logger
+	sei    SeiClient
+	cache  cache.Cache
+}
+
+// New cria uma nova instância de [Service].
+func New(pool *pgxpool.Pool, logger *slog.Logger, sei SeiClient, cache cache.Cache) *Service {
+	return &Service{
+		pool:   pool,
+		store:  database.New(pool),
+		logger: logger.With(slog.String("service", "analistas")),
+		sei:    sei,
+		cache:  cache,
+	}
+}
+
+// CreateAnalistaParams são os parâmetros para criação de um analista.
 type CreateAnalistaParams struct {
 	UsuarioID    int64
 	SeiUnidadeID string
@@ -95,8 +128,7 @@ func (s *Service) GetAnalista(ctx context.Context, usuarioID int64) (*Analista, 
 	return mapAnalista(r), nil
 }
 
-// AfastarAnalista marca um analista como afastado, não podendo receber novos
-// processos.
+// AfastarAnalista marca um analista como afastado, não podendo receber novos processos.
 func (s *Service) AfastarAnalista(ctx context.Context, usuarioID int64) error {
 	r, err := s.store.GetAnalista(ctx, usuarioID)
 	if err != nil {
@@ -104,16 +136,10 @@ func (s *Service) AfastarAnalista(ctx context.Context, usuarioID int64) error {
 	}
 
 	r.Afastado = true
-	err = s.store.UpdateAnalista(ctx, r)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.store.UpdateAnalista(ctx, r)
 }
 
-// RetornarAnalista marca um analista como não afastado, podendo receber novos
-// processos.
+// RetornarAnalista marca um analista como não afastado, podendo receber novos processos.
 func (s *Service) RetornarAnalista(ctx context.Context, usuarioID int64) error {
 	r, err := s.store.GetAnalista(ctx, usuarioID)
 	if err != nil {
@@ -121,12 +147,7 @@ func (s *Service) RetornarAnalista(ctx context.Context, usuarioID int64) error {
 	}
 
 	r.Afastado = false
-	err = s.store.UpdateAnalista(ctx, r)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.store.UpdateAnalista(ctx, r)
 }
 
 // ListAnalistas retorna os dados dos analistas da aplicação.

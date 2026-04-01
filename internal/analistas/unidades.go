@@ -1,4 +1,4 @@
-package fila
+package analistas
 
 import (
 	"context"
@@ -9,14 +9,15 @@ import (
 	"github.com/automatiza-mg/fila/internal/sei"
 )
 
+// UnidadeSei representa uma unidade do SEI disponível para analistas.
 type UnidadeSei struct {
 	ID        string `json:"id"`
 	Sigla     string `json:"sigla"`
 	Descricao string `json:"descricao"`
 }
 
-// ListUnidadesAnalistas retorna as unidades do SEI reservadas aos analistas de processos de aposentadoria (SEPLAG/APXX).
-func (s *Service) ListUnidadesAnalistas(ctx context.Context) ([]UnidadeSei, error) {
+// ListUnidades retorna as unidades do SEI reservadas aos analistas de processos de aposentadoria (SEPLAG/APXX).
+func (s *Service) ListUnidades(ctx context.Context) ([]UnidadeSei, error) {
 	key := "fila:sei:unidades"
 
 	b, err := s.cache.Remember(ctx, key, 24*time.Hour, func() ([]byte, error) {
@@ -58,7 +59,7 @@ func (s *Service) ListUnidadesAnalistas(ctx context.Context) ([]UnidadeSei, erro
 
 // GetUnidadesMap retorna um mapa de unidades no formato ID -> Unidade.
 func (s *Service) GetUnidadesMap(ctx context.Context) (map[string]UnidadeSei, error) {
-	unidades, err := s.ListUnidadesAnalistas(ctx)
+	unidades, err := s.ListUnidades(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -39,6 +39,29 @@ type Usuario struct {
 	AtualizadoEm    time.Time
 }
 
+// HasSenha reporta se o campo [Usuario.HashSenha] possui um valor (não é null).
+func (u *Usuario) HasSenha() bool {
+	return u.HashSenha.Valid
+}
+
+// SetHashSenha define a senha do usuário para o valor informado.
+// Caso hash seja uma string vazia, o campo é atribuído como null.
+func (u *Usuario) SetHashSenha(hash string) {
+	u.HashSenha = sql.Null[string]{
+		V:     hash,
+		Valid: hash != "",
+	}
+}
+
+// SetPapel define o papel do usuário para o valor informado.
+// Caso hash seja uma string vazia, o campo é atribuído como null.
+func (u *Usuario) SetPapel(papel string) {
+	u.Papel = sql.Null[string]{
+		V:     papel,
+		Valid: papel != "",
+	}
+}
+
 // SaveUsuario adiciona o usuário ao banco de dados. Retorna [ErrUsuarioCPFTaken] e [ErrUsuarioEmailTaken]
 // no caso de campos duplicados.
 func (s *Store) SaveUsuario(ctx context.Context, usuario *Usuario) error {
@@ -219,17 +242,6 @@ func (s *Store) DeleteUsuario(ctx context.Context, id int64) error {
 		return err
 	}
 	return nil
-}
-
-// UpdateUsuarioSenha atualiza apenas a senha (hash) de um usuário.
-func (s *Store) UpdateUsuarioSenha(ctx context.Context, usuarioID int64, hashSenha string) error {
-	q := `
-	UPDATE usuarios SET
-		hash_senha = $2,
-		atualizado_em = CURRENT_TIMESTAMP
-	WHERE id = $1`
-	_, err := s.db.Exec(ctx, q, usuarioID, hashSenha)
-	return err
 }
 
 // ListEmailsByPapel retorna a lista de emails de todos os usuários com determinado papel.

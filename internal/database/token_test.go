@@ -6,8 +6,6 @@ import (
 	"errors"
 	"testing"
 	"time"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestToken_Lifecycle(t *testing.T) {
@@ -24,12 +22,12 @@ func TestToken_Lifecycle(t *testing.T) {
 		t.Fatal("expected token to return plaintext on creation")
 	}
 
-	read, err := store.GetUsuarioForToken(t.Context(), token.Plaintext, token.Escopo)
+	id, err := store.GetUsuarioIDForToken(t.Context(), token.Plaintext, token.Escopo)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(usuario, read); diff != "" {
-		t.Fatalf("mismatch:\n%s", diff)
+	if id != usuario.ID {
+		t.Fatalf("expected usuario ID %d, got %d", usuario.ID, id)
 	}
 
 	err = store.DeleteToken(t.Context(), token.Hash)
@@ -37,7 +35,7 @@ func TestToken_Lifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = store.GetUsuarioForToken(t.Context(), token.Plaintext, token.Escopo)
+	_, err = store.GetUsuarioIDForToken(t.Context(), token.Plaintext, token.Escopo)
 	if !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
@@ -49,7 +47,7 @@ func TestToken_Invalid(t *testing.T) {
 	store := newTestStore(t)
 	usuario := seedUsuario(t, store)
 
-	_, err := store.GetUsuarioForToken(t.Context(), "foobar", "reset-senha")
+	_, err := store.GetUsuarioIDForToken(t.Context(), "foobar", "reset-senha")
 	if !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
@@ -60,7 +58,7 @@ func TestToken_Invalid(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = store.GetUsuarioForToken(t.Context(), token.Plaintext, token.Escopo)
+	_, err = store.GetUsuarioIDForToken(t.Context(), token.Plaintext, token.Escopo)
 	if !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
@@ -88,12 +86,12 @@ func TestToken_SaveToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	read, err := store.GetUsuarioForToken(t.Context(), plaintext, "manual")
+	id, err := store.GetUsuarioIDForToken(t.Context(), plaintext, "manual")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(usuario, read); diff != "" {
-		t.Fatalf("mismatch:\n%s", diff)
+	if id != usuario.ID {
+		t.Fatalf("expected usuario ID %d, got %d", usuario.ID, id)
 	}
 
 	err = store.DeleteToken(t.Context(), token.Hash)
@@ -101,7 +99,7 @@ func TestToken_SaveToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = store.GetUsuarioForToken(t.Context(), plaintext, "manual")
+	_, err = store.GetUsuarioIDForToken(t.Context(), plaintext, "manual")
 	if !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
@@ -132,21 +130,21 @@ func TestToken_DeleteTokensUsuario(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = store.GetUsuarioForToken(t.Context(), rs1.Plaintext, "reset-senha")
+	_, err = store.GetUsuarioIDForToken(t.Context(), rs1.Plaintext, "reset-senha")
 	if !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected ErrNotFound for rs1, got %v", err)
 	}
-	_, err = store.GetUsuarioForToken(t.Context(), rs2.Plaintext, "reset-senha")
+	_, err = store.GetUsuarioIDForToken(t.Context(), rs2.Plaintext, "reset-senha")
 	if !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected ErrNotFound for rs2, got %v", err)
 	}
 
-	read, err := store.GetUsuarioForToken(t.Context(), setup.Plaintext, "setup")
+	id, err := store.GetUsuarioIDForToken(t.Context(), setup.Plaintext, "setup")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(usuario, read); diff != "" {
-		t.Fatalf("mismatch:\n%s", diff)
+	if id != usuario.ID {
+		t.Fatalf("expected usuario ID %d, got %d", usuario.ID, id)
 	}
 }
 
@@ -161,16 +159,16 @@ func TestToken_WrongEscopo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = store.GetUsuarioForToken(t.Context(), token.Plaintext, "reset-senha")
+	_, err = store.GetUsuarioIDForToken(t.Context(), token.Plaintext, "reset-senha")
 	if !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 
-	read, err := store.GetUsuarioForToken(t.Context(), token.Plaintext, "setup")
+	id, err := store.GetUsuarioIDForToken(t.Context(), token.Plaintext, "setup")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(usuario, read); diff != "" {
-		t.Fatalf("mismatch:\n%s", diff)
+	if id != usuario.ID {
+		t.Fatalf("expected usuario ID %d, got %d", usuario.ID, id)
 	}
 }

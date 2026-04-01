@@ -6,10 +6,7 @@ import (
 	"errors"
 
 	"github.com/automatiza-mg/fila/internal/auth"
-	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/database"
-	"github.com/automatiza-mg/fila/internal/datalake"
-	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
@@ -18,35 +15,24 @@ import (
 
 var _ auth.UsuarioHook = (*Service)(nil)
 
-type SeiClient interface {
-	ListarUnidades(ctx context.Context) (*sei.ListarUnidadesResponse, error)
-}
-
-type ServidorProvider interface {
-	GetServidorByCPF(ctx context.Context, cpf string) (*datalake.Servidor, error)
-}
-
+// TaskInserter define a interface para inserção de tarefas na fila.
 type TaskInserter interface {
 	InsertTx(ctx context.Context, tx pgx.Tx, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error)
 }
 
+// Service gerencia a fila de processos de aposentadoria.
 type Service struct {
-	pool       *pgxpool.Pool
-	store      *database.Store
-	sei        SeiClient
-	cache      cache.Cache
-	servidores ServidorProvider
-	queue      TaskInserter
+	pool  *pgxpool.Pool
+	store *database.Store
+	queue TaskInserter
 }
 
-func New(pool *pgxpool.Pool, sei SeiClient, cache cache.Cache, servidores ServidorProvider, queue TaskInserter) *Service {
+// New cria uma nova instância de [Service].
+func New(pool *pgxpool.Pool, queue TaskInserter) *Service {
 	return &Service{
-		pool:       pool,
-		store:      database.New(pool),
-		sei:        sei,
-		cache:      cache,
-		servidores: servidores,
-		queue:      queue,
+		pool:  pool,
+		store: database.New(pool),
+		queue: queue,
 	}
 }
 

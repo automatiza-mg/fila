@@ -40,8 +40,6 @@ type Usuario struct {
 	EmailVerificado bool            `json:"email_verificado"`
 	Papel           string          `json:"papel,omitempty"`
 	Pendencias      []PendingAction `json:"pendencias"`
-
-	hashSenha string
 }
 
 func MapUsuario(u *database.Usuario) *Usuario {
@@ -52,26 +50,7 @@ func MapUsuario(u *database.Usuario) *Usuario {
 		Email:           u.Email,
 		EmailVerificado: u.EmailVerificado,
 		Papel:           u.Papel.V,
-
-		hashSenha: u.HashSenha.V,
 	}
-}
-
-// CheckSenha verifica se a senha informada equivale ao campo HashSenha do usuário.
-// Caso o usuário não possua uma senha, retorna [ErrNoPassword].
-func (u *Usuario) CheckSenha(senha string) (bool, error) {
-	if !u.HasSenha() {
-		return false, ErrNoPassword
-	}
-
-	err := bcrypt.CompareHashAndPassword([]byte(u.hashSenha), []byte(senha))
-	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return true, nil
 }
 
 // IsAnonymous reporta se o usuário é anônimo (não autenticado).
@@ -92,11 +71,6 @@ func (u *Usuario) IsAdmin() bool {
 // IsAnalista verifica se o usuário é um analista.
 func (u *Usuario) IsAnalista() bool {
 	return u.HasPapel(PapelAnalista)
-}
-
-// HasSenha reporta se o usuário possui uma senha cadastrada.
-func (u *Usuario) HasSenha() bool {
-	return u.hashSenha != ""
 }
 
 type CreateUsuarioParams struct {
@@ -195,12 +169,9 @@ func (s *Service) GetUsuario(ctx context.Context, usuarioID int64) (*Usuario, er
 }
 
 type UpdateUsuarioParams struct {
-	// O identificador do usuário.
 	UsuarioID int64
-	// Nome completo do usuário.
-	Nome string
-	// O papel (role) do usuário. Deve ser um dos valores definidos em [AllowedPapeis].
-	Papel string
+	Nome      string
+	Papel     string
 }
 
 // UpdateUsuario aplica as atualizações ao usuário. Caso ocorra mudança de papel,
@@ -210,12 +181,10 @@ func (s *Service) UpdateUsuario(ctx context.Context, params UpdateUsuarioParams)
 		return ErrInvalidPapel
 	}
 
-	r, err := s.store.GetUsuario(ctx, params.UsuarioID)
+	record, err := s.store.GetUsuario(ctx, params.UsuarioID)
 	if err != nil {
 		return err
 	}
-
-	u := MapUsuario(r)
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -226,20 +195,19 @@ func (s *Service) UpdateUsuario(ctx context.Context, params UpdateUsuarioParams)
 	store := s.store.WithTx(tx)
 
 	// Verifica se houve mudança de papel para limpeza em potencial de recursos.
-	if r.Papel.Valid && r.Papel.V != params.Papel {
-		if err := s.cleanupAll(ctx, tx, CleanupTriggerPapelUpdate, u); err != nil {
+	if record.Papel.Valid && record.Papel.V != params.Papel {
+		if err := s.cleanupAll(ctx, tx, CleanupTriggerPapelUpdate, MapUsuario(record)); err != nil {
 			return err
 		}
 	}
 
-	// Atualiza dados do usuário.
-	r.Nome = params.Nome
-	r.Papel = sql.Null[string]{
+	record.Nome = params.Nome
+	record.Papel = sql.Null[string]{
 		V:     params.Papel,
 		Valid: true,
 	}
 
-	if err := store.UpdateUsuario(ctx, r); err != nil {
+	if err := store.UpdateUsuario(ctx, record); err != nil {
 		return err
 	}
 
@@ -293,15 +261,10 @@ func (s *Service) CreateAdmin(ctx context.Context, params CreateAdminParams) (*U
 		CPF:             cleanCPF(params.CPF),
 		Email:           params.Email,
 		EmailVerificado: true,
-		HashSenha: sql.Null[string]{
-			V:     string(hashSenha),
-			Valid: true,
-		},
-		Papel: sql.Null[string]{
-			V:     PapelAdmin,
-			Valid: true,
-		},
 	}
+	r.SetHashSenha(string(hashSenha))
+	r.SetPapel(PapelAdmin)
+
 	err = s.store.SaveUsuario(ctx, r)
 	if err != nil {
 		return nil, err
