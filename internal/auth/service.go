@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/database"
@@ -70,10 +71,17 @@ func (s *Service) RegisterHook(h UsuarioHook) error {
 	return nil
 }
 
+// Remove caracteres de formatação do CPF (pontos e hífens).
+func cleanCPF(cpf string) string {
+	cpf = strings.ReplaceAll(cpf, ".", "")
+	cpf = strings.ReplaceAll(cpf, "-", "")
+	return cpf
+}
+
 // Authenticate retorna um usuário caso as credenciais informadas sejam válidas.
 // Se o CPF ou Senha estiverem incorretos, retorn [ErrInvalidCredentials].
 func (s *Service) Authenticate(ctx context.Context, cpf, senha string) (*Usuario, error) {
-	record, err := s.store.GetUsuarioByCPF(ctx, cpf)
+	record, err := s.store.GetUsuarioByCPF(ctx, cleanCPF(cpf))
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
 			return nil, ErrInvalidCredentials
@@ -214,7 +222,7 @@ func (s *Service) SendSetup(ctx context.Context, usuario *Usuario, tokenFn func(
 // Retorna nil silenciosamente caso o usuário não exista ou não tenha email verificado,
 // evitando enumeração de contas.
 func (s *Service) SendResetSenha(ctx context.Context, cpf string, tokenFn func(token string) string) error {
-	r, err := s.store.GetUsuarioByCPF(ctx, cpf)
+	r, err := s.store.GetUsuarioByCPF(ctx, cleanCPF(cpf))
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
 			return nil

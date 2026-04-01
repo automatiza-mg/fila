@@ -123,7 +123,7 @@ func (s *Service) CreateUsuario(ctx context.Context, params CreateUsuarioParams)
 	// Salva usuário no banco de dados.
 	r := &database.Usuario{
 		Nome:  params.Nome,
-		CPF:   params.CPF,
+		CPF:   cleanCPF(params.CPF),
 		Email: params.Email,
 		Papel: sql.Null[string]{V: params.Papel, Valid: true},
 	}
@@ -290,7 +290,7 @@ func (s *Service) CreateAdmin(ctx context.Context, params CreateAdminParams) (*U
 
 	r := &database.Usuario{
 		Nome:            params.Nome,
-		CPF:             params.CPF,
+		CPF:             cleanCPF(params.CPF),
 		Email:           params.Email,
 		EmailVerificado: true,
 		HashSenha: sql.Null[string]{

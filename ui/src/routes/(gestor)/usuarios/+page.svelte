@@ -1,6 +1,7 @@
 <script lang="ts">
   import Pendencias from "$lib/components/pendencias.svelte";
   import UsuarioForm from "$lib/components/usuario-form.svelte";
+  import { formatCpf } from "$lib/formatter";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
@@ -37,7 +38,7 @@
                 {usuario.nome}
               </a>
             </td>
-            <td class="p-2.5">{usuario.cpf}</td>
+            <td class="p-2.5">{formatCpf(usuario.cpf)}</td>
             <td class="p-2.5">{usuario.email}</td>
             <td class="p-2.5">{usuario.papel ?? "Não possui"}</td>
             <td>
