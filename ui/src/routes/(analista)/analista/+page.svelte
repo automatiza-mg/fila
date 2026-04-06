@@ -45,15 +45,17 @@
       class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <NumeroProcesso numero={data.processo.numero} />
-      <Button
-        variant="outline"
-        href="/preview/{data.processo.id}"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Pré-visualizar Processo
-        <ArrowSquareOutIcon />
-      </Button>
+      {#if data.processo.possui_preview}
+        <Button
+          variant="outline"
+          href="/preview/{data.processo.id}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Pré-visualizar Processo
+          <ArrowSquareOutIcon />
+        </Button>
+      {/if}
     </div>
 
     <div class="space-y-2">

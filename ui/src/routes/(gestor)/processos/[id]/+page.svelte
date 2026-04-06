@@ -117,15 +117,17 @@
   </div>
 
   <div class="flex items-center gap-4">
-    <Button
-      variant="outline"
-      href="/preview/{data.processo.id}"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Visualizar PDF
-      <ArrowSquareOutIcon />
-    </Button>
+    {#if data.processo.possui_preview}
+      <Button
+        variant="outline"
+        href="/preview/{data.processo.id}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Visualizar PDF
+        <ArrowSquareOutIcon />
+      </Button>
+    {/if}
     {#if !data.processo.prioridade && hasPapel(data.usuario, "GESTOR")}
       <PrioridadeForm paId={data.processo.id} />
     {/if}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
+  import Pagination from "$lib/components/ui/pagination.svelte";
   import { hasPapel } from "$lib/papel";
   import { toast } from "svelte-sonner";
   import { invalidateAll } from "$app/navigation";
@@ -40,7 +41,7 @@
   <title>Solicitações de Prioridade - Fila Aposentadoria</title>
 </svelte:head>
 
-<div class="space-y-6">
+<div class="flex grow flex-col gap-6">
   <div class="flex items-center justify-between">
     <form method="GET" class="flex items-center gap-2">
       <label for="numero-filter" class="text-sm font-medium">Número:</label>
@@ -153,4 +154,6 @@
       </table>
     {/if}
   </div>
+
+  <Pagination data={data.solicitacoes} url={data.url} />
 </div>

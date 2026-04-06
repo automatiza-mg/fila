@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/riverqueue/river"
 	"golang.org/x/text/encoding/charmap"
 )
 
@@ -127,7 +128,7 @@ func (c *Client) DownloadProcedimento(ctx context.Context, linkAcesso string) (i
 	}
 
 	formData := make(url.Values)
-	doc.Find("#frmProcessoAcessoExternoConsulta input[type='hidden']").Each(func(i int, s *goquery.Selection) {
+	doc.Find("#hdnInfraItensHash, #hdnInfraItens").Each(func(i int, s *goquery.Selection) {
 		name, ok := s.Attr("name")
 		if ok {
 			val, _ := s.Attr("value")
@@ -154,6 +155,7 @@ func (c *Client) DownloadProcedimento(ctx context.Context, linkAcesso string) (i
 		return nil, err
 	}
 	reqPost.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	reqPost.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36")
 
 	resPost, err := http.DefaultClient.Do(reqPost)
 	if err != nil {
@@ -162,8 +164,7 @@ func (c *Client) DownloadProcedimento(ctx context.Context, linkAcesso string) (i
 
 	contentType := resPost.Header.Get("Content-Type")
 	if !strings.Contains(contentType, "application/pdf") {
-		resPost.Body.Close()
-		return nil, errors.New("invalid content-type")
+		return nil, river.JobCancel(errors.New("invalid content-type"))
 	}
 
 	return resPost.Body, nil

@@ -1,6 +1,7 @@
 <script lang="ts">
   import Button from "$lib/components/ui/button.svelte";
   import Input from "$lib/components/ui/input.svelte";
+  import Pagination from "$lib/components/ui/pagination.svelte";
   import { statusColor, statusText } from "$lib/processo";
   import type { PageProps } from "./$types";
 
@@ -11,7 +12,7 @@
   <title>Processos - Fila Aposentadoria</title>
 </svelte:head>
 
-<div class="space-y-6">
+<div class="flex grow flex-col gap-6">
   <div class="flex items-center justify-between">
     <form method="GET" class="flex items-center gap-2">
       <Input
@@ -19,7 +20,6 @@
         type="text"
         value={data.numero}
         placeholder="Número do processo"
-        required
       />
       <Button type="submit">Buscar</Button>
     </form>
@@ -82,4 +82,6 @@
       </tbody>
     </table>
   </div>
+
+  <Pagination data={data.processos} url={data.url} />
 </div>
