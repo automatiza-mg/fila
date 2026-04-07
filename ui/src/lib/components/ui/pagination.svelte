@@ -1,18 +1,18 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import CaretLeftIcon from "phosphor-svelte/lib/CaretLeftIcon";
   import CaretRightIcon from "phosphor-svelte/lib/CaretRightIcon";
   import type { Paginated } from "$lib/api/types";
 
   type Props = {
     data: Paginated<unknown>;
-    url: URL;
   };
 
-  let { data, url }: Props = $props();
+  let { data }: Props = $props();
 
-  function pageHref(page: number): string {
-    const next = new URL(url);
-    next.searchParams.set("page", String(page));
+  function pageHref(pageNum: number): string {
+    const next = new URL(page.url);
+    next.searchParams.set("page", String(pageNum));
     return `${next.pathname}${next.search}`;
   }
 </script>

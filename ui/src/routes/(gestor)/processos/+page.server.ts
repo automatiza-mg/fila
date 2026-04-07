@@ -9,6 +9,5 @@ export const load = async ({ url }) => {
   return {
     processos,
     numero: numero ?? "",
-    url,
   };
 };

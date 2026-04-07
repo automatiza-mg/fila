@@ -91,5 +91,5 @@
     </table>
   </div>
 
-  <Pagination data={data.processos} url={data.url} />
+  <Pagination data={data.processos} />
 </div>

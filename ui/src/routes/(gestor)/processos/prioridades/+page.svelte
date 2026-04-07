@@ -155,5 +155,5 @@
     {/if}
   </div>
 
-  <Pagination data={data.solicitacoes} url={data.url} />
+  <Pagination data={data.solicitacoes} />
 </div>

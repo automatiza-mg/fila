@@ -15,6 +15,5 @@ export const load = async ({ url }) => {
     solicitacoes,
     status: status ?? "",
     numero: numero ?? "",
-    url,
   };
 };
