@@ -340,12 +340,6 @@ export class Client {
     return this.requestBlob(`/api/v1/aposentadoria/${paId}/preview`);
   }
 
-  async syncAposentadoriaPreview(paId: number): Promise<void> {
-    return this.requestVoid(`/api/v1/aposentadoria/${paId}/sync-preview`, {
-      method: "POST",
-    });
-  }
-
   async marcarLeituraInvalida(
     paId: number,
     motivo: string,

@@ -146,43 +146,6 @@ func (s *Service) ListProcessos(ctx context.Context, params ListProcessosParams)
 	return pagination.NewResult(processos, params.Page, totalCount, params.Limit), nil
 }
 
-// SyncPreviews adiciona uma tarefa na fila para atualizar os previews de
-// todos os processos.
-func (s *Service) SyncPreviews(ctx context.Context) (int, error) {
-	ids, err := s.store.ListProcessoIDs(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	if len(ids) == 0 {
-		return 0, nil
-	}
-
-	params := make([]river.InsertManyParams, len(ids))
-	for i, id := range ids {
-		params[i] = river.InsertManyParams{
-			Args: tasks.DownloadPreviewArgs{ProcessoID: id},
-		}
-	}
-
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback(ctx)
-
-	_, err = s.queue.InsertManyTx(ctx, tx, params)
-	if err != nil {
-		return 0, err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return 0, err
-	}
-
-	return len(ids), nil
-}
-
 // Preview retorna um conteúdo do preview associado ao processo.
 type Preview struct {
 	Body        io.ReadCloser
@@ -214,27 +177,4 @@ func (s *Service) GetPreview(ctx context.Context, processoID uuid.UUID) (*Previe
 		Body:        body,
 		ContentType: arq.ContentType,
 	}, nil
-}
-
-// SyncPreview enfileira o download do preview para um processo específico.
-func (s *Service) SyncPreview(ctx context.Context, processoID uuid.UUID) error {
-	_, err := s.store.GetProcesso(ctx, processoID)
-	if err != nil {
-		return err
-	}
-
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	_, err = s.queue.InsertManyTx(ctx, tx, []river.InsertManyParams{
-		{Args: tasks.DownloadPreviewArgs{ProcessoID: processoID}},
-	})
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit(ctx)
 }

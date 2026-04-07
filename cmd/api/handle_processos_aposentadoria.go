@@ -218,26 +218,6 @@ func (app *application) handleAposentadoriaPreview(w http.ResponseWriter, r *htt
 	io.Copy(w, preview.Body)
 }
 
-func (app *application) handleAposentadoriaSyncPreview(w http.ResponseWriter, r *http.Request) {
-	pa := app.getProcessoAposentadoriaFromRequest(w, r)
-	if pa == nil {
-		return
-	}
-
-	err := app.processos.SyncPreview(r.Context(), pa.ProcessoID)
-	if err != nil {
-		switch {
-		case errors.Is(err, database.ErrNotFound):
-			app.notFound(w, r)
-		default:
-			app.serverError(w, r, err)
-		}
-		return
-	}
-
-	w.WriteHeader(http.StatusAccepted)
-}
-
 type LeituraInvalidaRequest struct {
 	Motivo string `json:"motivo"`
 

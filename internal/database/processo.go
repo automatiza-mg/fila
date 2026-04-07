@@ -285,31 +285,6 @@ func (s *Store) UpdateProcessoPreviewHash(ctx context.Context, id uuid.UUID, has
 	return err
 }
 
-// ListProcessoIDs retorna todos os IDs de processos.
-func (s *Store) ListProcessoIDs(ctx context.Context) ([]uuid.UUID, error) {
-	q := `SELECT id FROM processos`
-
-	rows, err := s.db.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var ids []uuid.UUID
-	for rows.Next() {
-		var id uuid.UUID
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return ids, nil
-}
-
 func (s *Store) DeleteProcesso(ctx context.Context, id uuid.UUID) error {
 	q := `DELETE FROM processos WHERE id = $1`
 	_, err := s.db.Exec(ctx, q, id)

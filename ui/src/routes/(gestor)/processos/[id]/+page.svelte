@@ -10,29 +10,12 @@
   import { hasPapel } from "$lib/papel";
   import { statusText, statusColor } from "$lib/processo";
   import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
-  import ArrowsClockwiseIcon from "phosphor-svelte/lib/ArrowsClockwiseIcon";
   import ArrowRightIcon from "phosphor-svelte/lib/ArrowRightIcon";
   import CalendarIcon from "phosphor-svelte/lib/CalendarIcon";
-  import { toast } from "svelte-sonner";
   import type { PageProps } from "./$types";
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
-  import { syncPreviewCmd } from "./processo.remote";
 
   let { data }: PageProps = $props();
-  let syncing = $state(false);
-
-  async function handleSyncPreview() {
-    syncing = true;
-    try {
-      await syncPreviewCmd({ paId: data.processo.id });
-      toast.success("Atualização da pré-visualização enfileirada com sucesso!");
-      await invalidateAll();
-    } catch {
-      toast.error("Não foi possível atualizar a pré-visualização");
-    } finally {
-      syncing = false;
-    }
-  }
 </script>
 
 <svelte:head>
@@ -135,6 +118,9 @@
   </div>
 
   <div class="flex items-center gap-4">
+    {#if !data.processo.prioridade && hasPapel(data.usuario, "GESTOR")}
+      <PrioridadeForm paId={data.processo.id} />
+    {/if}
     {#if data.processo.possui_preview}
       <Button
         variant="outline"
@@ -145,13 +131,6 @@
         Visualizar PDF
         <ArrowSquareOutIcon />
       </Button>
-    {/if}
-    <Button variant="outline" onclick={handleSyncPreview} disabled={syncing}>
-      <ArrowsClockwiseIcon />
-      Atualizar Pré-visualização
-    </Button>
-    {#if !data.processo.prioridade && hasPapel(data.usuario, "GESTOR")}
-      <PrioridadeForm paId={data.processo.id} />
     {/if}
   </div>
 
