@@ -48,7 +48,7 @@ type Service struct {
 }
 
 func New(pool *pgxpool.Pool, logger *slog.Logger, queue TaskInserter) *Service {
-	return &Service{
+	s := &Service{
 		pool:   pool,
 		store:  database.New(pool),
 		logger: logger.With(slog.String("service", "auth")),
@@ -56,6 +56,28 @@ func New(pool *pgxpool.Pool, logger *slog.Logger, queue TaskInserter) *Service {
 
 		hooks: make(map[string]UsuarioHook),
 	}
+
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			count, err := s.store.DeleteExpiredTokens(context.Background())
+			if err != nil {
+				s.logger.Error(
+					"Não foi possível limpar tokens expirados",
+					slog.Any("err", err),
+				)
+			} else if count > 0 {
+				s.logger.Debug(
+					"Tokens expirados excluídos",
+					slog.Int64("count", count),
+				)
+			}
+		}
+	}()
+
+	return s
 }
 
 // RegisterProvider registra um novo [UsuarioHook] no serviço.

@@ -100,3 +100,12 @@ func (s *Store) DeleteToken(ctx context.Context, hash []byte) error {
 	}
 	return nil
 }
+
+func (s *Store) DeleteExpiredTokens(ctx context.Context) (int64, error) {
+	q := `DELETE FROM tokens WHERE expira_em < CURRENT_TIMESTAMP`
+	res, err := s.db.Exec(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected(), nil
+}

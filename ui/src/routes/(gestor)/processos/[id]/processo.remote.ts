@@ -1,4 +1,4 @@
-import { form } from "$app/server";
+import { command, form } from "$app/server";
 import { getClient } from "$lib/server/util";
 import { z } from "zod";
 
@@ -14,4 +14,13 @@ export const criarPrioridadeForm = form(criarPrioridadeSchema, async (data) => {
   await client.solicitarPrioridade(paId, {
     justificativa: data.justificativa,
   });
+});
+
+const syncPreviewSchema = z.object({
+  paId: z.number().int(),
+});
+
+export const syncPreviewCmd = command(syncPreviewSchema, async ({ paId }) => {
+  const client = getClient();
+  await client.syncAposentadoriaPreview(paId);
 });

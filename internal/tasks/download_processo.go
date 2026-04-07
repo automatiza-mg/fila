@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	DownloadProcessoTimeout = 30 * time.Second
+	DownloadProcessoTimeout = 60 * time.Second
 )
 
 type DownloadProcessoArgs struct {

@@ -80,5 +80,5 @@ func (w *DownloadPreviewWorker) Work(ctx context.Context, job *river.Job[Downloa
 }
 
 func (w *DownloadPreviewWorker) Timeout(job *river.Job[DownloadPreviewArgs]) time.Duration {
-	return 30 * time.Second
+	return 3 * time.Minute
 }

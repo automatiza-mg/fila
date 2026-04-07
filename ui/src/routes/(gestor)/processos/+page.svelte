@@ -1,7 +1,9 @@
 <script lang="ts">
+  import ProcessoForm from "$lib/components/processo-form.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import Input from "$lib/components/ui/input.svelte";
   import Pagination from "$lib/components/ui/pagination.svelte";
+  import { hasPapel } from "$lib/papel";
   import { statusColor, statusText } from "$lib/processo";
   import type { PageProps } from "./$types";
 
@@ -24,7 +26,13 @@
       <Button type="submit">Buscar</Button>
     </form>
 
-    <Button href="/processos/prioridades">Solicitações de Prioridade</Button>
+    <div class="flex items-center gap-2">
+      <!-- TODO: remover gate de ADMIN quando processos vierem do datalake -->
+      {#if hasPapel(data.usuario, "ADMIN")}
+        <ProcessoForm />
+      {/if}
+      <Button href="/processos/prioridades">Solicitações de Prioridade</Button>
+    </div>
   </div>
 
   <div>

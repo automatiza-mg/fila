@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/riverqueue/river"
 	"golang.org/x/text/encoding/charmap"
 )
 
@@ -107,6 +106,18 @@ func (c *Client) EnviarProcesso(ctx context.Context, protocolo string, unidadeOr
 
 // DownloadProcedimento é uma extensão da API do SEI que permite o download do PDF de um processo.
 func (c *Client) DownloadProcedimento(ctx context.Context, linkAcesso string) (io.ReadCloser, error) {
+	u, err := url.Parse(linkAcesso)
+	if err != nil {
+		return nil, err
+	}
+
+	// Adiciona www ao host em produção. Essa mudança foi introduzida após
+	// a atualização do SEI versão 5 em MG.
+	if u.Host == "sei.mg.gov.br" {
+		u.Host = fmt.Sprintf("www.%s", u.Host)
+	}
+	linkAcesso = u.String()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, linkAcesso, nil)
 	if err != nil {
 		return nil, err
@@ -155,16 +166,16 @@ func (c *Client) DownloadProcedimento(ctx context.Context, linkAcesso string) (i
 		return nil, err
 	}
 	reqPost.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	reqPost.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36")
 
-	resPost, err := http.DefaultClient.Do(reqPost)
+	resPost, err := c.http.Do(reqPost)
 	if err != nil {
 		return nil, err
 	}
 
 	contentType := resPost.Header.Get("Content-Type")
 	if !strings.Contains(contentType, "application/pdf") {
-		return nil, river.JobCancel(errors.New("invalid content-type"))
+		defer resPost.Body.Close()
+		return nil, errors.New("invalid content-type")
 	}
 
 	return resPost.Body, nil

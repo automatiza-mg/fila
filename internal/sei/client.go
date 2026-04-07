@@ -5,10 +5,9 @@ import (
 	"context"
 	"encoding/xml"
 	"io"
-	"log"
 	"net/http"
-	"net/http/cookiejar"
 	"strings"
+	"time"
 
 	"github.com/automatiza-mg/fila/internal/soap"
 )
@@ -27,15 +26,10 @@ type Client struct {
 }
 
 func NewClient(cfg *Config) *Client {
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		log.Printf("Failed to create cookie jar")
-	}
-
 	return &Client{
 		cfg: cfg,
 		http: &http.Client{
-			Jar: jar,
+			Timeout: 5 * time.Minute,
 		},
 	}
 }
