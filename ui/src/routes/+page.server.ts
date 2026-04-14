@@ -6,7 +6,7 @@ export const load = async ({ locals }) => {
   }
 
   if (locals.usuario.papel === "ANALISTA") {
-    redirect(302, "/analista");
+    redirect(302, "/analise");
   }
 
   redirect(302, "/processos");

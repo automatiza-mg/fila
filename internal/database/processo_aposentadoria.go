@@ -283,6 +283,43 @@ func (s *Store) GetProcessoAtribuido(ctx context.Context, analistaID int64) (*Pr
 	return &pa, nil
 }
 
+// ListAllProcessoAposentadoria retorna todos os processos de aposentadoria.
+func (s *Store) ListAllProcessoAposentadoria(ctx context.Context) ([]*ProcessoAposentadoria, error) {
+	q := `
+	SELECT
+		id, processo_id, data_requerimento, cpf_requerente, data_nascimento_requerente,
+		invalidez, judicial, prioridade, score, status,
+		analista_id, ultimo_analista_id, criado_em, atualizado_em
+	FROM processos_aposentadoria
+	ORDER BY id`
+
+	rows, err := s.db.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	paa := make([]*ProcessoAposentadoria, 0)
+	for rows.Next() {
+		var pa ProcessoAposentadoria
+		err := rows.Scan(
+			&pa.ID, &pa.ProcessoID, &pa.DataRequerimento, &pa.CPFRequerente,
+			&pa.DataNascimentoRequerente, &pa.Invalidez, &pa.Judicial, &pa.Prioridade,
+			&pa.Score, &pa.Status, &pa.AnalistaID, &pa.UltimoAnalistaID,
+			&pa.CriadoEm, &pa.AtualizadoEm,
+		)
+		if err != nil {
+			return nil, err
+		}
+		paa = append(paa, &pa)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return paa, nil
+}
+
 // GetNumeroProcessoAposentadoria retorna no número do processo SEI para um
 // determinado processo de aposentadoria
 func (s *Store) GetNumeroProcessoAposentadoria(ctx context.Context, paID int64) (string, error) {

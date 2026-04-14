@@ -6,17 +6,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/mail"
 	"github.com/automatiza-mg/fila/internal/pagination"
 	"github.com/automatiza-mg/fila/internal/tasks"
 	"github.com/jackc/pgx/v5"
-)
-
-const (
-	// O valor que deve ser adicionado / subtraído do score nos casos de prioridade.
-	prioScore = 6
 )
 
 type SolicitacaoPrioridade struct {
@@ -195,11 +191,13 @@ func (s *Service) AprovarSolicitacaoPrioridade(ctx context.Context, spID int64) 
 		return fmt.Errorf("failed to get processo: %w", err)
 	}
 
-	if !pa.Prioridade {
-		pa.Score += prioScore
-	}
-
 	pa.Prioridade = true
+	pa.Score = aposentadoria.CalculateScore(
+		pa.DataNascimentoRequerente,
+		pa.Invalidez,
+		pa.Judicial,
+		pa.Prioridade,
+	)
 	err = store.UpdateProcessoAposentadoria(ctx, pa)
 	if err != nil {
 		return err
@@ -235,10 +233,13 @@ func (s *Service) NegarSolicitacaoPrioridade(ctx context.Context, spID int64) er
 		return err
 	}
 
-	if pa.Prioridade {
-		pa.Score -= prioScore
-	}
 	pa.Prioridade = false
+	pa.Score = aposentadoria.CalculateScore(
+		pa.DataNascimentoRequerente,
+		pa.Invalidez,
+		pa.Judicial,
+		pa.Prioridade,
+	)
 	err = store.UpdateProcessoAposentadoria(ctx, pa)
 	if err != nil {
 		return err

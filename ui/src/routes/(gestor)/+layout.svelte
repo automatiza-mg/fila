@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { cn } from "$lib/cn";
-  import { sairForm } from "../(auth)/auth.remote";
+  import { sairForm } from "../(auth)/sair.remote";
 
   let { children } = $props();
 
@@ -39,7 +39,8 @@
   <main class="flex grow flex-col p-4">
     <section class="mx-auto flex w-full max-w-7xl grow flex-col p-4">
       <nav class="flex gap-0.5">
-        {@render tab("/painel", "Painel de Gestão")}
+        <!-- TODO: Incluir essa aba quando o painel estiver pronto. -->
+        <!-- {@render tab("/painel", "Painel de Gestão")} -->
         {@render tab("/processos", "Processos")}
         {@render tab("/usuarios", "Usuários")}
       </nav>

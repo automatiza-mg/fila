@@ -340,16 +340,12 @@ export class Client {
     return this.requestBlob(`/api/v1/aposentadoria/${paId}/preview`);
   }
 
-  async marcarLeituraInvalida(
-    paId: number,
-    motivo: string,
-  ): Promise<void> {
-    return this.requestVoid(
-      `/api/v1/aposentadoria/${paId}/leitura-invalida`,
-      {
-        method: "POST",
-        body: JSON.stringify({ motivo }),
-      },
-    );
+  async marcarLeituraInvalida(paId: number, motivo: string): Promise<void> {
+    return this.requestVoid(`/api/v1/aposentadoria/${paId}/leitura-invalida`, {
+      method: "POST",
+      body: JSON.stringify({ motivo }),
+    });
   }
+
+  async recalcularScore() {}
 }

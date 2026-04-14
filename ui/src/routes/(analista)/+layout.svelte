@@ -1,9 +1,12 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { cn } from "$lib/cn";
-  import { sairForm } from "../(auth)/auth.remote";
+  import { setDiligenciaState } from "$lib/stores/diligencia.svelte";
+  import { sairForm } from "../(auth)/sair.remote";
 
   let { children } = $props();
+
+  setDiligenciaState();
 
   function isActive(href: string): boolean {
     return (
@@ -39,7 +42,8 @@
   <main class="flex grow flex-col p-1.5 sm:p-4">
     <section class="mx-auto flex w-full max-w-7xl grow flex-col p-1.5 sm:p-4">
       <nav class="flex gap-0.5">
-        {@render tab("/analista", "Análise")}
+        {@render tab("/analise", "Processo em Análise")}
+        {@render tab("/historico", "Histórico de Processos")}
       </nav>
 
       <div

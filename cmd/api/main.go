@@ -127,6 +127,7 @@ func run(ctx context.Context) error {
 	river.AddWorker(workers, tasks.NewDownloadProcessoWorker(pool, storage, sei, di))
 	river.AddWorker(workers, tasks.NewDownloadPreviewWorker(pool, storage, sei, di))
 	river.AddWorker(workers, tasks.NewAnalisarProcessoWorker(pool, ai))
+	river.AddWorker(workers, tasks.NewRecalcularScoresWorker(pool))
 	worker, err := tasks.NewWorker(ctx, pool, workers)
 	if err != nil {
 		return err

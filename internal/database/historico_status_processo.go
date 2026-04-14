@@ -19,6 +19,13 @@ type HistoricoStatusProcesso struct {
 	AlteradoEm              time.Time
 }
 
+func (h *HistoricoStatusProcesso) SetObservacao(obs string) {
+	h.Observacao = sql.Null[string]{
+		V:     obs,
+		Valid: obs != "",
+	}
+}
+
 func (s *Store) SaveHistoricoStatusProcesso(ctx context.Context, h *HistoricoStatusProcesso) error {
 	q := `
 	INSERT INTO historico_status_processo (

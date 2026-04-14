@@ -5,7 +5,7 @@ import { invalid } from "@sveltejs/kit";
 import { z } from "zod";
 
 const leituraInvalidaSchema = z.object({
-  processoId: z.coerce.number().int(),
+  processoId: z.string(),
   _motivo: z.string().min(1, "Campo obrigatório"),
 });
 
@@ -13,9 +13,9 @@ export const leituraInvalidaForm = form(
   leituraInvalidaSchema,
   async ({ processoId, _motivo }, issue) => {
     const client = getClient();
-
+    const paId = parseInt(processoId, 10);
     try {
-      await client.marcarLeituraInvalida(processoId, _motivo);
+      await client.marcarLeituraInvalida(paId, _motivo);
     } catch (err) {
       if (err instanceof ApiError) {
         invalid(err.message);

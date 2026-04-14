@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -122,7 +121,12 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 		return err
 	}
 
-	score := aposentadoria.CalculateScore(dataNascimento, analise.Invalidez)
+	score := aposentadoria.CalculateScore(
+		dataNascimento,
+		analise.Invalidez,
+		analise.Judicial,
+		false,
+	)
 
 	pa := &database.ProcessoAposentadoria{
 		ProcessoID:               p.ID,
@@ -139,11 +143,13 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 		return err
 	}
 
-	err = store.SaveHistoricoStatusProcesso(ctx, &database.HistoricoStatusProcesso{
+	hist := &database.HistoricoStatusProcesso{
 		ProcessoAposentadoriaID: pa.ID,
 		StatusNovo:              database.StatusProcessoAnalisePendente,
-		Observacao:              sql.Null[string]{V: "Processo criado após análise por inteligência artificial", Valid: true},
-	})
+	}
+	hist.SetObservacao("Processo criado após análise de IA")
+
+	err = store.SaveHistoricoStatusProcesso(ctx, hist)
 	if err != nil {
 		return err
 	}

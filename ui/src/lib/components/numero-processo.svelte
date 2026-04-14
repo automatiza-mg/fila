@@ -10,7 +10,7 @@
   let { numero }: Props = $props();
   let copied = $state(false);
 
-  let id: number;
+  let id: NodeJS.Timeout;
   async function copy() {
     if (id) clearTimeout(id);
     await navigator.clipboard.writeText(numero);

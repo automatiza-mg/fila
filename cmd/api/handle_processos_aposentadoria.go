@@ -14,6 +14,18 @@ import (
 	"github.com/automatiza-mg/fila/internal/validator"
 )
 
+func (app *application) handleRecalcularScores(w http.ResponseWriter, r *http.Request) {
+	err := app.fila.EnqueueRecalcularScores(r.Context())
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusAccepted, map[string]string{
+		"mensagem": "Recálculo de scores enfileirado com sucesso",
+	})
+}
+
 func (app *application) handleProcessoAposentadoriaList(w http.ResponseWriter, r *http.Request) {
 	params := pagination.ParseQuery(r)
 

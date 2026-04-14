@@ -35,8 +35,8 @@
     <ProcessoInfo processo={data.processo} />
 
     <div class="flex gap-2">
+      <Button href="/analise/diligencia">Solicitar Diligência</Button>
       <LeituraInvalidaDialog processoId={data.processo.id} />
-      <Button href="/diligencia">Diligência</Button>
     </div>
   </div>
 {:else}

@@ -76,6 +76,11 @@ func (app *application) routes() http.Handler {
 			r.Post("/{paID}/prioridade", app.handleProcessoAposentadoriaSolicitarPrioridade)
 			r.Get("/{paID}/preview", app.handleAposentadoriaPreview)
 			r.Post("/{paID}/leitura-invalida", app.handleProcessoAposentadoriaLeituraInvalida)
+
+			r.Group(func(r chi.Router) {
+				r.Use(app.requirePapel(auth.PapelGestor, auth.PapelSubsecretario))
+				r.Post("/recalcular-scores", app.handleRecalcularScores)
+			})
 		})
 
 		r.Route("/analistas", func(r chi.Router) {
