@@ -1,5 +1,6 @@
 <script lang="ts">
   import ProcessoForm from "$lib/components/processo-form.svelte";
+  import RecalcularScoresDialog from "$lib/components/recalcular-scores-dialog.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import Input from "$lib/components/ui/input.svelte";
   import Pagination from "$lib/components/ui/pagination.svelte";
@@ -31,6 +32,7 @@
       {#if hasPapel(data.usuario, "ADMIN")}
         <ProcessoForm />
       {/if}
+      <RecalcularScoresDialog />
       <Button href="/processos/prioridades">Solicitações de Prioridade</Button>
     </div>
   </div>

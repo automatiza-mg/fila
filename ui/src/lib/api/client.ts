@@ -347,5 +347,9 @@ export class Client {
     });
   }
 
-  async recalcularScore() {}
+  async recalcularScore(): Promise<void> {
+    return this.requestVoid("/api/v1/aposentadoria/recalcular-scores", {
+      method: "POST",
+    });
+  }
 }

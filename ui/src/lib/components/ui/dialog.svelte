@@ -6,6 +6,7 @@
 
   type Props = Dialog.RootProps & {
     buttonText: string;
+    buttonIcon?: Snippet;
     buttonVariant?: "default" | "destructive" | "outline" | "link";
     title: Snippet;
     description?: Snippet;
@@ -17,6 +18,7 @@
     open = $bindable(false),
     children,
     buttonText,
+    buttonIcon,
     buttonVariant = "default",
     contentProps,
     title,
@@ -29,7 +31,10 @@
 <Dialog.Root bind:open {...restProps}>
   <Dialog.Trigger>
     {#snippet child({ props })}
-      <Button variant={buttonVariant} {...props}>{buttonText}</Button>
+      <Button variant={buttonVariant} {...props}>
+          {#if buttonIcon}{@render buttonIcon()}{/if}
+          {buttonText}
+        </Button>
     {/snippet}
   </Dialog.Trigger>
   <Dialog.Portal>

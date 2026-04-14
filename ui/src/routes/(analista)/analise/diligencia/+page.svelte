@@ -127,7 +127,7 @@
               Selecione os documentos aplicáveis
             </legend>
             <div
-              class="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-border p-3"
+              class="max-h-72 overflow-y-auto space-y-1.5 rounded-lg border border-border p-3"
             >
               {#each categoriaAtual.subcategorias as sub}
                 <Label class="flex items-start gap-2 cursor-pointer">
@@ -135,7 +135,7 @@
                     type="checkbox"
                     checked={diligenciaForm.subcategorias.includes(sub)}
                     onchange={() => toggleSubcategoria(sub)}
-                    class="mt-0.5 accent-primary"
+                    class="mt-0.5 size-4 rounded border-border-strong checked:border-primary checked:bg-primary text-primary focus:ring-secondary"
                   />
                   <span class="text-sm">{sub}</span>
                 </Label>
@@ -162,7 +162,7 @@
   {#if diligenciaStore.diligencias.length > 0}
     <ul class="space-y-2">
       {#each diligenciaStore.diligencias as diligencia, i}
-        <li class="text-sm flex items-start gap-2">
+        <li class="text-sm flex items-center gap-2">
           <div>
             <span>{i + 1}- {diligencia.tipo}</span>
             {#if diligencia.subcategorias.length > 0}

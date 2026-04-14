@@ -2,6 +2,7 @@
   import { invalidateAll } from "$app/navigation";
   import { criarProcessoForm } from "../../routes/(gestor)/processos/processo.remote";
   import { toast } from "svelte-sonner";
+  import PlusIcon from "phosphor-svelte/lib/PlusIcon";
   import Alert from "./ui/alert.svelte";
   import Button from "./ui/button.svelte";
   import Dialog from "./ui/dialog.svelte";
@@ -19,7 +20,12 @@
   }
 </script>
 
-<Dialog bind:open={getOpen, setOpen} buttonText="Novo Processo">
+<Dialog
+  bind:open={getOpen, setOpen}
+  buttonText="Novo Processo"
+  buttonVariant="outline"
+>
+  {#snippet buttonIcon()}<PlusIcon />{/snippet}
   {#snippet title()}
     Criar Processo
   {/snippet}
