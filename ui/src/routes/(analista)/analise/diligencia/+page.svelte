@@ -16,8 +16,9 @@
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
   import ClipboardTextIcon from "phosphor-svelte/lib/ClipboardTextIcon";
   import PencilSimpleIcon from "phosphor-svelte/lib/PencilSimpleIcon";
+  import PlusIcon from "phosphor-svelte/lib/PlusIcon";
   import TrashIcon from "phosphor-svelte/lib/TrashIcon";
-  import { Tooltip } from "bits-ui";
+  import { Popover, Tooltip } from "bits-ui";
 
   const diligenciaStore = getDiligenciaState();
   let diligenciaForm = $state({
@@ -85,11 +86,15 @@
     <div>
       <Dialog
         buttonText="Adicionar Diligência"
+        buttonVariant="outline"
         bind:open
         onOpenChange={(isOpen) => {
           if (!isOpen) resetDiligenciaForm();
         }}
       >
+        {#snippet buttonIcon()}
+          <PlusIcon />
+        {/snippet}
         {#snippet title()}
           {editingIndex !== null ? "Editar Diligência" : "Adicionar Diligência"}
         {/snippet}
@@ -173,12 +178,31 @@
                 {i + 1}. {diligencia.tipo}
               </p>
               {#if diligencia.subcategorias.length > 0}
-                <p class="mt-0.5 text-xs text-muted-foreground">
-                  {diligencia.subcategorias.length}
-                  {diligencia.subcategorias.length === 1
-                    ? "documento selecionado"
-                    : "documentos selecionados"}
-                </p>
+                <Popover.Root>
+                  <Popover.Trigger
+                    class="mt-0.5 text-xs text-muted-foreground underline cursor-pointer"
+                  >
+                    {diligencia.subcategorias.length}
+                    {diligencia.subcategorias.length === 1
+                      ? "documento selecionado"
+                      : "documentos selecionados"}
+                  </Popover.Trigger>
+                  <Popover.Portal>
+                    <Popover.Content
+                      class="border border-border-strong shadow-sm z-30 max-w-80 rounded-xl p-4 w-full bg-surface space-y-1"
+                      sideOffset={8}
+                    >
+                      <p class="text-sm font-medium">Documentos selecionados:</p>
+                      <ul class="text-sm text-muted-foreground space-y-0.5 list-disc max-h-60 overflow-y-auto">
+                        {#each diligencia.subcategorias as sub}
+                          <li class="ml-6">
+                            <p class="tracking-tight">{sub}</p>
+                          </li>
+                        {/each}
+                      </ul>
+                    </Popover.Content>
+                  </Popover.Portal>
+                </Popover.Root>
               {/if}
               {#if diligencia.detalhe}
                 <p class="mt-0.5 text-xs text-muted-foreground truncate">
