@@ -29,6 +29,7 @@ import (
 	"github.com/automatiza-mg/fila/internal/processos"
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/automatiza-mg/fila/internal/tasks"
+	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 	"github.com/riverqueue/river"
 )
@@ -53,6 +54,7 @@ type application struct {
 	dev       bool
 	cfg       *config.Config
 	logger    *slog.Logger
+	queue     *river.Client[pgx.Tx]
 	analistas *analistas.Service
 	apos      *aposentadoria.Service
 	auth      *auth.Service
@@ -126,7 +128,7 @@ func run(ctx context.Context) error {
 	river.AddWorker(workers, tasks.NewSendEmailWorker(sender))
 	river.AddWorker(workers, tasks.NewDownloadProcessoWorker(pool, storage, sei, di))
 	river.AddWorker(workers, tasks.NewDownloadPreviewWorker(pool, storage, sei, di))
-	river.AddWorker(workers, tasks.NewAnalisarProcessoWorker(pool, ai))
+	river.AddWorker(workers, tasks.NewAnalisarProcessoWorker(pool, ai, dl))
 	river.AddWorker(workers, tasks.NewRecalcularScoresWorker(pool))
 	worker, err := tasks.NewWorker(ctx, pool, workers)
 	if err != nil {
@@ -140,6 +142,7 @@ func run(ctx context.Context) error {
 		dev:       *dev,
 		cfg:       cfg,
 		logger:    logger,
+		queue:     queue,
 		analistas: anal,
 		apos:      apos,
 		fila:      fila,

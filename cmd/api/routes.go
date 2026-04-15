@@ -1,15 +1,36 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/go-chi/chi/v5"
+	"riverqueue.com/riverui"
 )
 
 // Define as rotas da API.
 func (app *application) routes() http.Handler {
 	r := chi.NewMux()
+
+	if app.dev {
+		r.Group(func(r chi.Router) {
+			endpoints := riverui.NewEndpoints(app.queue, nil)
+			opts := &riverui.HandlerOpts{
+				Endpoints: endpoints,
+				Logger:    app.logger,
+				Prefix:    "/riverui",
+			}
+
+			h, err := riverui.NewHandler(opts)
+			if err != nil {
+				panic(err)
+			}
+
+			h.Start(context.Background())
+			r.Handle("/riverui/*", h)
+		})
+	}
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.NotFound(app.notFound)

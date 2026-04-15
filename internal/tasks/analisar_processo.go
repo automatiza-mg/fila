@@ -16,6 +16,12 @@ import (
 	"github.com/riverqueue/river"
 )
 
+const (
+	// UnidadeRecebimento é a sigla da unidade responsável por receber os
+	// processos de aposentadoria.
+	UnidadeRecebimento = "SEPLAG/DCCTA"
+)
+
 type AnalisarProcessoArgs struct {
 	ProcessoID uuid.UUID `json:"processo_id"`
 }
@@ -24,10 +30,16 @@ func (args AnalisarProcessoArgs) Kind() string {
 	return "processo:analisar"
 }
 
+// DataRecebimentoFetcher busca a data de recebimento de um processo.
+type DataRecebimentoFetcher interface {
+	GetDataRecebimento(ctx context.Context, numero, unidade string) (time.Time, error)
+}
+
 type AnalisarProcessoWorker struct {
-	pool  *pgxpool.Pool
-	store *database.Store
-	llm   *llm.Client
+	pool        *pgxpool.Pool
+	store       *database.Store
+	llm         *llm.Client
+	dataFetcher DataRecebimentoFetcher
 	river.WorkerDefaults[AnalisarProcessoArgs]
 }
 
@@ -55,35 +67,9 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 		return fmt.Errorf("failed to load arquivos: %w", err)
 	}
 
-	docs := make([]llm.Documento, 0, len(dd))
-
-	// Mapeia os dados do banco de dados para leitura da IA.
-	for _, d := range dd {
-		var seiDoc sei.RetornoConsultaDocumento
-		err := json.Unmarshal(d.MetadadosAPI, &seiDoc)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal api data: %w", err)
-		}
-
-		assinaturas := make([]llm.Assinatura, 0, len(seiDoc.Assinaturas.Itens))
-		for _, a := range seiDoc.Assinaturas.Itens {
-			assinaturas = append(assinaturas, llm.Assinatura{
-				Nome: a.Nome,
-				CPF:  a.Sigla,
-			})
-		}
-
-		var conteudo string
-		if arq, ok := arquivoMap[d.ArquivoHash]; ok {
-			conteudo = arq.Conteudo
-		}
-
-		docs = append(docs, llm.Documento{
-			Tipo:        d.Tipo,
-			Data:        seiDoc.Data,
-			Conteudo:    conteudo,
-			Assinaturas: assinaturas,
-		})
+	docs, err := mapDocumentos(dd, arquivoMap)
+	if err != nil {
+		return err
 	}
 
 	analise, err := w.llm.AnalisarAposentadoria(ctx, docs)
@@ -116,9 +102,13 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 		return err
 	}
 
-	dataRequerimento, err := time.Parse(time.DateOnly, analise.DataRequerimento)
+	// Busca a informação complementar da data de recebimento do processo.
+	dataRequerimento, err := w.dataFetcher.GetDataRecebimento(ctx, p.Numero, UnidadeRecebimento)
 	if err != nil {
-		return err
+		dataRequerimento, err = time.Parse(time.DateOnly, analise.DataRequerimento)
+		if err != nil {
+			return err
+		}
 	}
 
 	score := aposentadoria.CalculateScore(
@@ -162,10 +152,47 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 	return tx.Commit(ctx)
 }
 
-func NewAnalisarProcessoWorker(pool *pgxpool.Pool, llm *llm.Client) *AnalisarProcessoWorker {
+func NewAnalisarProcessoWorker(pool *pgxpool.Pool, llm *llm.Client, dataFetcher DataRecebimentoFetcher) *AnalisarProcessoWorker {
 	return &AnalisarProcessoWorker{
-		pool:  pool,
-		store: database.New(pool),
-		llm:   llm,
+		pool:        pool,
+		store:       database.New(pool),
+		llm:         llm,
+		dataFetcher: dataFetcher,
 	}
+}
+
+// Converte uma lista de documentos do banco de dados para o formato
+// esperado pela IA.
+func mapDocumentos(dd []*database.Documento, arquivoMap map[string]*database.Arquivo) ([]llm.Documento, error) {
+	docs := make([]llm.Documento, 0, len(dd))
+
+	for _, d := range dd {
+		var seiDoc sei.RetornoConsultaDocumento
+		err := json.Unmarshal(d.MetadadosAPI, &seiDoc)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal api data: %w", err)
+		}
+
+		assinaturas := make([]llm.Assinatura, 0, len(seiDoc.Assinaturas.Itens))
+		for _, a := range seiDoc.Assinaturas.Itens {
+			assinaturas = append(assinaturas, llm.Assinatura{
+				Nome: a.Nome,
+				CPF:  a.Sigla,
+			})
+		}
+
+		var conteudo string
+		if arq, ok := arquivoMap[d.ArquivoHash]; ok {
+			conteudo = arq.Conteudo
+		}
+
+		docs = append(docs, llm.Documento{
+			Tipo:        d.Tipo,
+			Data:        seiDoc.Data,
+			Conteudo:    conteudo,
+			Assinaturas: assinaturas,
+		})
+	}
+
+	return docs, nil
 }

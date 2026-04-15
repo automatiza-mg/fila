@@ -2,6 +2,9 @@ package datalake
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fmt"
 	"time"
 )
 
@@ -99,4 +102,35 @@ func (d *DataLake) ListUnidadesDisponiveis(ctx context.Context) ([]string, error
 	}
 
 	return unidades, nil
+}
+
+// GetDataRecebimento retorna a data de recebimento de um processo pelo número e unidade.
+func (d *DataLake) GetDataRecebimento(ctx context.Context, numero, unidade string) (time.Time, error) {
+	q := `
+	SELECT data_andamento_processo
+	FROM (
+		SELECT
+			data_andamento_processo,
+			ROW_NUMBER() OVER (
+				PARTITION BY numero_processo, sigla_unidade_andamento_processo
+				ORDER BY data_andamento_processo ASC
+			) AS rn
+		FROM db_dlseplag_prod_dlsei_reporting.vw_sei_017_andamento_processo_aberto_automatiza
+		WHERE numero_processo = ?
+		AND sigla_unidade_andamento_processo = ?
+	) AS t1
+	WHERE t1.rn = 1`
+
+	var dataRecebimento time.Time
+	err := d.db.QueryRowContext(ctx, q, numero, unidade).Scan(&dataRecebimento)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return time.Time{}, ErrNotFound
+		default:
+			return time.Time{}, fmt.Errorf("falha ao buscar data de recebimento: %w", err)
+		}
+	}
+
+	return dataRecebimento, nil
 }

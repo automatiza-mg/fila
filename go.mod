@@ -18,16 +18,16 @@ require (
 	github.com/ory/dockertest/v3 v3.12.0
 	github.com/pressly/goose/v3 v3.27.0
 	github.com/redis/go-redis/v9 v9.18.0
-	github.com/riverqueue/river v0.32.0
-	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.32.0
-	github.com/riverqueue/river/rivertype v0.32.0
+	github.com/riverqueue/river v0.34.0
+	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.34.0
+	github.com/riverqueue/river/rivertype v0.34.0
 	github.com/sclgo/impala-go v1.4.1
 	github.com/urfave/cli/v3 v3.7.0
 	github.com/wneessen/go-mail v0.7.2
-	golang.org/x/crypto v0.49.0
+	golang.org/x/crypto v0.50.0
 	golang.org/x/sync v0.20.0
-	golang.org/x/term v0.41.0
-	golang.org/x/text v0.35.0
+	golang.org/x/term v0.42.0
+	golang.org/x/text v0.36.0
 )
 
 require (
@@ -56,15 +56,21 @@ require (
 	github.com/docker/go-connections v0.6.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator/v10 v10.30.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
+	github.com/jackc/pgerrcode v0.0.0-20250907135507-afb5586c32a6 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mailru/easyjson v0.9.2 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
@@ -78,8 +84,9 @@ require (
 	github.com/opencontainers/runc v1.2.3 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/riverqueue/river/riverdriver v0.32.0 // indirect
-	github.com/riverqueue/river/rivershared v0.32.0 // indirect
+	github.com/riverqueue/apiframe v0.0.0-20260413195946-beb4f91f6830 // indirect
+	github.com/riverqueue/river/riverdriver v0.34.0 // indirect
+	github.com/riverqueue/river/rivershared v0.34.0 // indirect
 	github.com/samber/lo v1.53.0 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
@@ -102,6 +109,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	riverqueue.com/riverui v0.15.0 // indirect
 )

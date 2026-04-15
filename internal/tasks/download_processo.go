@@ -21,10 +21,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const (
-	DownloadProcessoTimeout = 60 * time.Second
-)
-
 type DownloadProcessoArgs struct {
 	ProcessoID uuid.UUID `json:"processo_id"`
 }
@@ -35,6 +31,13 @@ func (args DownloadProcessoArgs) Kind() string {
 
 func (args DownloadProcessoArgs) KindAliases() []string {
 	return []string{"pocesso:download"}
+}
+
+func (args DownloadProcessoArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{
+		Queue:       QueueProcessos,
+		MaxAttempts: 10,
+	}
 }
 
 type DownloadProcessoWorker struct {
@@ -173,5 +176,5 @@ func (w *DownloadProcessoWorker) Work(ctx context.Context, job *river.Job[Downlo
 }
 
 func (w *DownloadProcessoWorker) Timeout(job *river.Job[DownloadProcessoArgs]) time.Duration {
-	return DownloadProcessoTimeout
+	return 3 * time.Minute
 }
