@@ -9,6 +9,7 @@
     title: Snippet;
     description: Snippet;
     variant?: "default" | "destructive" | "outline";
+    disabled?: boolean;
     contentProps?: WithoutChild<AlertDialog.ContentProps>;
     onConfirmed?: () => void;
     onCancelled?: () => void;
@@ -17,6 +18,7 @@
   let {
     open = $bindable(false),
     variant = "default",
+    disabled = false,
     children,
     buttonText,
     buttonIcon,
@@ -30,9 +32,9 @@
 </script>
 
 <AlertDialog.Root bind:open {...restProps}>
-  <AlertDialog.Trigger>
+  <AlertDialog.Trigger {disabled}>
     {#snippet child({ props })}
-      <Button {variant} {...props}>
+      <Button {variant} {disabled} {...props}>
         {#if buttonIcon}{@render buttonIcon()}{/if}
         {buttonText}
       </Button>
