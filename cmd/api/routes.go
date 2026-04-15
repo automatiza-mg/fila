@@ -106,6 +106,12 @@ func (app *application) routes() http.Handler {
 			})
 		})
 
+		r.Route("/servidores", func(r chi.Router) {
+			r.Use(app.requireAuth)
+
+			r.Get("/{cpf}", app.handleServidoresDetail)
+		})
+
 		r.Route("/analistas", func(r chi.Router) {
 			r.Use(
 				app.requireAuth,

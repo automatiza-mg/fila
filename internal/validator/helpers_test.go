@@ -85,6 +85,62 @@ func TestEmailRX(t *testing.T) {
 	}
 }
 
+func TestCpfRX(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name  string
+		value string
+		want  bool
+	}{
+		{
+			name:  "formatted",
+			value: "123.456.789-00",
+			want:  true,
+		},
+		{
+			name:  "unformatted",
+			value: "12345678900",
+			want:  true,
+		},
+		{
+			name:  "blank",
+			value: "",
+		},
+		{
+			name:  "too short",
+			value: "1234567890",
+		},
+		{
+			name:  "too long",
+			value: "123456789001",
+		},
+		{
+			name:  "letters",
+			value: "1234567890a",
+		},
+		{
+			name:  "partial formatting",
+			value: "123.456.78900",
+		},
+		{
+			name:  "missing dash",
+			value: "123.456.789.00",
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := Matches(tt.value, CpfRX)
+			if tt.want != got {
+				t.Fatalf("expected CpfRX.Match(%q) to return %t", tt.value, tt.want)
+			}
+		})
+	}
+}
+
 func TestMinLength(t *testing.T) {
 	t.Parallel()
 

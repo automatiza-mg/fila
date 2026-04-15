@@ -18,6 +18,7 @@ import {
   type ProcessoHistorico,
   type RecuperarSenha,
   type RedefinirSenha,
+  type Servidor,
   type SolicitacaoPrioridade,
   type SolicitarPrioridade,
   type Token,
@@ -345,6 +346,10 @@ export class Client {
       method: "POST",
       body: JSON.stringify({ motivo }),
     });
+  }
+
+  async getServidor(cpf: string): Promise<Servidor> {
+    return this.request<Servidor>(`/api/v1/servidores/${cpf}`);
   }
 
   async recalcularScore(): Promise<void> {

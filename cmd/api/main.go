@@ -115,7 +115,7 @@ func run(ctx context.Context) error {
 	di := docintel.NewAzureDocIntel(&cfg.DocIntel)
 	ai := llm.New(&cfg.LLM)
 	proc := processos.New(pool, storage, sei, cache, queue)
-	apos := aposentadoria.New(dl, cache)
+	apos := aposentadoria.New(pool, dl, cache)
 	auth := auth.New(pool, logger, queue)
 	anal := analistas.New(pool, logger, sei, cache)
 	fila := fila.New(pool, queue)

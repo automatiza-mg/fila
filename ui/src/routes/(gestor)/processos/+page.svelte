@@ -1,6 +1,7 @@
 <script lang="ts">
   import ProcessoForm from "$lib/components/processo-form.svelte";
   import RecalcularScoresDialog from "$lib/components/recalcular-scores-dialog.svelte";
+  import ServidorPopover from "$lib/components/servidor-popover.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import Input from "$lib/components/ui/input.svelte";
   import Pagination from "$lib/components/ui/pagination.svelte";
@@ -16,7 +17,7 @@
 </svelte:head>
 
 <div class="flex grow flex-col gap-6">
-  <div class="flex items-center justify-between">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <form method="GET" class="flex items-center gap-2">
       <Input
         name="numero"
@@ -27,7 +28,7 @@
       <Button type="submit">Buscar</Button>
     </form>
 
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
       <!-- TODO: remover gate de ADMIN quando processos vierem do datalake -->
       {#if hasPapel(data.usuario, "ADMIN")}
         <ProcessoForm />
@@ -42,6 +43,7 @@
       <thead>
         <tr class="border-y border-border bg-surface-alt">
           <th scope="col" class="text-left font-semibold p-2.5">Numero</th>
+          <th scope="col" class="text-left font-semibold p-2.5">Requerente</th>
           <th scope="col" class="text-left font-semibold p-2.5">Status</th>
           <th scope="col" class="text-left font-semibold p-2.5">
             Data Requerimento
@@ -61,6 +63,9 @@
               >
                 {processo.numero}</a
               >
+            </td>
+            <td class="p-2.5">
+              <ServidorPopover cpf={processo.cpf_requerente} />
             </td>
             <td class={`p-2.5 ${statusColor(processo.status)}`}
               >{statusText(processo.status)}</td

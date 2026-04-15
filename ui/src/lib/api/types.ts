@@ -197,3 +197,13 @@ export type AlterarSenha = {
 export type CriarProcesso = {
   numero: string;
 };
+
+export type Servidor = {
+  id_pessoa: number;
+  nome: string;
+  masp: string;
+  cpf: string;
+  sexo: string;
+  data_nascimento: string;
+  possui_deficiencia: boolean;
+};

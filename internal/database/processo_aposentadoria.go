@@ -342,3 +342,17 @@ func (s *Store) GetNumeroProcessoAposentadoria(ctx context.Context, paID int64) 
 	}
 	return numero, nil
 }
+
+// HasProcessoAposentadoria reporta se determinado CPF se encontra no nosso
+// banco de dados.
+func (s *Store) HasProcessoAposentadoria(ctx context.Context, cpf string) (bool, error) {
+	q := `SELECT COUNT(*) FROM processos_aposentadoria WHERE cpf_requerente = $1`
+
+	var count int
+	err := s.db.QueryRow(ctx, q, cpf).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}

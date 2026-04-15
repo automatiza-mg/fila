@@ -1,4 +1,4 @@
-import { command, form } from "$app/server";
+import { command, form, query } from "$app/server";
 import { ApiError } from "$lib/api/client";
 import { getClient } from "$lib/server/util";
 import { invalid } from "@sveltejs/kit";
@@ -12,6 +12,26 @@ export const recalcularScoresCmd = command("unchecked", async () => {
   const client = getClient();
   await client.recalcularScore();
 });
+
+const servidorQuerySchema = z.object({
+  cpf: z.string(),
+});
+
+export const servidorQuery = query(
+  servidorQuerySchema,
+  async ({ cpf }) => {
+    const client = getClient();
+
+    try {
+      return await client.getServidor(cpf);
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 404 || err.status === 409)) {
+        return null;
+      }
+      throw err;
+    }
+  },
+);
 
 export const criarProcessoForm = form(
   criarProcessoSchema,

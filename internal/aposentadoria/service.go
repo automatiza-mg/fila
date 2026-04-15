@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/cache"
+	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/datalake"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -17,14 +19,24 @@ const (
 	cacheTTL = 2 * time.Hour
 )
 
+var (
+	// ErrInvalidCPF é o erro retornado quando um CPF é consultado sem possuir
+	// um processo de aposentadoria no banco de dados.
+	ErrInvalidCPF = errors.New("cpf does not have a processo")
+)
+
 type Service struct {
+	pool     *pgxpool.Pool
+	store    *database.Store
 	datalake *datalake.DataLake
 	cache    cache.Cache
 	sg       singleflight.Group
 }
 
-func New(dl *datalake.DataLake, cache cache.Cache) *Service {
+func New(pool *pgxpool.Pool, dl *datalake.DataLake, cache cache.Cache) *Service {
 	return &Service{
+		pool:     pool,
+		store:    database.New(pool),
 		datalake: dl,
 		cache:    cache,
 	}
@@ -99,8 +111,16 @@ func (s *Service) ListUnidadesDisponiveis(ctx context.Context) ([]string, error)
 	return uu, nil
 }
 
-// GetServidorByCPF retorna os dados de um servidor pelo CPF informado.
-func (s *Service) GetServidorByCPF(ctx context.Context, cpf string) (*datalake.Servidor, error) {
+// GetServidor retorna os dados de um servidor pelo CPF informado.
+func (s *Service) GetServidor(ctx context.Context, cpf string) (*datalake.Servidor, error) {
+	ok, err := s.store.HasProcessoAposentadoria(ctx, cpf)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrInvalidCPF
+	}
+
 	key := fmt.Sprintf("fila:datalake:servidor:%s", cpf)
 
 	b, err := s.remember(ctx, key, cacheTTL, func() ([]byte, error) {

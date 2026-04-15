@@ -36,7 +36,7 @@ func (app *application) handleDatalakeUnidadesProcessos(w http.ResponseWriter, r
 func (app *application) handleDatalakeServidor(w http.ResponseWriter, r *http.Request) {
 	cpf := r.PathValue("cpf")
 
-	servidor, err := app.apos.GetServidorByCPF(r.Context(), cpf)
+	servidor, err := app.apos.GetServidor(r.Context(), cpf)
 	if err != nil {
 		switch {
 		case errors.Is(err, datalake.ErrNotFound):
