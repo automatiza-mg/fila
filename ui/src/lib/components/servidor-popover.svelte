@@ -10,9 +10,11 @@
 
   let { cpf }: Props = $props();
 
-  // svelte-ignore state_referenced_locally
-  const servidor = servidorQuery({ cpf });
+  const buildQuery = () => {
+    return servidorQuery({ cpf });
+  };
 
+  const servidor = buildQuery();
 </script>
 
 <LinkPreview.Root openDelay={400} closeDelay={200}>

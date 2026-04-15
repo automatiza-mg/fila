@@ -12,7 +12,8 @@
 
   let { data }: PageProps = $props();
 
-  let isSubsecretario = $derived(hasPapel(data.usuario, "SUBSECRETARIO"));
+  const getUsuario = () => data.usuario;
+  let isSubsecretario = hasPapel(getUsuario(), "SUBSECRETARIO");
 
   async function handleStatusChange(
     event: Event & { currentTarget: HTMLSelectElement },
