@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/automatiza-mg/fila/internal/auth"
@@ -16,10 +17,11 @@ func (app *application) routes() http.Handler {
 	if app.dev {
 		r.Group(func(r chi.Router) {
 			endpoints := riverui.NewEndpoints(app.queue, nil)
+
 			opts := &riverui.HandlerOpts{
 				Endpoints: endpoints,
-				Logger:    app.logger,
 				Prefix:    "/riverui",
+				Logger:    slog.New(slog.DiscardHandler),
 			}
 
 			h, err := riverui.NewHandler(opts)

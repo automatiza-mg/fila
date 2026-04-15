@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/datalake"
 	"github.com/automatiza-mg/fila/internal/llm"
 	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/google/uuid"
@@ -35,11 +37,18 @@ type DataRecebimentoFetcher interface {
 	GetDataRecebimento(ctx context.Context, numero, unidade string) (time.Time, error)
 }
 
+// ServidorFetcher busca os dados de um servidor pelo CPF.
+type ServidorFetcher interface {
+	GetServidorByCPF(ctx context.Context, cpf string) (*datalake.Servidor, error)
+}
+
 type AnalisarProcessoWorker struct {
-	pool        *pgxpool.Pool
-	store       *database.Store
-	llm         *llm.Client
-	dataFetcher DataRecebimentoFetcher
+	pool            *pgxpool.Pool
+	store           *database.Store
+	llm             *llm.Client
+	dataFetcher     DataRecebimentoFetcher
+	servidorFetcher ServidorFetcher
+	logger          *slog.Logger
 	river.WorkerDefaults[AnalisarProcessoArgs]
 }
 
@@ -102,6 +111,20 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 		return err
 	}
 
+	invalidez := analise.Invalidez
+
+	// Enriquece os dados do processo com informações do servidor no datalake.
+	servidor, err := w.servidorFetcher.GetServidorByCPF(ctx, analise.CPF)
+	if err != nil {
+		w.logger.Warn("falha ao buscar servidor no datalake, usando dados da IA",
+			slog.String("cpf", analise.CPF),
+			slog.String("erro", err.Error()),
+		)
+	} else {
+		dataNascimento = servidor.DataNascimento
+		invalidez = invalidez || servidor.PossuiDeficiencia
+	}
+
 	// Busca a informação complementar da data de recebimento do processo.
 	dataRequerimento, err := w.dataFetcher.GetDataRecebimento(ctx, p.Numero, UnidadeRecebimento)
 	if err != nil {
@@ -113,7 +136,7 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 
 	score := aposentadoria.CalculateScore(
 		dataNascimento,
-		analise.Invalidez,
+		invalidez,
 		analise.Judicial,
 		false,
 	)
@@ -121,7 +144,7 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 	pa := &database.ProcessoAposentadoria{
 		ProcessoID:               p.ID,
 		CPFRequerente:            analise.CPF,
-		Invalidez:                analise.Invalidez,
+		Invalidez:                invalidez,
 		Judicial:                 analise.Judicial,
 		DataNascimentoRequerente: dataNascimento,
 		DataRequerimento:         dataRequerimento,
@@ -152,12 +175,14 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 	return tx.Commit(ctx)
 }
 
-func NewAnalisarProcessoWorker(pool *pgxpool.Pool, llm *llm.Client, dataFetcher DataRecebimentoFetcher) *AnalisarProcessoWorker {
+func NewAnalisarProcessoWorker(pool *pgxpool.Pool, logger *slog.Logger, llm *llm.Client, dataFetcher DataRecebimentoFetcher, servidorFetcher ServidorFetcher) *AnalisarProcessoWorker {
 	return &AnalisarProcessoWorker{
-		pool:        pool,
-		store:       database.New(pool),
-		llm:         llm,
-		dataFetcher: dataFetcher,
+		pool:            pool,
+		store:           database.New(pool),
+		llm:             llm,
+		dataFetcher:     dataFetcher,
+		servidorFetcher: servidorFetcher,
+		logger:          logger.With(slog.String("worker", "analisar_processo")),
 	}
 }
 
