@@ -10,11 +10,11 @@ O score é calculado com base em quatro critérios, avaliados na seguinte ordem 
 
 ### 1. Processo Judicializado
 
-Se o processo for judicializado, o score é fixado em **9**, independentemente dos demais critérios.
+Se o processo for judicializado, o score é fixado em **7**, independentemente dos demais critérios.
 
 ### 2. Prioridade Aprovada
 
-Se o processo possuir uma solicitação de prioridade aprovada, o score é fixado em **8**, independentemente dos critérios de idade ou invalidez.
+Se o processo possuir uma solicitação de prioridade aprovada, o score é fixado em **6**, independentemente dos critérios de idade ou invalidez.
 
 ### 3. Cálculo Padrão
 
@@ -32,8 +32,8 @@ O score máximo pelo cálculo padrão é **5** (requerente com 80+ anos e invali
 
 | Situação | Score |
 | :--- | :---: |
-| Judicializado | 9 |
-| Prioridade aprovada | 8 |
+| Judicializado | 7 |
+| Prioridade aprovada | 6 |
 | 80+ anos com invalidez | 5 |
 | 80+ anos sem invalidez | 3 |
 | 60-79 anos com invalidez | 3 |

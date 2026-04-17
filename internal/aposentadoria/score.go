@@ -4,10 +4,10 @@ import "time"
 
 const (
 	// ScoreJudicial é o score atribuído a processos judicializados.
-	ScoreJudicial = 9
+	ScoreJudicial = 7
 
 	// ScorePrioridade é o score atribuído a processos com prioridade aprovada.
-	ScorePrioridade = 8
+	ScorePrioridade = 6
 )
 
 func CalculateAge(t time.Time) int {
