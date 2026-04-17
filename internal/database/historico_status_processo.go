@@ -10,13 +10,13 @@ import (
 )
 
 type HistoricoStatusProcesso struct {
-	ID                      int64
-	ProcessoAposentadoriaID int64
-	StatusAnterior          sql.Null[StatusProcesso]
-	StatusNovo              StatusProcesso
-	UsuarioID               sql.Null[int64]
-	Observacao              sql.Null[string]
-	AlteradoEm              time.Time
+	ID                      int64                    `db:"id"`
+	ProcessoAposentadoriaID int64                    `db:"processo_aposentadoria_id"`
+	StatusAnterior          sql.Null[StatusProcesso] `db:"status_anterior"`
+	StatusNovo              StatusProcesso           `db:"status_novo"`
+	UsuarioID               sql.Null[int64]          `db:"usuario_id"`
+	Observacao              sql.Null[string]         `db:"observacao"`
+	AlteradoEm              time.Time                `db:"alterado_em"`
 }
 
 func (h *HistoricoStatusProcesso) SetObservacao(obs string) {
@@ -54,24 +54,18 @@ func (s *Store) GetHistoricoStatusProcesso(ctx context.Context, id int64) (*Hist
 	FROM historico_status_processo
 	WHERE id = $1`
 
-	var h HistoricoStatusProcesso
-	err := s.db.QueryRow(ctx, q, id).Scan(
-		&h.ID,
-		&h.ProcessoAposentadoriaID,
-		&h.StatusAnterior,
-		&h.StatusNovo,
-		&h.UsuarioID,
-		&h.Observacao,
-		&h.AlteradoEm,
-	)
+	rows, err := s.db.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	h, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[HistoricoStatusProcesso])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-
-	return &h, nil
+	return h, nil
 }
 
 func (s *Store) ListHistoricoStatusProcesso(ctx context.Context, paID int64) ([]*HistoricoStatusProcesso, error) {
@@ -86,28 +80,5 @@ func (s *Store) ListHistoricoStatusProcesso(ctx context.Context, paID int64) ([]
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	hh := make([]*HistoricoStatusProcesso, 0)
-	for rows.Next() {
-		var h HistoricoStatusProcesso
-		err := rows.Scan(
-			&h.ID,
-			&h.ProcessoAposentadoriaID,
-			&h.StatusAnterior,
-			&h.StatusNovo,
-			&h.UsuarioID,
-			&h.Observacao,
-			&h.AlteradoEm,
-		)
-		if err != nil {
-			return nil, err
-		}
-		hh = append(hh, &h)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return hh, nil
+	return pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[HistoricoStatusProcesso])
 }

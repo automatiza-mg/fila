@@ -28,15 +28,15 @@ const (
 var Anonymous = &Usuario{}
 
 type Usuario struct {
-	ID              int64
-	Nome            string
-	CPF             string
-	Email           string
-	EmailVerificado bool
-	HashSenha       sql.Null[string]
-	Papel           sql.Null[string]
-	CriadoEm        time.Time
-	AtualizadoEm    time.Time
+	ID              int64            `db:"id"`
+	Nome            string           `db:"nome"`
+	CPF             string           `db:"cpf"`
+	Email           string           `db:"email"`
+	EmailVerificado bool             `db:"email_verificado"`
+	HashSenha       sql.Null[string] `db:"hash_senha"`
+	Papel           sql.Null[string] `db:"papel"`
+	CriadoEm        time.Time        `db:"criado_em"`
+	AtualizadoEm    time.Time        `db:"atualizado_em"`
 }
 
 // HasSenha reporta se o campo [Usuario.HashSenha] possui um valor (não é null).
@@ -100,25 +100,18 @@ func (s *Store) GetUsuario(ctx context.Context, usuarioID int64) (*Usuario, erro
 	FROM usuarios
 	WHERE id = $1`
 
-	var usuario Usuario
-	err := s.db.QueryRow(ctx, q, usuarioID).Scan(
-		&usuario.ID,
-		&usuario.Nome,
-		&usuario.CPF,
-		&usuario.Email,
-		&usuario.EmailVerificado,
-		&usuario.HashSenha,
-		&usuario.Papel,
-		&usuario.CriadoEm,
-		&usuario.AtualizadoEm,
-	)
+	rows, err := s.db.Query(ctx, q, usuarioID)
+	if err != nil {
+		return nil, err
+	}
+	usuario, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[Usuario])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-	return &usuario, nil
+	return usuario, nil
 }
 
 // GetUsuarioByCPF retorna um usuário do banco de dados pelo CPF.
@@ -131,25 +124,18 @@ func (s *Store) GetUsuarioByCPF(ctx context.Context, cpf string) (*Usuario, erro
 	FROM usuarios
 	WHERE cpf = $1`
 
-	var usuario Usuario
-	err := s.db.QueryRow(ctx, q, cpf).Scan(
-		&usuario.ID,
-		&usuario.Nome,
-		&usuario.CPF,
-		&usuario.Email,
-		&usuario.EmailVerificado,
-		&usuario.HashSenha,
-		&usuario.Papel,
-		&usuario.CriadoEm,
-		&usuario.AtualizadoEm,
-	)
+	rows, err := s.db.Query(ctx, q, cpf)
+	if err != nil {
+		return nil, err
+	}
+	usuario, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[Usuario])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-	return &usuario, nil
+	return usuario, nil
 }
 
 type ListUsuariosParams struct {

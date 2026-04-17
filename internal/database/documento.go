@@ -11,16 +11,16 @@ import (
 )
 
 type Documento struct {
-	ID           int64
-	Numero       string
-	ProcessoID   uuid.UUID
-	Tipo         string
-	Unidade      string
-	LinkAcesso   string
-	ArquivoHash  string
-	MetadadosAPI json.RawMessage
-	CriadoEm     time.Time
-	AtualizadoEm time.Time
+	ID           int64           `db:"id"`
+	Numero       string          `db:"numero"`
+	ProcessoID   uuid.UUID       `db:"processo_id"`
+	Tipo         string          `db:"tipo"`
+	Unidade      string          `db:"unidade"`
+	LinkAcesso   string          `db:"link_acesso"`
+	ArquivoHash  string          `db:"arquivo_hash"`
+	MetadadosAPI json.RawMessage `db:"metadados_api"`
+	CriadoEm     time.Time       `db:"criado_em"`
+	AtualizadoEm time.Time       `db:"atualizado_em"`
 }
 
 func (s *Store) SaveDocumento(ctx context.Context, d *Documento) error {
@@ -57,27 +57,18 @@ func (s *Store) GetDocumento(ctx context.Context, id int64) (*Documento, error) 
 	FROM documentos
 	WHERE id = $1`
 
-	var d Documento
-	err := s.db.QueryRow(ctx, q, id).Scan(
-		&d.ID,
-		&d.Numero,
-		&d.ProcessoID,
-		&d.Tipo,
-		&d.Unidade,
-		&d.LinkAcesso,
-		&d.ArquivoHash,
-		&d.MetadadosAPI,
-		&d.CriadoEm,
-		&d.AtualizadoEm,
-	)
+	rows, err := s.db.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	d, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[Documento])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-
-	return &d, nil
+	return d, nil
 }
 
 func (s *Store) GetDocumentoByNumero(ctx context.Context, numero string) (*Documento, error) {
@@ -89,27 +80,18 @@ func (s *Store) GetDocumentoByNumero(ctx context.Context, numero string) (*Docum
 	FROM documentos
 	WHERE numero = $1`
 
-	var d Documento
-	err := s.db.QueryRow(ctx, q, numero).Scan(
-		&d.ID,
-		&d.Numero,
-		&d.ProcessoID,
-		&d.Tipo,
-		&d.Unidade,
-		&d.LinkAcesso,
-		&d.ArquivoHash,
-		&d.MetadadosAPI,
-		&d.CriadoEm,
-		&d.AtualizadoEm,
-	)
+	rows, err := s.db.Query(ctx, q, numero)
+	if err != nil {
+		return nil, err
+	}
+	d, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[Documento])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-
-	return &d, nil
+	return d, nil
 }
 
 func (s *Store) ListDocumentos(ctx context.Context, processoID uuid.UUID) ([]*Documento, error) {
@@ -125,33 +107,7 @@ func (s *Store) ListDocumentos(ctx context.Context, processoID uuid.UUID) ([]*Do
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	dd := make([]*Documento, 0)
-	for rows.Next() {
-		var d Documento
-		err := rows.Scan(
-			&d.ID,
-			&d.Numero,
-			&d.ProcessoID,
-			&d.Tipo,
-			&d.Unidade,
-			&d.LinkAcesso,
-			&d.ArquivoHash,
-			&d.MetadadosAPI,
-			&d.CriadoEm,
-			&d.AtualizadoEm,
-		)
-		if err != nil {
-			return nil, err
-		}
-		dd = append(dd, &d)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return dd, nil
+	return pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[Documento])
 }
 
 func (s *Store) GetDocumentosMap(ctx context.Context, processoIDs []uuid.UUID) (map[uuid.UUID][]*Documento, error) {
@@ -171,33 +127,14 @@ func (s *Store) GetDocumentosMap(ctx context.Context, processoIDs []uuid.UUID) (
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	docMap := make(map[uuid.UUID][]*Documento, len(processoIDs))
-	for rows.Next() {
-		var d Documento
-		err := rows.Scan(
-			&d.ID,
-			&d.Numero,
-			&d.ProcessoID,
-			&d.Tipo,
-			&d.Unidade,
-			&d.LinkAcesso,
-			&d.ArquivoHash,
-			&d.MetadadosAPI,
-			&d.CriadoEm,
-			&d.AtualizadoEm,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		docMap[d.ProcessoID] = append(docMap[d.ProcessoID], &d)
-	}
-	if err := rows.Err(); err != nil {
+	list, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[Documento])
+	if err != nil {
 		return nil, err
 	}
-
+	docMap := make(map[uuid.UUID][]*Documento, len(processoIDs))
+	for _, d := range list {
+		docMap[d.ProcessoID] = append(docMap[d.ProcessoID], d)
+	}
 	return docMap, nil
 }
 

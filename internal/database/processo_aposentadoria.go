@@ -22,20 +22,20 @@ const (
 type StatusProcesso string
 
 type ProcessoAposentadoria struct {
-	ID                       int64
-	ProcessoID               uuid.UUID
-	DataRequerimento         time.Time
-	CPFRequerente            string
-	DataNascimentoRequerente time.Time
-	Invalidez                bool
-	Judicial                 bool
-	Prioridade               bool
-	Score                    int
-	Status                   StatusProcesso
-	AnalistaID               sql.Null[int64]
-	UltimoAnalistaID         sql.Null[int64]
-	CriadoEm                 time.Time
-	AtualizadoEm             time.Time
+	ID                       int64           `db:"id"`
+	ProcessoID               uuid.UUID       `db:"processo_id"`
+	DataRequerimento         time.Time       `db:"data_requerimento"`
+	CPFRequerente            string          `db:"cpf_requerente"`
+	DataNascimentoRequerente time.Time       `db:"data_nascimento_requerente"`
+	Invalidez                bool            `db:"invalidez"`
+	Judicial                 bool            `db:"judicial"`
+	Prioridade               bool            `db:"prioridade"`
+	Score                    int             `db:"score"`
+	Status                   StatusProcesso  `db:"status"`
+	AnalistaID               sql.Null[int64] `db:"analista_id"`
+	UltimoAnalistaID         sql.Null[int64] `db:"ultimo_analista_id"`
+	CriadoEm                 time.Time       `db:"criado_em"`
+	AtualizadoEm             time.Time       `db:"atualizado_em"`
 }
 
 func (s *Store) SaveProcessoAposentadoria(ctx context.Context, pa *ProcessoAposentadoria) error {
@@ -91,20 +91,18 @@ func (s *Store) GetProcessoAposentadoria(ctx context.Context, id int64) (*Proces
 	FROM processos_aposentadoria
 	WHERE id = $1`
 
-	var pa ProcessoAposentadoria
-	err := s.db.QueryRow(ctx, q, id).Scan(
-		&pa.ID, &pa.ProcessoID, &pa.DataRequerimento, &pa.CPFRequerente, &pa.DataNascimentoRequerente,
-		&pa.Invalidez, &pa.Judicial, &pa.Prioridade, &pa.Score, &pa.Status,
-		&pa.AnalistaID, &pa.UltimoAnalistaID, &pa.CriadoEm, &pa.AtualizadoEm,
-	)
+	rows, err := s.db.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	pa, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[ProcessoAposentadoria])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-
-	return &pa, nil
+	return pa, nil
 }
 
 func (s *Store) GetProcessoAposentadoriaByNumero(ctx context.Context, numero string) (*ProcessoAposentadoria, error) {
@@ -117,20 +115,18 @@ func (s *Store) GetProcessoAposentadoriaByNumero(ctx context.Context, numero str
 	INNER JOIN processos p ON pa.processo_id = p.id
 	WHERE p.numero = $1`
 
-	var pa ProcessoAposentadoria
-	err := s.db.QueryRow(ctx, q, numero).Scan(
-		&pa.ID, &pa.ProcessoID, &pa.DataRequerimento, &pa.CPFRequerente, &pa.DataNascimentoRequerente,
-		&pa.Invalidez, &pa.Judicial, &pa.Prioridade, &pa.Score, &pa.Status,
-		&pa.AnalistaID, &pa.UltimoAnalistaID, &pa.CriadoEm, &pa.AtualizadoEm,
-	)
+	rows, err := s.db.Query(ctx, q, numero)
+	if err != nil {
+		return nil, err
+	}
+	pa, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[ProcessoAposentadoria])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-
-	return &pa, nil
+	return pa, nil
 }
 
 func (s *Store) UpdateProcessoAposentadoria(ctx context.Context, pa *ProcessoAposentadoria) error {

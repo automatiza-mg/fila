@@ -15,12 +15,12 @@ var (
 )
 
 type Analista struct {
-	UsuarioID          int64               `json:"usuario_id"`
-	Orgao              string              `json:"orgao"`
-	SEIUnidadeID       string              `json:"sei_unidade_id"`
-	SEIUnidadeSigla    string              `json:"sei_unidade_sigla"`
-	Afastado           bool                `json:"afastado"`
-	UltimaAtribuicaoEm sql.Null[time.Time] `json:"ultima_atribuicao_em"`
+	UsuarioID          int64               `db:"usuario_id" json:"usuario_id"`
+	Orgao              string              `db:"orgao" json:"orgao"`
+	SEIUnidadeID       string              `db:"sei_unidade_id" json:"sei_unidade_id"`
+	SEIUnidadeSigla    string              `db:"sei_unidade_sigla" json:"sei_unidade_sigla"`
+	Afastado           bool                `db:"afastado" json:"afastado"`
+	UltimaAtribuicaoEm sql.Null[time.Time] `db:"ultima_atribuicao_em" json:"ultima_atribuicao_em"`
 }
 
 // SaveAnalista insere os dados de analista vinculado a um usuário no banco de dados.
@@ -51,29 +51,24 @@ func (s *Store) SaveAnalista(ctx context.Context, analista *Analista) error {
 // GetAnalista retorna os dados de um analista pelo usuarioID. Retorna [ErrNotFound] caso não seja encontrado.
 func (s *Store) GetAnalista(ctx context.Context, usuarioID int64) (*Analista, error) {
 	q := `
-	SELECT 
+	SELECT
 		usuario_id, orgao, sei_unidade_id, sei_unidade_sigla,
 		afastado, ultima_atribuicao_em
 	FROM analistas
 	WHERE usuario_id = $1`
 
-	var analista Analista
-	err := s.db.QueryRow(ctx, q, usuarioID).Scan(
-		&analista.UsuarioID,
-		&analista.Orgao,
-		&analista.SEIUnidadeID,
-		&analista.SEIUnidadeSigla,
-		&analista.Afastado,
-		&analista.UltimaAtribuicaoEm,
-	)
+	rows, err := s.db.Query(ctx, q, usuarioID)
+	if err != nil {
+		return nil, err
+	}
+	analista, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[Analista])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-
-	return &analista, nil
+	return analista, nil
 }
 
 func (s *Store) ListAnalistas(ctx context.Context) ([]*Analista, error) {
@@ -87,29 +82,7 @@ func (s *Store) ListAnalistas(ctx context.Context) ([]*Analista, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	analistas := make([]*Analista, 0)
-	for rows.Next() {
-		var analista Analista
-		err := rows.Scan(
-			&analista.UsuarioID,
-			&analista.Orgao,
-			&analista.SEIUnidadeID,
-			&analista.SEIUnidadeSigla,
-			&analista.Afastado,
-			&analista.UltimaAtribuicaoEm,
-		)
-		if err != nil {
-			return nil, err
-		}
-		analistas = append(analistas, &analista)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return analistas, nil
+	return pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[Analista])
 }
 
 // GetAnalistasMap retorna um map de analistas para os ids de usuários informados.
@@ -125,29 +98,15 @@ func (s *Store) GetAnalistasMap(ctx context.Context, ids []int64) (map[int64]*An
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	analistas := make(map[int64]*Analista)
-	for rows.Next() {
-		var analista Analista
-		err := rows.Scan(
-			&analista.UsuarioID,
-			&analista.Orgao,
-			&analista.SEIUnidadeID,
-			&analista.SEIUnidadeSigla,
-			&analista.Afastado,
-			&analista.UltimaAtribuicaoEm,
-		)
-		if err != nil {
-			return nil, err
-		}
-		analistas[analista.UsuarioID] = &analista
-	}
-	if err := rows.Err(); err != nil {
+	list, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[Analista])
+	if err != nil {
 		return nil, err
 	}
-
-	return analistas, nil
+	m := make(map[int64]*Analista, len(list))
+	for _, a := range list {
+		m[a.UsuarioID] = a
+	}
+	return m, nil
 }
 
 func (s *Store) UpdateAnalista(ctx context.Context, analista *Analista) error {

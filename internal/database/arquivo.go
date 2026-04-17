@@ -9,12 +9,12 @@ import (
 )
 
 type Arquivo struct {
-	Hash            string
-	ChaveStorage    string
-	ContentType     string
-	Conteudo        string
-	FormatoConteudo string
-	CriadoEm        time.Time
+	Hash            string    `db:"hash"`
+	ChaveStorage    string    `db:"chave_storage"`
+	ContentType     string    `db:"content_type"`
+	Conteudo        string    `db:"conteudo"`
+	FormatoConteudo string    `db:"formato_conteudo"`
+	CriadoEm        time.Time `db:"criado_em"`
 }
 
 // SaveArquivo insere um novo arquivo no banco de dados
@@ -49,22 +49,18 @@ func (s *Store) GetArquivo(ctx context.Context, hash string) (*Arquivo, error) {
 	FROM arquivos
 	WHERE hash = $1`
 
-	var a Arquivo
-	err := s.db.QueryRow(ctx, q, hash).Scan(
-		&a.Hash,
-		&a.ChaveStorage,
-		&a.ContentType,
-		&a.Conteudo,
-		&a.FormatoConteudo,
-		&a.CriadoEm,
-	)
+	rows, err := s.db.Query(ctx, q, hash)
+	if err != nil {
+		return nil, err
+	}
+	a, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[Arquivo])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-	return &a, nil
+	return a, nil
 }
 
 // GetArquivosMap retorna um mapa de hash -> Arquivo para os hashes informados.
@@ -82,28 +78,14 @@ func (s *Store) GetArquivosMap(ctx context.Context, hashes []string) (map[string
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	arquivoMap := make(map[string]*Arquivo, len(hashes))
-	for rows.Next() {
-		var a Arquivo
-		err := rows.Scan(
-			&a.Hash,
-			&a.ChaveStorage,
-			&a.ContentType,
-			&a.Conteudo,
-			&a.FormatoConteudo,
-			&a.CriadoEm,
-		)
-		if err != nil {
-			return nil, err
-		}
-		arquivoMap[a.Hash] = &a
-	}
-	if err := rows.Err(); err != nil {
+	list, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[Arquivo])
+	if err != nil {
 		return nil, err
 	}
-
+	arquivoMap := make(map[string]*Arquivo, len(list))
+	for _, a := range list {
+		arquivoMap[a.Hash] = a
+	}
 	return arquivoMap, nil
 }
 

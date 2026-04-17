@@ -12,19 +12,19 @@ import (
 )
 
 type Processo struct {
-	ID                  uuid.UUID
-	Numero              string
-	StatusProcessamento string
-	Resumo              string
-	LinkAcesso          string
-	SeiUnidadeID        string
-	SeiUnidadeSigla     string
-	MetadadosIA         json.RawMessage
-	Aposentadoria       sql.Null[bool]
-	PreviewHash         sql.Null[string]
-	AnalisadoEm         sql.Null[time.Time]
-	CriadoEm            time.Time
-	AtualizadoEm        time.Time
+	ID                  uuid.UUID           `db:"id"`
+	Numero              string              `db:"numero"`
+	StatusProcessamento string              `db:"status_processamento"`
+	Resumo              string              `db:"resumo"`
+	LinkAcesso          string              `db:"link_acesso"`
+	SeiUnidadeID        string              `db:"sei_unidade_id"`
+	SeiUnidadeSigla     string              `db:"sei_unidade_sigla"`
+	MetadadosIA         json.RawMessage     `db:"metadados_ia"`
+	Aposentadoria       sql.Null[bool]      `db:"aposentadoria"`
+	PreviewHash         sql.Null[string]    `db:"preview_hash"`
+	AnalisadoEm         sql.Null[time.Time] `db:"analisado_em"`
+	CriadoEm            time.Time           `db:"criado_em"`
+	AtualizadoEm        time.Time           `db:"atualizado_em"`
 }
 
 func (p *Processo) SetPreviewHash(hash string) {
@@ -141,41 +141,18 @@ func (s *Store) GetProcessosMap(ctx context.Context, ids []uuid.UUID) (map[uuid.
 	FROM processos
 	WHERE id = ANY($1)`
 
-	processoMap := make(map[uuid.UUID]*Processo, len(ids))
-
 	rows, err := s.db.Query(ctx, q, ids)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var p Processo
-		err := rows.Scan(
-			&p.ID,
-			&p.Numero,
-			&p.StatusProcessamento,
-			&p.Resumo,
-			&p.LinkAcesso,
-			&p.SeiUnidadeID,
-			&p.SeiUnidadeSigla,
-			&p.MetadadosIA,
-			&p.Aposentadoria,
-			&p.PreviewHash,
-			&p.AnalisadoEm,
-			&p.CriadoEm,
-			&p.AtualizadoEm,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		processoMap[p.ID] = &p
-	}
-	if err := rows.Err(); err != nil {
+	list, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[Processo])
+	if err != nil {
 		return nil, err
 	}
-
+	processoMap := make(map[uuid.UUID]*Processo, len(list))
+	for _, p := range list {
+		processoMap[p.ID] = p
+	}
 	return processoMap, nil
 }
 
@@ -188,29 +165,18 @@ func (s *Store) GetProcesso(ctx context.Context, id uuid.UUID) (*Processo, error
 	FROM processos
 	WHERE id = $1`
 
-	var p Processo
-	err := s.db.QueryRow(ctx, q, id).Scan(
-		&p.ID,
-		&p.Numero,
-		&p.StatusProcessamento,
-		&p.Resumo,
-		&p.LinkAcesso,
-		&p.SeiUnidadeID,
-		&p.SeiUnidadeSigla,
-		&p.MetadadosIA,
-		&p.Aposentadoria,
-		&p.PreviewHash,
-		&p.AnalisadoEm,
-		&p.CriadoEm,
-		&p.AtualizadoEm,
-	)
+	rows, err := s.db.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	p, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[Processo])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-	return &p, nil
+	return p, nil
 }
 
 func (s *Store) GetProcessoByNumero(ctx context.Context, numero string) (*Processo, error) {
@@ -222,29 +188,18 @@ func (s *Store) GetProcessoByNumero(ctx context.Context, numero string) (*Proces
 	FROM processos
 	WHERE numero = $1`
 
-	var p Processo
-	err := s.db.QueryRow(ctx, q, numero).Scan(
-		&p.ID,
-		&p.Numero,
-		&p.StatusProcessamento,
-		&p.Resumo,
-		&p.LinkAcesso,
-		&p.SeiUnidadeID,
-		&p.SeiUnidadeSigla,
-		&p.MetadadosIA,
-		&p.Aposentadoria,
-		&p.PreviewHash,
-		&p.AnalisadoEm,
-		&p.CriadoEm,
-		&p.AtualizadoEm,
-	)
+	rows, err := s.db.Query(ctx, q, numero)
+	if err != nil {
+		return nil, err
+	}
+	p, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[Processo])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
-	return &p, nil
+	return p, nil
 }
 
 func (s *Store) UpdateProcesso(ctx context.Context, p *Processo) error {
