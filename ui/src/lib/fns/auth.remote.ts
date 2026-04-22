@@ -7,6 +7,7 @@ import {
   recuperarSenha,
   redefinirSenha,
 } from "$lib/api/client";
+import { getClient } from "$lib/server/util";
 import { error, invalid, redirect } from "@sveltejs/kit";
 import { z } from "zod/v4";
 
@@ -148,3 +149,35 @@ export const sairForm = form("unchecked", async () => {
   });
   redirect(303, "/entrar");
 });
+
+const alterarSenhaSchema = z.object({
+  _senha_atual: z.string().min(1, "Campo obrigatório"),
+  _nova_senha: z.string().min(1, "Campo obrigatório"),
+  _confirmar_nova_senha: z.string().min(1, "Campo obrigatório"),
+});
+
+export const alterarSenhaForm = form(
+  alterarSenhaSchema,
+  async ({ _senha_atual, _nova_senha, _confirmar_nova_senha }, issue) => {
+    const client = getClient();
+    try {
+      await client.alterarSenha({
+        senha_atual: _senha_atual,
+        nova_senha: _nova_senha,
+        confirmar_nova_senha: _confirmar_nova_senha,
+      });
+    } catch (e) {
+      if (e instanceof ApiError && e.response?.errors) {
+        for (const [, message] of Object.entries(e.response.errors)) {
+          issue(message);
+        }
+        return;
+      }
+      if (e instanceof ApiError) {
+        issue(e.message);
+        return;
+      }
+      invalid("Não foi possível alterar a senha, tente novamente mais tarde");
+    }
+  },
+);

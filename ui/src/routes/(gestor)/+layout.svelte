@@ -1,7 +1,8 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { cn } from "$lib/cn";
-  import { sairForm } from "$lib/fns/auth.remote";
+  import PerfilLink from "$lib/components/perfil-link.svelte";
+  import SairButton from "$lib/components/sair-button.svelte";
 
   let { children } = $props();
 
@@ -29,10 +30,9 @@
     <div>
       <p class="text-xl font-bold">Fila Aposentadoria</p>
     </div>
-    <div>
-      <form {...sairForm}>
-        <button class="font-semibold">Sair</button>
-      </form>
+    <div class="flex items-center gap-2">
+      <PerfilLink />
+      <SairButton />
     </div>
   </header>
 

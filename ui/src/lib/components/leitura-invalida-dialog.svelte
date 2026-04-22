@@ -27,7 +27,7 @@
 
 <Dialog
   bind:open={getDialogOpen, setDialogOpen}
-  buttonText="Não é processo de aposentadoria"
+  buttonText="Leitura Inválida"
   buttonVariant="destructive"
 >
   {#snippet title()}

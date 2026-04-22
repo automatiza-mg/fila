@@ -169,6 +169,7 @@
             onConfirmed={async () => {
               try {
                 await retornarAnalistaCmd({ usuarioId: data.usuario.id });
+                retornarOpen = false;
                 toast.success("Analista retornado com sucesso!");
                 await invalidateAll();
               } catch {
@@ -193,6 +194,7 @@
             onConfirmed={async () => {
               try {
                 await afastarAnalistaCmd({ usuarioId: data.usuario.id });
+                afastarOpen = false;
                 toast.success("Analista afastado com sucesso!");
                 await invalidateAll();
               } catch {
