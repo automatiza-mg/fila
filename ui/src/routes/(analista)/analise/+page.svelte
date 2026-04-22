@@ -1,13 +1,35 @@
 <script lang="ts">
+  import { invalidateAll } from "$app/navigation";
   import NumeroProcesso from "$lib/components/numero-processo.svelte";
   import ProcessoInfo from "$lib/components/processo-info.svelte";
   import LeituraInvalidaDialog from "$lib/components/leitura-invalida-dialog.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
-  import HourglassIcon from "phosphor-svelte/lib/HourglassIcon";
+  import { onDestroy } from "svelte";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
+
+  let pollId: ReturnType<typeof setInterval> | null = null;
+
+  $effect(() => {
+    if (!data.processo) {
+      pollId = setInterval(() => {
+        invalidateAll();
+      }, 2000);
+    }
+
+    return () => {
+      if (pollId) {
+        clearInterval(pollId);
+        pollId = null;
+      }
+    };
+  });
+
+  onDestroy(() => {
+    if (pollId) clearInterval(pollId);
+  });
 </script>
 
 <svelte:head>

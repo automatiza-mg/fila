@@ -378,10 +378,8 @@
         {/each}
       </ul>
     {:else}
-      <div class="flex flex-col items-center gap-2 py-10 border border-border">
-        <p class="text-center font-semibold">
-          Nenhuma diligência adicionada.
-        </p>
+      <div class="flex flex-col items-center py-10 border border-border">
+        <p class="text-center font-semibold">Nenhuma diligência adicionada.</p>
         <p class="text-center text-sm text-muted-foreground">
           Utilize o botão acima para adicionar diligências.
         </p>
