@@ -19,6 +19,7 @@ import (
 	"github.com/automatiza-mg/fila/internal/cache"
 	"github.com/automatiza-mg/fila/internal/config"
 	"github.com/automatiza-mg/fila/internal/datalake"
+	"github.com/automatiza-mg/fila/internal/diligencias"
 	"github.com/automatiza-mg/fila/internal/docintel"
 	"github.com/automatiza-mg/fila/internal/fila"
 	"github.com/automatiza-mg/fila/internal/infra"
@@ -51,15 +52,16 @@ func main() {
 }
 
 type application struct {
-	dev       bool
-	cfg       *config.Config
-	logger    *slog.Logger
-	queue     *river.Client[pgx.Tx]
-	analistas *analistas.Service
-	apos      *aposentadoria.Service
-	auth      *auth.Service
-	fila      *fila.Service
-	processos *processos.Service
+	dev         bool
+	cfg         *config.Config
+	logger      *slog.Logger
+	queue       *river.Client[pgx.Tx]
+	analistas   *analistas.Service
+	apos        *aposentadoria.Service
+	auth        *auth.Service
+	diligencias *diligencias.Service
+	fila        *fila.Service
+	processos   *processos.Service
 }
 
 func run(ctx context.Context) error {
@@ -117,8 +119,9 @@ func run(ctx context.Context) error {
 	proc := processos.New(pool, storage, sei, cache, queue)
 	apos := aposentadoria.New(pool, dl, cache)
 	auth := auth.New(pool, logger, queue)
-	anal := analistas.New(pool, logger, sei, cache)
+	anali := analistas.New(pool, logger, sei, cache)
 	fila := fila.New(pool, queue)
+	dil := diligencias.New(pool, logger)
 
 	if err := auth.RegisterHook(fila); err != nil {
 		return err
@@ -139,15 +142,16 @@ func run(ctx context.Context) error {
 	}
 
 	app := &application{
-		dev:       *dev,
-		cfg:       cfg,
-		logger:    logger,
-		queue:     queue,
-		analistas: anal,
-		apos:      apos,
-		fila:      fila,
-		auth:      auth,
-		processos: proc,
+		dev:         *dev,
+		cfg:         cfg,
+		logger:      logger,
+		queue:       queue,
+		analistas:   anali,
+		apos:        apos,
+		fila:        fila,
+		auth:        auth,
+		diligencias: dil,
+		processos:   proc,
 	}
 
 	fila.StartAtribuicaoWorker(ctx, 30*time.Second)
