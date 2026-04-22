@@ -20,9 +20,9 @@ const (
 )
 
 var (
-	// ErrInvalidCPF é o erro retornado quando um CPF é consultado sem possuir
+	// ErrNoProcesso é o erro retornado quando um CPF é consultado sem possuir
 	// um processo de aposentadoria no banco de dados.
-	ErrInvalidCPF = errors.New("cpf does not have a processo")
+	ErrNoProcesso = errors.New("cpf does not have a processo")
 )
 
 type Service struct {
@@ -111,16 +111,16 @@ func (s *Service) ListUnidadesDisponiveis(ctx context.Context) ([]string, error)
 	return uu, nil
 }
 
-// GetServidor retorna os dados de um servidor pelo CPF informado.
-func (s *Service) GetServidor(ctx context.Context, cpf string) (*datalake.Servidor, error) {
-	ok, err := s.store.HasProcessoAposentadoria(ctx, cpf)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, ErrInvalidCPF
-	}
+// HasProcessoByCPF verifica se um determinado CPF possui um processo de
+// aposentadoria cadastrado no sistema.
+func (s *Service) HasProcessoByCPF(ctx context.Context, cpf string) (bool, error) {
+	return s.store.HasProcessoAposentadoria(ctx, cpf)
+}
 
+// GetServidor retorna os dados de um servidor pelo CPF informado, utilizando
+// cache para reduzir consultas ao datalake. A verificação de existência de um
+// processo de aposentadoria para o CPF é responsabilidade do chamador.
+func (s *Service) GetServidor(ctx context.Context, cpf string) (*datalake.Servidor, error) {
 	key := fmt.Sprintf("fila:datalake:servidor:%s", cpf)
 
 	b, err := s.remember(ctx, key, cacheTTL, func() ([]byte, error) {

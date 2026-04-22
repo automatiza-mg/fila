@@ -39,7 +39,7 @@ type DataRecebimentoFetcher interface {
 
 // ServidorFetcher busca os dados de um servidor pelo CPF.
 type ServidorFetcher interface {
-	GetServidorByCPF(ctx context.Context, cpf string) (*datalake.Servidor, error)
+	GetServidor(ctx context.Context, cpf string) (*datalake.Servidor, error)
 }
 
 type AnalisarProcessoWorker struct {
@@ -114,7 +114,7 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 	invalidez := analise.Invalidez
 
 	// Enriquece os dados do processo com informações do servidor no datalake.
-	servidor, err := w.servidorFetcher.GetServidorByCPF(ctx, analise.CPF)
+	servidor, err := w.servidorFetcher.GetServidor(ctx, analise.CPF)
 	if err != nil {
 		w.logger.Warn("falha ao buscar servidor no datalake, usando dados da IA",
 			slog.String("cpf", analise.CPF),

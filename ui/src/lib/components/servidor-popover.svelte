@@ -2,6 +2,7 @@
   import { Popover } from "bits-ui";
   import { formatCpf } from "$lib/formatter";
   import SpinnerGapIcon from "phosphor-svelte/lib/SpinnerGapIcon";
+  import WarningCircleIcon from "phosphor-svelte/lib/WarningCircleIcon";
   import { servidorQuery } from "$lib/fns/processos.remote";
 
   type Props = {
@@ -25,7 +26,14 @@
     class="border border-border-strong shadow-md z-30 w-72 rounded-xl p-4 bg-surface"
     sideOffset={8}
   >
-    {#if !servidor.ready}
+    {#if servidor.error}
+      <div class="h-32 flex items-center justify-center">
+        <p class="text-sm text-muted-foreground flex items-center gap-1.5">
+          <WarningCircleIcon class="size-4" />
+          Não foi possível consultar os dados do servidor.
+        </p>
+      </div>
+    {:else if !servidor.ready}
       <div class="h-32 flex items-center justify-center">
         <p class="text-sm text-muted-foreground flex items-center gap-1.5">
           <SpinnerGapIcon class="size-4 animate-spin" />

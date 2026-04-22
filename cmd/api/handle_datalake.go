@@ -49,3 +49,4 @@ func (app *application) handleDatalakeServidor(w http.ResponseWriter, r *http.Re
 
 	app.writeJSON(w, http.StatusOK, servidor)
 }
+
