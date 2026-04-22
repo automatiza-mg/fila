@@ -8,7 +8,7 @@
   import CakeIcon from "phosphor-svelte/lib/CakeIcon";
   import CalendarIcon from "phosphor-svelte/lib/CalendarIcon";
   import GavelIcon from "phosphor-svelte/lib/GavelIcon";
-  import WheelchairIcon from "phosphor-svelte/lib/WheelchairIcon";
+  import FirstAidIcon from "phosphor-svelte/lib/FirstAidIcon";
   import FlagIcon from "phosphor-svelte/lib/FlagIcon";
 
   type Props = {
@@ -103,7 +103,7 @@
         <p
           class="text-muted-foreground text-xs sm:text-sm flex items-center gap-1"
         >
-          <WheelchairIcon class="size-3.5 sm:size-4" />
+          <FirstAidIcon class="size-3.5 sm:size-4" />
           Invalidez
         </p>
         <p class="font-medium mt-0.5">
