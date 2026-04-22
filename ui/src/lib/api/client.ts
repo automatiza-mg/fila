@@ -18,7 +18,9 @@ import {
   type ProcessoHistorico,
   type RecuperarSenha,
   type RedefinirSenha,
+  type SalvarDiligencia,
   type Servidor,
+  type SolicitacaoDiligencia,
   type SolicitacaoPrioridade,
   type SolicitarPrioridade,
   type Token,
@@ -356,5 +358,46 @@ export class Client {
     return this.requestVoid("/api/v1/aposentadoria/recalcular-scores", {
       method: "POST",
     });
+  }
+
+  async getDiligenciaRascunho(paId: number): Promise<SolicitacaoDiligencia> {
+    return this.request<SolicitacaoDiligencia>(
+      `/api/v1/aposentadoria/${paId}/diligencias/rascunho`,
+    );
+  }
+
+  async salvarDiligenciaRascunho(
+    paId: number,
+    data: SalvarDiligencia,
+  ): Promise<SolicitacaoDiligencia> {
+    return this.request<SolicitacaoDiligencia>(
+      `/api/v1/aposentadoria/${paId}/diligencias/rascunho`,
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      },
+    );
+  }
+
+  async descartarDiligenciaRascunho(paId: number): Promise<void> {
+    return this.requestVoid(
+      `/api/v1/aposentadoria/${paId}/diligencias/rascunho`,
+      { method: "DELETE" },
+    );
+  }
+
+  async enviarDiligenciaRascunho(
+    paId: number,
+  ): Promise<SolicitacaoDiligencia> {
+    return this.request<SolicitacaoDiligencia>(
+      `/api/v1/aposentadoria/${paId}/diligencias/rascunho/enviar`,
+      { method: "POST" },
+    );
+  }
+
+  async listarDiligencias(paId: number): Promise<SolicitacaoDiligencia[]> {
+    return this.request<SolicitacaoDiligencia[]>(
+      `/api/v1/aposentadoria/${paId}/diligencias`,
+    );
   }
 }

@@ -100,6 +100,12 @@ func (app *application) routes() http.Handler {
 			r.Get("/{paID}/preview", app.handleAposentadoriaPreview)
 			r.Post("/{paID}/leitura-invalida", app.handleProcessoAposentadoriaLeituraInvalida)
 
+			r.Get("/{paID}/diligencias", app.handleDiligenciaList)
+			r.Get("/{paID}/diligencias/rascunho", app.handleDiligenciaRascunhoGet)
+			r.Put("/{paID}/diligencias/rascunho", app.handleDiligenciaRascunhoSalvar)
+			r.Delete("/{paID}/diligencias/rascunho", app.handleDiligenciaRascunhoDescartar)
+			r.Post("/{paID}/diligencias/rascunho/enviar", app.handleDiligenciaRascunhoEnviar)
+
 			r.Group(func(r chi.Router) {
 				r.Use(app.requirePapel(auth.PapelGestor, auth.PapelSubsecretario))
 				r.Post("/recalcular-scores", app.handleRecalcularScores)

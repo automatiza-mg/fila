@@ -163,6 +163,35 @@ export type SolicitacaoPrioridade = {
   atualizado_em: string;
 };
 
+export type StatusSolicitacaoDiligencia = "rascunho" | "enviada";
+
+export type ItemDiligencia = {
+  id: number;
+  tipo: string;
+  subcategorias: string[];
+  detalhe: string;
+};
+
+export type SolicitacaoDiligencia = {
+  id: number;
+  processo_aposentadoria_id: number;
+  analista_id: number;
+  status: StatusSolicitacaoDiligencia;
+  itens: ItemDiligencia[];
+  criado_em: string;
+  enviada_em: string | null;
+};
+
+export type ItemDiligenciaInput = {
+  tipo: string;
+  subcategorias: string[];
+  detalhe: string;
+};
+
+export type SalvarDiligencia = {
+  itens: ItemDiligenciaInput[];
+};
+
 export type ListProcessosAposentadoriaFilters = {
   page?: number;
   numero?: string;
