@@ -345,6 +345,18 @@ export class Client {
     return this.request<ProcessoAposentadoria>("/api/v1/meu-processo");
   }
 
+  async meuHistorico(
+    filters: ListProcessosAposentadoriaFilters = {},
+  ): Promise<Paginated<ProcessoAposentadoria>> {
+    const q = new URLSearchParams({ page: String(filters.page ?? 1) });
+    if (filters.numero) {
+      q.set("numero", filters.numero);
+    }
+    return this.request<Paginated<ProcessoAposentadoria>>(
+      `/api/v1/meu-historico?${q}`,
+    );
+  }
+
   async getAposentadoriaPreview(paId: number): Promise<Blob> {
     return this.requestBlob(`/api/v1/aposentadoria/${paId}/preview`);
   }
@@ -353,6 +365,12 @@ export class Client {
     return this.requestVoid(`/api/v1/aposentadoria/${paId}/leitura-invalida`, {
       method: "POST",
       body: JSON.stringify({ motivo }),
+    });
+  }
+
+  async registrarPublicacao(paId: number): Promise<void> {
+    return this.requestVoid(`/api/v1/aposentadoria/${paId}/publicar`, {
+      method: "POST",
     });
   }
 

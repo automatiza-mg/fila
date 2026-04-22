@@ -3,14 +3,18 @@
   import NumeroProcesso from "$lib/components/numero-processo.svelte";
   import ProcessoInfo from "$lib/components/processo-info.svelte";
   import LeituraInvalidaDialog from "$lib/components/leitura-invalida-dialog.svelte";
+  import AlertDialog from "$lib/components/ui/alert-dialog.svelte";
   import Button from "$lib/components/ui/button.svelte";
+  import { registrarPublicacao } from "$lib/fns/analise.remote";
   import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
   import { onDestroy } from "svelte";
+  import { toast } from "svelte-sonner";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
 
   let pollId: ReturnType<typeof setInterval> | null = null;
+  let registrando = $state(false);
 
   $effect(() => {
     if (!data.processo) {
@@ -30,6 +34,20 @@
   onDestroy(() => {
     if (pollId) clearInterval(pollId);
   });
+
+  async function handleRegistrarPublicacao() {
+    if (!data.processo) return;
+    registrando = true;
+    try {
+      await registrarPublicacao({ paId: data.processo.id });
+      toast.success("Publicação registrada");
+      await invalidateAll();
+    } catch {
+      toast.error("Não foi possível registrar a publicação");
+    } finally {
+      registrando = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -58,6 +76,19 @@
     <ProcessoInfo processo={data.processo} />
 
     <div class="flex gap-2">
+      <AlertDialog
+        buttonText="Registrar Publicação"
+        disabled={registrando}
+        onConfirmed={handleRegistrarPublicacao}
+      >
+        {#snippet title()}
+          Confirmar Registro de Publicação
+        {/snippet}
+        {#snippet description()}
+          O processo será marcado como concluído e desatribuído de você. Deseja
+          continuar?
+        {/snippet}
+      </AlertDialog>
       <Button href="/analise/diligencia">Registrar Diligência</Button>
       <LeituraInvalidaDialog processoId={data.processo.id} />
     </div>

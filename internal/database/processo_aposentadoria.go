@@ -157,15 +157,28 @@ func (s *Store) UpdateProcessoAposentadoria(ctx context.Context, pa *ProcessoApo
 }
 
 type ListProcessoAposentadoriaParams struct {
-	Numero string
-	Status string
-	Limit  int
-	Offset int
+	Numero           string
+	Status           string
+	UltimoAnalistaID sql.Null[int64]
+	StatusIn         []StatusProcesso
+	Limit            int
+	Offset           int
 }
 
 // ListProcessoAposentadoria retorna uma lista paginada de processos de aposentadoria.
-// Permite filtrar por Numero (do processo) e Status.
+// Permite filtrar por Numero (do processo), Status, UltimoAnalistaID e StatusIn.
 func (s *Store) ListProcessoAposentadoria(ctx context.Context, params ListProcessoAposentadoriaParams) ([]*ProcessoAposentadoria, int, error) {
+	statusIn := make([]string, 0, len(params.StatusIn))
+	for _, s := range params.StatusIn {
+		statusIn = append(statusIn, string(s))
+	}
+
+	var ultimoAnalistaID *int64
+	if params.UltimoAnalistaID.Valid {
+		v := params.UltimoAnalistaID.V
+		ultimoAnalistaID = &v
+	}
+
 	q := `
 	SELECT
 		pa.id, pa.processo_id, pa.data_requerimento, pa.cpf_requerente,
@@ -176,9 +189,11 @@ func (s *Store) ListProcessoAposentadoria(ctx context.Context, params ListProces
 	INNER JOIN processos p ON pa.processo_id = p.id
 	WHERE (LOWER(pa.status::text) = LOWER($1) OR $1 = '')
 	  AND (p.numero LIKE '%' || $2 || '%' OR $2 = '')
+	  AND ($5::bigint IS NULL OR pa.ultimo_analista_id = $5)
+	  AND (cardinality($6::text[]) = 0 OR pa.status::text = ANY($6))
 	ORDER BY pa.criado_em DESC
 	LIMIT $3 OFFSET $4`
-	args := []any{params.Status, params.Numero, params.Limit, params.Offset}
+	args := []any{params.Status, params.Numero, params.Limit, params.Offset, ultimoAnalistaID, statusIn}
 
 	rows, err := s.db.Query(ctx, q, args...)
 	if err != nil {

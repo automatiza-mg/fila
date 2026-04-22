@@ -173,6 +173,20 @@ func (app *application) handleMeuProcessoAtribuido(w http.ResponseWriter, r *htt
 	app.writeJSON(w, http.StatusOK, pa)
 }
 
+func (app *application) handleMeuHistorico(w http.ResponseWriter, r *http.Request) {
+	usuario := app.getAuth(r.Context())
+	params := pagination.ParseQuery(r)
+	numero := r.URL.Query().Get("numero")
+
+	result, err := app.fila.ListHistoricoAnalista(r.Context(), usuario.ID, numero, params.Page, params.Limit)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, result)
+}
+
 // getProcessoAposentadoriaFromRequest carrega o ProcessoAposentadoria pelo paID
 // da rota e verifica se o usuário autenticado tem acesso. Gestores e
 // subsecretários acessam qualquer processo; analistas só o que estiver
@@ -263,6 +277,33 @@ func (app *application) handleProcessoAposentadoriaLeituraInvalida(w http.Respon
 		ProcessoID: paID,
 		Motivo:     input.Motivo,
 	})
+	if err != nil {
+		switch {
+		case errors.Is(err, database.ErrNotFound):
+			app.notFound(w, r)
+		case errors.Is(err, fila.ErrNotAssigned):
+			app.writeError(w, http.StatusForbidden, "Você não possui permissão para alterar este processo")
+		case errors.Is(err, fila.ErrInvalidStatus):
+			app.writeError(w, http.StatusConflict, "O processo não está no status esperado para esta ação")
+		default:
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (app *application) handleProcessoAposentadoriaRegistrarPublicacao(w http.ResponseWriter, r *http.Request) {
+	paID, err := app.intParam(r, "paID")
+	if err != nil || paID < 1 {
+		app.notFound(w, r)
+		return
+	}
+
+	usuario := app.getAuth(r.Context())
+
+	err = app.fila.RegistrarPublicacao(r.Context(), paID, usuario.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrNotFound):

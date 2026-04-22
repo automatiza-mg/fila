@@ -100,6 +100,7 @@ func (app *application) routes() http.Handler {
 			r.Post("/{paID}/prioridade", app.handleProcessoAposentadoriaSolicitarPrioridade)
 			r.Get("/{paID}/preview", app.handleAposentadoriaPreview)
 			r.Post("/{paID}/leitura-invalida", app.handleProcessoAposentadoriaLeituraInvalida)
+			r.Post("/{paID}/publicar", app.handleProcessoAposentadoriaRegistrarPublicacao)
 
 			r.Get("/{paID}/diligencias", app.handleDiligenciaList)
 			r.Get("/{paID}/diligencias/rascunho", app.handleDiligenciaRascunhoGet)
@@ -169,6 +170,7 @@ func (app *application) routes() http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(app.requireAuth)
 			r.Get("/meu-processo", app.handleMeuProcessoAtribuido)
+			r.Get("/meu-historico", app.handleMeuHistorico)
 		})
 	})
 

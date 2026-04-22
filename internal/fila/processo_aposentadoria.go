@@ -157,6 +157,52 @@ func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentad
 	return pagination.NewResult(processos, params.Page, totalCount, params.Limit), nil
 }
 
+// ListHistoricoAnalista retorna os processos em que o analista foi o último responsável,
+// nos status CONCLUIDO, LEITURA_INVALIDA ou EM_DILIGENCIA. Suporta busca por número e paginação.
+func (s *Service) ListHistoricoAnalista(ctx context.Context, analistaID int64, numero string, page, limit int) (*pagination.Result[*ProcessoAposentadoria], error) {
+	offset := pagination.Offset(page, limit)
+
+	paa, totalCount, err := s.store.ListProcessoAposentadoria(ctx, database.ListProcessoAposentadoriaParams{
+		Numero:           numero,
+		UltimoAnalistaID: sql.Null[int64]{V: analistaID, Valid: true},
+		StatusIn: []database.StatusProcesso{
+			database.StatusProcessoConcluido,
+			database.StatusProcessoLeituraInvalid,
+			database.StatusProcessoEmDiligencia,
+		},
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(paa) == 0 {
+		return pagination.NewResult[*ProcessoAposentadoria](nil, page, 0, limit), nil
+	}
+
+	processos := make([]*ProcessoAposentadoria, 0, len(paa))
+	for _, pa := range paa {
+		p, err := s.store.GetProcesso(ctx, pa.ProcessoID)
+		if err != nil {
+			return nil, err
+		}
+
+		var analista *string
+		if pa.AnalistaID.Valid {
+			nome, err := s.store.GetNomeAnalista(ctx, pa.AnalistaID.V)
+			if err != nil {
+				return nil, err
+			}
+			analista = &nome
+		}
+
+		processos = append(processos, mapProcesso(pa, p, analista))
+	}
+
+	return pagination.NewResult(processos, page, totalCount, limit), nil
+}
+
 type MarcarLeituraInvalidaParams struct {
 	AnalistaID int64
 	ProcessoID int64
@@ -199,6 +245,51 @@ func (s *Service) MarcarLeituraInvalida(ctx context.Context, params MarcarLeitur
 	}
 
 	pa.Status = database.StatusProcessoLeituraInvalid
+	pa.UltimoAnalistaID = pa.AnalistaID
+	pa.AnalistaID = sql.Null[int64]{}
+
+	if err := store.UpdateProcessoAposentadoria(ctx, pa); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+// RegistrarPublicacao marca um processo de aposentadoria como concluído,
+// desatribuindo o analista. Retorna [ErrNotAssigned] caso o processo não esteja
+// atribuído ao analista informado e [ErrInvalidStatus] caso o processo não esteja em análise.
+func (s *Service) RegistrarPublicacao(ctx context.Context, paID, analistaID int64) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	store := s.store.WithTx(tx)
+
+	pa, err := store.GetProcessoAposentadoria(ctx, paID)
+	if err != nil {
+		return err
+	}
+
+	if !pa.AnalistaID.Valid || pa.AnalistaID.V != analistaID {
+		return ErrNotAssigned
+	}
+
+	if pa.Status != database.StatusProcessoEmAnalise {
+		return ErrInvalidStatus
+	}
+
+	if err := s.saveHistorico(ctx, store, saveHistoricoParams{
+		ProcessoAposentadoriaID: pa.ID,
+		StatusAnterior:          &pa.Status,
+		StatusNovo:              database.StatusProcessoConcluido,
+		UsuarioID:               &analistaID,
+	}); err != nil {
+		return err
+	}
+
+	pa.Status = database.StatusProcessoConcluido
 	pa.UltimoAnalistaID = pa.AnalistaID
 	pa.AnalistaID = sql.Null[int64]{}
 
