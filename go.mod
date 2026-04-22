@@ -1,10 +1,11 @@
 module github.com/automatiza-mg/fila
 
-go 1.25.4
+go 1.26.2
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.4
+	github.com/JohannesKaufmann/html-to-markdown/v2 v2.5.0
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/caarlos0/env/v11 v11.4.0
 	github.com/go-chi/chi/v5 v5.2.5
@@ -25,9 +26,11 @@ require (
 	github.com/urfave/cli/v3 v3.7.0
 	github.com/wneessen/go-mail v0.7.2
 	golang.org/x/crypto v0.50.0
+	golang.org/x/net v0.52.0
 	golang.org/x/sync v0.20.0
 	golang.org/x/term v0.42.0
 	golang.org/x/text v0.36.0
+	riverqueue.com/riverui v0.15.0
 )
 
 require (
@@ -37,7 +40,6 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.7.0 // indirect
 	github.com/JohannesKaufmann/dom v0.2.0 // indirect
-	github.com/JohannesKaufmann/html-to-markdown/v2 v2.5.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
@@ -108,8 +110,6 @@ require (
 	go.uber.org/goleak v1.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	riverqueue.com/riverui v0.15.0 // indirect
 )
