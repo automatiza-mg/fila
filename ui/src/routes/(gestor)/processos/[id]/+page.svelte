@@ -1,21 +1,41 @@
 <script lang="ts">
-  import { invalidateAll } from "$app/navigation";
   import NumeroProcesso from "$lib/components/numero-processo.svelte";
   import PrioridadeForm from "$lib/components/prioridade-form.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import FormField from "$lib/components/ui/form-field.svelte";
   import Input from "$lib/components/ui/input.svelte";
   import { calcularIdade } from "$lib/date";
+  import { atualizarProcessoPreviewCmd } from "$lib/fns/processos.remote";
   import { formatCpf } from "$lib/formatter";
   import { hasPapel } from "$lib/papel";
   import { statusText, statusColor } from "$lib/processo";
-  import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
-  import ArrowRightIcon from "phosphor-svelte/lib/ArrowRightIcon";
-  import CalendarIcon from "phosphor-svelte/lib/CalendarIcon";
-  import type { PageProps } from "./$types";
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
+  import ArrowRightIcon from "phosphor-svelte/lib/ArrowRightIcon";
+  import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
+  import CalendarIcon from "phosphor-svelte/lib/CalendarIcon";
+  import FilePdfIcon from "phosphor-svelte/lib/FilePdfIcon";
+  import { toast } from "svelte-sonner";
+  import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
+  let atualizandoPreview = $state(false);
+
+  async function atualizarPreview() {
+    if (atualizandoPreview) return;
+    atualizandoPreview = true;
+    try {
+      await atualizarProcessoPreviewCmd({
+        processoId: data.processo.processo_id,
+      });
+      toast.success(
+        "Preview em atualização. Recarregue a página em alguns instantes.",
+      );
+    } catch {
+      toast.error("Não foi possível atualizar o preview");
+    } finally {
+      atualizandoPreview = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -132,6 +152,14 @@
         <ArrowSquareOutIcon />
       </Button>
     {/if}
+    <Button
+      variant="outline"
+      disabled={atualizandoPreview}
+      onclick={atualizarPreview}
+    >
+      <FilePdfIcon />
+      Atualizar Preview
+    </Button>
   </div>
 
   <!-- Histórico -->

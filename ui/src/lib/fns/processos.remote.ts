@@ -47,3 +47,15 @@ export const servidorQuery = query(servidorQuerySchema, async ({ cpf }) => {
     throw err;
   }
 });
+
+const atualizarPreviewSchema = z.object({
+  processoId: z.string(),
+});
+
+export const atualizarProcessoPreviewCmd = command(
+  atualizarPreviewSchema,
+  async ({ processoId }) => {
+    const client = getClient();
+    await client.atualizarProcessoPreview(processoId);
+  },
+);

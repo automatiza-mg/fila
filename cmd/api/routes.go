@@ -85,6 +85,7 @@ func (app *application) routes() http.Handler {
 			r.Post("/", app.handleProcessoCreate)
 			r.Get("/{processoID}", app.handleProcessoDetail)
 			r.Get("/{processoID}/documentos", app.handleProcessoDetailDocumentos)
+			r.Post("/{processoID}/preview/refresh", app.handleProcessoRefreshPreview)
 		})
 
 		r.Route("/aposentadoria", func(r chi.Router) {

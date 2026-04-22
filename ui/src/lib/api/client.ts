@@ -262,6 +262,12 @@ export class Client {
     return this.request<Documento[]>(`/api/v1/processos/${id}/documentos`);
   }
 
+  async atualizarProcessoPreview(id: string): Promise<void> {
+    return this.requestVoid(`/api/v1/processos/${id}/preview/refresh`, {
+      method: "POST",
+    });
+  }
+
   async listarAposentadoria(
     filters: ListProcessosAposentadoriaFilters = {},
   ): Promise<Paginated<ProcessoAposentadoria>> {

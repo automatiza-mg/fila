@@ -27,6 +27,10 @@ func (args DownloadPreviewArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{
 		Queue:       QueueProcessos,
 		MaxAttempts: 5,
+		UniqueOpts: river.UniqueOpts{
+			ByArgs:   true,
+			ByPeriod: time.Hour,
+		},
 	}
 }
 

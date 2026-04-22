@@ -101,6 +101,28 @@ func (s *Service) CreateProcesso(ctx context.Context, num string) (*Processo, er
 	return mapProcesso(p), nil
 }
 
+// RefreshPreview enfileira um job para (re)baixar o preview de um processo
+// existente. A unicidade do job está configurada em [tasks.DownloadPreviewArgs]
+// para no máximo uma execução por processo a cada hora.
+func (s *Service) RefreshPreview(ctx context.Context, processoID uuid.UUID) error {
+	if _, err := s.store.GetProcesso(ctx, processoID); err != nil {
+		return err
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = s.queue.InsertTx(ctx, tx, tasks.DownloadPreviewArgs{ProcessoID: processoID}, nil)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
 // GetProcessoByNumero retorna os dados de um processo pelo numero (protocolo).
 func (s *Service) GetProcessoByNumero(ctx context.Context, numeroProcesso string) (*Processo, error) {
 	p, err := s.store.GetProcessoByNumero(ctx, numeroProcesso)
