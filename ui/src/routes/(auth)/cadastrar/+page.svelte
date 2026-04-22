@@ -3,7 +3,7 @@
   import FormField from "$lib/components/ui/form-field.svelte";
   import Input from "$lib/components/ui/input.svelte";
   import { toast } from "svelte-sonner";
-  import { cadastrarForm } from "../auth.remote";
+  import { cadastrarForm } from "$lib/fns/auth.remote";
 
   let { data } = $props();
 

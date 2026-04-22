@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { cn } from "$lib/cn";
-  import { sairForm } from "../(auth)/sair.remote";
+  import { sairForm } from "$lib/fns/auth.remote";
 
   let { children } = $props();
 

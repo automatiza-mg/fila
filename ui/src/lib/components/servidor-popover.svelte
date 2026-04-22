@@ -2,7 +2,7 @@
   import { Popover } from "bits-ui";
   import { formatCpf } from "$lib/formatter";
   import SpinnerGapIcon from "phosphor-svelte/lib/SpinnerGapIcon";
-  import { servidorQuery } from "../../routes/(gestor)/processos/processo.remote";
+  import { servidorQuery } from "$lib/fns/processos.remote";
 
   type Props = {
     cpf: string;

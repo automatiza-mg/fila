@@ -8,31 +8,6 @@ const criarProcessoSchema = z.object({
   numero: z.string().min(1, "Campo obrigatório"),
 });
 
-export const recalcularScoresCmd = command("unchecked", async () => {
-  const client = getClient();
-  await client.recalcularScore();
-});
-
-const servidorQuerySchema = z.object({
-  cpf: z.string(),
-});
-
-export const servidorQuery = query(
-  servidorQuerySchema,
-  async ({ cpf }) => {
-    const client = getClient();
-
-    try {
-      return await client.getServidor(cpf);
-    } catch (err) {
-      if (err instanceof ApiError && (err.status === 404 || err.status === 409)) {
-        return null;
-      }
-      throw err;
-    }
-  },
-);
-
 export const criarProcessoForm = form(
   criarProcessoSchema,
   async (data, issue) => {
@@ -50,3 +25,25 @@ export const criarProcessoForm = form(
     }
   },
 );
+
+export const recalcularScoresCmd = command("unchecked", async () => {
+  const client = getClient();
+  await client.recalcularScore();
+});
+
+const servidorQuerySchema = z.object({
+  cpf: z.string(),
+});
+
+export const servidorQuery = query(servidorQuerySchema, async ({ cpf }) => {
+  const client = getClient();
+
+  try {
+    return await client.getServidor(cpf);
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 404 || err.status === 409)) {
+      return null;
+    }
+    throw err;
+  }
+});

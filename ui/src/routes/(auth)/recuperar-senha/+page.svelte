@@ -4,7 +4,7 @@
   import Input from "$lib/components/ui/input.svelte";
   import { formatCpf } from "$lib/formatter";
   import { toast } from "svelte-sonner";
-  import { recuperarSenhaForm } from "../auth.remote";
+  import { recuperarSenhaForm } from "$lib/fns/auth.remote";
 
   let enviado = $state(false);
 

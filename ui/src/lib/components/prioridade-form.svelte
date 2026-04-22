@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { criarPrioridadeForm } from "../../routes/(gestor)/processos/[id]/processo.remote";
+  import { criarPrioridadeForm } from "$lib/fns/prioridades.remote";
   import Button from "./ui/button.svelte";
   import Dialog from "./ui/dialog.svelte";
   import FormField from "./ui/form-field.svelte";

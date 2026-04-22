@@ -4,7 +4,7 @@
   import Dialog from "$lib/components/ui/dialog.svelte";
   import FormField from "$lib/components/ui/form-field.svelte";
   import Textarea from "$lib/components/ui/textarea.svelte";
-  import { leituraInvalidaForm } from "../../routes/(analista)/analise/analista.remote";
+  import { leituraInvalidaForm } from "$lib/fns/analise.remote";
   import { toast } from "svelte-sonner";
   import { invalidateAll } from "$app/navigation";
 

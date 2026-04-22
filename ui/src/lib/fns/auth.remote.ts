@@ -1,13 +1,13 @@
 import { form, getRequestEvent } from "$app/server";
 import { env } from "$env/dynamic/public";
 import {
+  ApiError,
   cadastrar,
   entrar,
   recuperarSenha,
   redefinirSenha,
-  ApiError,
 } from "$lib/api/client";
-import { invalid, redirect } from "@sveltejs/kit";
+import { error, invalid, redirect } from "@sveltejs/kit";
 import { z } from "zod/v4";
 
 const entrarSchema = z.object({
@@ -138,3 +138,13 @@ export const cadastrarForm = form(
   },
 );
 
+export const sairForm = form("unchecked", async () => {
+  const { locals, cookies } = getRequestEvent();
+  if (!locals.usuario) {
+    error(401, "Usuário não autenticado");
+  }
+  cookies.delete("auth", {
+    path: "/",
+  });
+  redirect(303, "/entrar");
+});

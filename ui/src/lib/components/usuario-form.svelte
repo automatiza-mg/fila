@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
-  import { createUsuarioForm } from "../../routes/(gestor)/usuarios/usuario.remote";
+  import { createUsuarioForm } from "$lib/fns/usuarios.remote";
   import { formatCpf } from "$lib/formatter";
   import { toast } from "svelte-sonner";
   import Alert from "./ui/alert.svelte";

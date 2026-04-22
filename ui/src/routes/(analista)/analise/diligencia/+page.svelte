@@ -1,26 +1,35 @@
 <script lang="ts">
+  import { goto, invalidateAll } from "$app/navigation";
   import NumeroProcesso from "$lib/components/numero-processo.svelte";
-  import type { PageProps } from "./$types";
-
-  let { data }: PageProps = $props();
-  import {
-    getDiligenciaState,
-    categoriasDiligencia,
-  } from "$lib/stores/diligencia.svelte";
   import AlertDialog from "$lib/components/ui/alert-dialog.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import Dialog from "$lib/components/ui/dialog.svelte";
   import Label from "$lib/components/ui/label.svelte";
   import Select from "$lib/components/ui/select.svelte";
   import Textarea from "$lib/components/ui/textarea.svelte";
+  import { categoriasDiligencia } from "$lib/stores/diligencia.svelte";
+  import { Popover, Tooltip } from "bits-ui";
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
   import ClipboardTextIcon from "phosphor-svelte/lib/ClipboardTextIcon";
   import PencilSimpleIcon from "phosphor-svelte/lib/PencilSimpleIcon";
   import PlusIcon from "phosphor-svelte/lib/PlusIcon";
   import TrashIcon from "phosphor-svelte/lib/TrashIcon";
-  import { Popover, Tooltip } from "bits-ui";
+  import { toast } from "svelte-sonner";
+  import type { PageProps } from "./$types";
+  import {
+    descartarDiligencia,
+    enviarDiligencia,
+    salvarDiligencia,
+  } from "$lib/fns/diligencias.remote";
 
-  const diligenciaStore = getDiligenciaState();
+  let { data }: PageProps = $props();
+
+  type ItemPayload = {
+    tipo: string;
+    subcategorias: string[];
+    detalhe: string;
+  };
+
   let diligenciaForm = $state({
     tipo: "",
     subcategorias: [] as string[],
@@ -28,7 +37,10 @@
   });
 
   let open = $state(false);
-  let editingIndex = $state<number | null>(null);
+  let editingId = $state<number | null>(null);
+  let isSubmitting = $state(false);
+
+  let itens = $derived(data.rascunho.itens);
 
   let categoriaAtual = $derived(
     categoriasDiligencia.find((c) => c.nome === diligenciaForm.tipo),
@@ -38,15 +50,16 @@
     diligenciaForm.tipo = "";
     diligenciaForm.subcategorias = [];
     diligenciaForm.detalhe = "";
-    editingIndex = null;
+    editingId = null;
   }
 
-  function editDiligencia(index: number) {
-    const d = diligenciaStore.diligencias[index];
+  function editDiligencia(id: number) {
+    const d = itens.find((it) => it.id === id);
+    if (!d) return;
     diligenciaForm.tipo = d.tipo;
     diligenciaForm.subcategorias = [...d.subcategorias];
     diligenciaForm.detalhe = d.detalhe;
-    editingIndex = index;
+    editingId = id;
     open = true;
   }
 
@@ -58,6 +71,114 @@
       diligenciaForm.subcategorias = diligenciaForm.subcategorias.filter(
         (s) => s !== sub,
       );
+    }
+  }
+
+  function itensToPayload(itemList: typeof itens): ItemPayload[] {
+    return itemList.map((it) => ({
+      tipo: it.tipo,
+      subcategorias: it.subcategorias,
+      detalhe: it.detalhe,
+    }));
+  }
+
+  function errorMessage(err: unknown, fallback: string): string {
+    if (err instanceof Error && err.message) {
+      return err.message;
+    }
+    return fallback;
+  }
+
+  async function salvarItens(novaLista: ItemPayload[]): Promise<boolean> {
+    try {
+      await salvarDiligencia({ paId: data.processo.id, itens: novaLista });
+      await invalidateAll();
+      return true;
+    } catch (err) {
+      toast.error(errorMessage(err, "Não foi possível salvar as diligências"));
+      return false;
+    }
+  }
+
+  async function handleAddOrEdit(e: SubmitEvent) {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    if (categoriaAtual?.subcategorias) {
+      if (diligenciaForm.subcategorias.length === 0) {
+        toast.error("Selecione ao menos um documento aplicável");
+        return;
+      }
+    } else if (diligenciaForm.detalhe.trim() === "") {
+      toast.error("Informe o detalhe da diligência");
+      return;
+    }
+
+    const novoItem: ItemPayload = {
+      tipo: diligenciaForm.tipo,
+      subcategorias: [...diligenciaForm.subcategorias],
+      detalhe: diligenciaForm.detalhe,
+    };
+
+    const base = itensToPayload(itens);
+    let novaLista: ItemPayload[];
+    if (editingId !== null) {
+      const idx = itens.findIndex((it) => it.id === editingId);
+      if (idx === -1) {
+        novaLista = [...base, novoItem];
+      } else {
+        novaLista = base.map((it, i) => (i === idx ? novoItem : it));
+      }
+    } else {
+      novaLista = [...base, novoItem];
+    }
+
+    isSubmitting = true;
+    const ok = await salvarItens(novaLista);
+    isSubmitting = false;
+
+    if (ok) {
+      open = false;
+      resetDiligenciaForm();
+    }
+  }
+
+  async function handleRemove(id: number) {
+    if (isSubmitting) return;
+    const novaLista = itensToPayload(itens.filter((it) => it.id !== id));
+    isSubmitting = true;
+    const ok = await salvarItens(novaLista);
+    isSubmitting = false;
+    if (ok) {
+      toast.success("Diligência removida");
+    }
+  }
+
+  async function handleEnviar() {
+    if (isSubmitting) return;
+    isSubmitting = true;
+    try {
+      await enviarDiligencia({ paId: data.processo.id });
+      toast.success("Diligência enviada");
+      await goto("/analise");
+    } catch (err) {
+      toast.error(errorMessage(err, "Não foi possível enviar a diligência"));
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
+  async function handleDescartar() {
+    if (isSubmitting) return;
+    isSubmitting = true;
+    try {
+      await descartarDiligencia({ paId: data.processo.id });
+      toast.success("Rascunho descartado");
+      await invalidateAll();
+    } catch (err) {
+      toast.error(errorMessage(err, "Não foi possível descartar o rascunho"));
+    } finally {
+      isSubmitting = false;
     }
   }
 </script>
@@ -85,7 +206,7 @@
 
     <div>
       <Dialog
-        buttonText="Adicionar Diligência"
+        buttonText="Adicionar"
         buttonVariant="outline"
         bind:open
         onOpenChange={(isOpen) => {
@@ -96,43 +217,36 @@
           <PlusIcon />
         {/snippet}
         {#snippet title()}
-          {editingIndex !== null ? "Editar Diligência" : "Adicionar Diligência"}
+          {editingId !== null ? "Editar Diligência" : "Adicionar Diligência"}
         {/snippet}
         {#snippet description()}
           Preencha o tipo e informações da diligência
         {/snippet}
 
-        <form
-          class="flex flex-col gap-4 mt-6"
-          onsubmit={(e) => {
-            e.preventDefault();
-            if (editingIndex !== null) {
-              diligenciaStore.update(editingIndex, diligenciaForm);
-            } else {
-              diligenciaStore.add(diligenciaForm);
-            }
-            open = false;
-            resetDiligenciaForm();
-          }}
-        >
-          <Select
-            required
-            bind:value={diligenciaForm.tipo}
-            onchange={() => {
-              diligenciaForm.subcategorias = [];
-              diligenciaForm.detalhe = "";
-            }}
-          >
-            <option value="" selected>Selecione o tipo de diligência</option>
-            {#each categoriasDiligencia as categoria}
-              <option value={categoria.nome}>{categoria.nome}</option>
-            {/each}
-          </Select>
+        <form class="flex flex-col gap-4 mt-6" onsubmit={handleAddOrEdit}>
+          <div class="grid gap-1 min-w-0">
+            <Label for="diligencia-tipo">Tipo de diligência</Label>
+            <Select
+              id="diligencia-tipo"
+              required
+              class="w-full min-w-0"
+              bind:value={diligenciaForm.tipo}
+              onchange={() => {
+                diligenciaForm.subcategorias = [];
+                diligenciaForm.detalhe = "";
+              }}
+            >
+              <option value="" selected>Selecione o tipo de diligência</option>
+              {#each categoriasDiligencia as categoria}
+                <option value={categoria.nome}>{categoria.nome}</option>
+              {/each}
+            </Select>
+          </div>
 
           {#if categoriaAtual?.subcategorias}
             <fieldset class="space-y-2">
               <legend class="text-sm font-medium">
-                Selecione os documentos aplicáveis
+                Documentos aplicáveis
               </legend>
               <div
                 class="max-h-72 overflow-y-auto space-y-1.5 rounded-lg border border-border p-3"
@@ -153,23 +267,30 @@
           {/if}
 
           {#if !categoriaAtual?.subcategorias}
-            <Textarea
-              bind:value={diligenciaForm.detalhe}
-              placeholder="Detalhar a diligência solicitada"
-              rows={5}
-            ></Textarea>
+            <div class="grid gap-1">
+              <Label for="diligencia-detalhe">Detalhe</Label>
+              <Textarea
+                id="diligencia-detalhe"
+                bind:value={diligenciaForm.detalhe}
+                placeholder="Detalhar a diligência solicitada"
+                rows={5}
+                required
+              ></Textarea>
+            </div>
           {/if}
 
           <div class="flex justify-end">
-            <Button>{editingIndex !== null ? "Salvar" : "Adicionar"}</Button>
+            <Button disabled={isSubmitting}>
+              {editingId !== null ? "Salvar" : "Adicionar"}
+            </Button>
           </div>
         </form>
       </Dialog>
     </div>
 
-    {#if diligenciaStore.diligencias.length > 0}
+    {#if itens.length > 0}
       <ul class="space-y-2">
-        {#each diligenciaStore.diligencias as diligencia, i}
+        {#each itens as diligencia, i (diligencia.id)}
           <li
             class="flex items-center gap-3 rounded-lg border border-border p-3"
           >
@@ -192,8 +313,12 @@
                       class="border border-border-strong shadow-sm z-30 max-w-80 rounded-xl p-4 w-full bg-surface space-y-1"
                       sideOffset={8}
                     >
-                      <p class="text-sm font-medium">Documentos selecionados:</p>
-                      <ul class="text-sm text-muted-foreground space-y-0.5 list-disc max-h-60 overflow-y-auto">
+                      <p class="text-sm font-medium">
+                        Documentos selecionados:
+                      </p>
+                      <ul
+                        class="text-sm text-muted-foreground space-y-0.5 list-disc max-h-60 overflow-y-auto"
+                      >
                         {#each diligencia.subcategorias as sub}
                           <li class="ml-6">
                             <p class="tracking-tight">{sub}</p>
@@ -214,8 +339,9 @@
               <div class="flex items-center gap-1 shrink-0">
                 <Tooltip.Root>
                   <Tooltip.Trigger
-                    onclick={() => editDiligencia(i)}
-                    class="text-primary bg-surface-alt hover:bg-surface-alt/80 cursor-pointer rounded-md p-1.5"
+                    onclick={() => editDiligencia(diligencia.id)}
+                    disabled={isSubmitting}
+                    class="text-primary bg-surface-alt hover:bg-surface-alt/80 cursor-pointer rounded-md p-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <PencilSimpleIcon class="size-4" />
                   </Tooltip.Trigger>
@@ -231,8 +357,9 @@
 
                 <Tooltip.Root>
                   <Tooltip.Trigger
-                    onclick={() => diligenciaStore.removeByIndex(i)}
-                    class="text-destructive bg-surface-alt hover:bg-surface-alt/80 cursor-pointer rounded-md p-1.5"
+                    onclick={() => handleRemove(diligencia.id)}
+                    disabled={isSubmitting}
+                    class="text-destructive bg-surface-alt hover:bg-surface-alt/80 cursor-pointer rounded-md p-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <TrashIcon class="size-4" />
                   </Tooltip.Trigger>
@@ -264,11 +391,28 @@
       </div>
     {/if}
 
-    <div class="flex justify-end">
+    <div class="flex justify-end gap-2">
+      {#if itens.length > 0}
+        <AlertDialog
+          buttonText="Descartar Rascunho"
+          variant="destructive"
+          disabled={isSubmitting}
+          onConfirmed={handleDescartar}
+        >
+          {#snippet title()}
+            Descartar rascunho
+          {/snippet}
+          {#snippet description()}
+            Todas as diligências adicionadas serão removidas. Esta ação não pode
+            ser desfeita.
+          {/snippet}
+        </AlertDialog>
+      {/if}
+
       <AlertDialog
         buttonText="Enviar Diligência"
-        disabled={diligenciaStore.diligencias.length === 0}
-        onConfirmed={() => {}}
+        disabled={itens.length === 0 || isSubmitting}
+        onConfirmed={handleEnviar}
       >
         {#snippet title()}
           Confirmar Envio de Diligência
@@ -278,7 +422,7 @@
         {/snippet}
 
         <ul class="mt-4 max-h-72 overflow-y-auto space-y-3 text-sm">
-          {#each diligenciaStore.diligencias as diligencia, i}
+          {#each itens as diligencia, i (diligencia.id)}
             <li>
               <p class="font-medium">{i + 1}. {diligencia.tipo}</p>
               {#if diligencia.subcategorias.length > 0}

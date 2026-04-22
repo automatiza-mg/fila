@@ -3,7 +3,7 @@
   import {
     criarAnalistaForm,
     unidadesQuery,
-  } from "../../routes/(gestor)/usuarios/usuario.remote";
+  } from "$lib/fns/usuarios.remote";
   import { toast } from "svelte-sonner";
   import Alert from "./ui/alert.svelte";
   import Button from "./ui/button.svelte";

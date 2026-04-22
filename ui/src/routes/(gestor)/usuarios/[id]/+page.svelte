@@ -11,7 +11,7 @@
     deleteUsuarioCmd,
     enviarCadastroCmd,
     retornarAnalistaCmd,
-  } from "../usuario.remote";
+  } from "$lib/fns/usuarios.remote";
   import { goto, invalidateAll } from "$app/navigation";
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
   import EnvelopeIcon from "phosphor-svelte/lib/EnvelopeIcon";

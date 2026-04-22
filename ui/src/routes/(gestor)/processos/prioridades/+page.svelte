@@ -7,7 +7,7 @@
   import {
     aprovarPrioridadeCmd,
     negarPrioridadeCmd,
-  } from "./prioridade.remote";
+  } from "$lib/fns/prioridades.remote";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();

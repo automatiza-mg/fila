@@ -46,7 +46,8 @@ func (app *application) handleDiligenciaRascunhoGet(w http.ResponseWriter, r *ht
 }
 
 // handleDiligenciaRascunhoSalvar substitui o conjunto de itens do rascunho
-// ativo. Requer ao menos um item.
+// ativo. Aceita lista vazia, permitindo que o analista remova todos os itens.
+// A validação de lista não vazia acontece apenas no envio da diligência.
 func (app *application) handleDiligenciaRascunhoSalvar(w http.ResponseWriter, r *http.Request) {
 	pa := app.getProcessoAposentadoriaFromRequest(w, r)
 	if pa == nil {
@@ -59,7 +60,6 @@ func (app *application) handleDiligenciaRascunhoSalvar(w http.ResponseWriter, r 
 		return
 	}
 
-	input.Check(len(input.Itens) > 0, "itens", "Deve conter ao menos um item de diligência")
 	for i, it := range input.Itens {
 		input.Check(validator.NotBlank(it.Tipo), fmt.Sprintf("itens[%d].tipo", i), "Campo obrigatório")
 		input.Check(

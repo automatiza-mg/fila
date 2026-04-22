@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
-  import { criarProcessoForm } from "../../routes/(gestor)/processos/processo.remote";
+  import { criarProcessoForm } from "$lib/fns/processos.remote";
   import { toast } from "svelte-sonner";
   import PlusIcon from "phosphor-svelte/lib/PlusIcon";
   import Alert from "./ui/alert.svelte";

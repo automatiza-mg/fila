@@ -5,7 +5,7 @@
   import Input from "$lib/components/ui/input.svelte";
   import { formatCpf } from "$lib/formatter";
   import { toast } from "svelte-sonner";
-  import { entrarForm } from "../auth.remote";
+  import { entrarForm } from "$lib/fns/auth.remote";
 
   $effect(() => {
     const value = entrarForm.fields.cpf.value() ?? "";

@@ -1,14 +1,6 @@
-import { getContext, setContext } from "svelte";
-
 export type CategoriaDiligencia = {
   nome: string;
   subcategorias?: string[];
-};
-
-export type Diligencia = {
-  tipo: string;
-  subcategorias: string[];
-  detalhe: string;
 };
 
 export const categoriasDiligencia: CategoriaDiligencia[] = [
@@ -56,33 +48,3 @@ export const categoriasDiligencia: CategoriaDiligencia[] = [
   },
   { nome: "Inconsistência na Análise do Órgão de Origem" },
 ];
-
-class DiligenciaStore {
-  diligencias = $state<Diligencia[]>([]);
-
-  add(diligencia: Diligencia) {
-    this.diligencias.push({
-      ...diligencia,
-      subcategorias: [...diligencia.subcategorias],
-    });
-  }
-
-  update(index: number, diligencia: Diligencia) {
-    this.diligencias[index] = {
-      ...diligencia,
-      subcategorias: [...diligencia.subcategorias],
-    };
-  }
-
-  removeByIndex(index: number) {
-    this.diligencias.splice(index, 1);
-  }
-}
-
-export function setDiligenciaState() {
-  setContext("diligencia", new DiligenciaStore());
-}
-
-export function getDiligenciaState() {
-  return getContext<DiligenciaStore>("diligencia");
-}

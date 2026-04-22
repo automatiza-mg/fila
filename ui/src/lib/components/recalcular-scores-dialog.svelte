@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
-  import { recalcularScoresCmd } from "../../routes/(gestor)/processos/processo.remote";
+  import { recalcularScoresCmd } from "$lib/fns/processos.remote";
   import { toast } from "svelte-sonner";
   import ArrowsClockwiseIcon from "phosphor-svelte/lib/ArrowsClockwiseIcon";
   import AlertDialog from "./ui/alert-dialog.svelte";
