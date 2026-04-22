@@ -4,6 +4,7 @@
   import LeituraInvalidaDialog from "$lib/components/leitura-invalida-dialog.svelte";
   import Button from "$lib/components/ui/button.svelte";
   import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
+  import HourglassIcon from "phosphor-svelte/lib/HourglassIcon";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
@@ -35,14 +36,18 @@
     <ProcessoInfo processo={data.processo} />
 
     <div class="flex gap-2">
-      <Button href="/analise/diligencia">Solicitar Diligência</Button>
+      <Button href="/analise/diligencia">Registrar Diligência</Button>
       <LeituraInvalidaDialog processoId={data.processo.id} />
     </div>
   </div>
 {:else}
-  <div class="flex grow items-center justify-center">
-    <p class="text-muted-foreground text-sm">
-      Nenhum processo atribuído no momento.
-    </p>
+  <div class="flex flex-col grow items-center justify-center">
+    <div class="flex max-w-md flex-col items-center text-center">
+      <p class="font-semibold">Nenhum processo atribuído no momento.</p>
+      <p class="text-muted-foreground text-xs">
+        Assim que um processo estiver disponível, ele será atribuído a você
+        automaticamente.
+      </p>
+    </div>
   </div>
 {/if}

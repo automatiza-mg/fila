@@ -47,7 +47,7 @@
         class="bg-muted flex h-full grow flex-col rounded-tr-2xl rounded-b-2xl p-4 sm:p-8"
       >
         <div
-          class="grow overflow-y-auto rounded-xl bg-surface p-6 shadow border border-secondary"
+          class="bg-surface border-secondary flex grow flex-col overflow-y-auto rounded-xl border p-6 shadow"
         >
           {@render children()}
         </div>

@@ -158,10 +158,11 @@
     isSubmitting = true;
     try {
       await enviarDiligencia({ paId: data.processo.id });
-      toast.success("Diligência enviada");
+      toast.success("Diligência registrada");
+      await invalidateAll();
       await goto("/analise");
     } catch (err) {
-      toast.error(errorMessage(err, "Não foi possível enviar a diligência"));
+      toast.error(errorMessage(err, "Não foi possível registrar a diligência"));
     } finally {
       isSubmitting = false;
     }
@@ -183,7 +184,7 @@
 </script>
 
 <svelte:head>
-  <title>Solicitar Diligência - Fila Aposentadoria</title>
+  <title>Registrar Diligência - Fila Aposentadoria</title>
 </svelte:head>
 
 <div class="space-y-8">
@@ -271,7 +272,7 @@
               <Textarea
                 id="diligencia-detalhe"
                 bind:value={diligenciaForm.detalhe}
-                placeholder="Detalhar a diligência solicitada"
+                placeholder="Detalhar a diligência"
                 rows={5}
                 required
               ></Textarea>
@@ -406,15 +407,15 @@
       {/if}
 
       <AlertDialog
-        buttonText="Enviar Diligência"
+        buttonText="Registrar Diligência"
         disabled={itens.length === 0 || isSubmitting}
         onConfirmed={handleEnviar}
       >
         {#snippet title()}
-          Confirmar Envio de Diligência
+          Confirmar Registro de Diligência
         {/snippet}
         {#snippet description()}
-          Revise as diligências antes de enviar.
+          Revise as diligências antes de registrar.
         {/snippet}
 
         <ul class="mt-4 max-h-72 overflow-y-auto space-y-3 text-sm">
