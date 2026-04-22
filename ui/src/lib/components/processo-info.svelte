@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ProcessoAposentadoria } from "$lib/api/types";
+  import ServidorPopover from "$lib/components/servidor-popover.svelte";
   import { calcularIdade } from "$lib/date";
-  import { formatCpf } from "$lib/formatter";
   import { statusText, statusColor } from "$lib/processo";
   import InfoIcon from "phosphor-svelte/lib/InfoIcon";
   import IdentificationCardIcon from "phosphor-svelte/lib/IdentificationCardIcon";
@@ -30,10 +30,10 @@
           class="text-muted-foreground text-xs sm:text-sm flex items-center gap-1"
         >
           <IdentificationCardIcon class="size-3.5 sm:size-4" />
-          CPF Requerente
+          Dados Requerente
         </p>
         <p class="font-medium mt-0.5">
-          {formatCpf(processo.cpf_requerente)}
+          <ServidorPopover cpf={processo.cpf_requerente} />
         </p>
       </div>
       <div class="px-4 py-3">
@@ -44,9 +44,10 @@
           Data de Nascimento
         </p>
         <p class="font-medium mt-0.5">
-          {new Date(
-            processo.data_nascimento_requerente,
-          ).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+          {new Date(processo.data_nascimento_requerente).toLocaleDateString(
+            "pt-BR",
+            { timeZone: "UTC" },
+          )}
           <span class="text-muted-foreground text-xs sm:text-sm font-normal">
             ({calcularIdade(processo.data_nascimento_requerente)} anos)
           </span>
@@ -123,8 +124,8 @@
     </div>
   </div>
   <p class="text-xs text-muted-foreground px-1">
-    Os dados acima foram extraídos e analisados automaticamente por
-    inteligência artificial.
+    Os dados acima foram extraídos e analisados automaticamente por inteligência
+    artificial.
     <span class="font-medium">
       Verifique as informações antes de prosseguir.
     </span>

@@ -10,7 +10,6 @@
   import { categoriasDiligencia } from "$lib/stores/diligencia.svelte";
   import { Popover, Tooltip } from "bits-ui";
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
-  import ClipboardTextIcon from "phosphor-svelte/lib/ClipboardTextIcon";
   import PencilSimpleIcon from "phosphor-svelte/lib/PencilSimpleIcon";
   import PlusIcon from "phosphor-svelte/lib/PlusIcon";
   import TrashIcon from "phosphor-svelte/lib/TrashIcon";
@@ -379,15 +378,12 @@
       </ul>
     {:else}
       <div class="flex flex-col items-center gap-2 py-10 border border-border">
-        <ClipboardTextIcon class="size-7" />
-        <div>
-          <p class="text-center font-semibold">
-            Nenhuma diligência adicionada.
-          </p>
-          <p class="text-center text-sm text-muted-foreground">
-            Utilize o botão acima para adicionar diligências.
-          </p>
-        </div>
+        <p class="text-center font-semibold">
+          Nenhuma diligência adicionada.
+        </p>
+        <p class="text-center text-sm text-muted-foreground">
+          Utilize o botão acima para adicionar diligências.
+        </p>
       </div>
     {/if}
 
