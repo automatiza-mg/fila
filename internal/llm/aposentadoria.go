@@ -3,9 +3,11 @@ package llm
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/responses"
+	"github.com/openai/openai-go/v3/shared"
 )
 
 type AnaliseAposentadoria struct {
@@ -46,8 +48,12 @@ func (c *Client) AnalisarAposentadoria(ctx context.Context, docs []Documento) (*
 		return nil, err
 	}
 
+	started := time.Now()
 	resp, err := c.openai.Responses.New(ctx, responses.ResponseNewParams{
 		Model: openai.ChatModelGPT5_4,
+		Reasoning: shared.ReasoningParam{
+			Effort: openai.ReasoningEffortLow,
+		},
 		Input: responses.ResponseNewParamsInputUnion{
 			OfInputItemList: prompt.Input(),
 		},
@@ -59,8 +65,12 @@ func (c *Client) AnalisarAposentadoria(ctx context.Context, docs []Documento) (*
 		return nil, err
 	}
 
+	c.logUsage("Análise de aposentadoria concluída", "aposentadoria", resp, time.Since(started))
+
+	text := resp.OutputText()
+
 	var analise AnaliseAposentadoria
-	err = json.Unmarshal([]byte(resp.Output[0].Content[0].Text), &analise)
+	err = json.Unmarshal([]byte(text), &analise)
 	if err != nil {
 		return nil, err
 	}

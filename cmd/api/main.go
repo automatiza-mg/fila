@@ -115,7 +115,7 @@ func run(ctx context.Context) error {
 	sei := sei.NewClient(&cfg.SEI)
 	cache := cache.NewRedisCache(rdb)
 	di := docintel.NewAzureDocIntel(&cfg.DocIntel)
-	ai := llm.New(&cfg.LLM)
+	ai := llm.New(&cfg.LLM, logger)
 	proc := processos.New(pool, storage, sei, cache, queue)
 	apos := aposentadoria.New(pool, dl, cache)
 	auth := auth.New(pool, logger, queue)
