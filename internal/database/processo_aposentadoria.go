@@ -34,6 +34,7 @@ type ProcessoAposentadoria struct {
 	Status                   StatusProcesso  `db:"status"`
 	AnalistaID               sql.Null[int64] `db:"analista_id"`
 	UltimoAnalistaID         sql.Null[int64] `db:"ultimo_analista_id"`
+	Alertas                  []string        `db:"alertas"`
 	CriadoEm                 time.Time       `db:"criado_em"`
 	AtualizadoEm             time.Time       `db:"atualizado_em"`
 }
@@ -51,9 +52,10 @@ func (s *Store) SaveProcessoAposentadoria(ctx context.Context, pa *ProcessoApose
 		score,
 		status,
 		analista_id,
-		ultimo_analista_id
+		ultimo_analista_id,
+		alertas
 	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	RETURNING id, data_requerimento, data_nascimento_requerente, criado_em, atualizado_em`
 	args := []any{
 		pa.ProcessoID,
@@ -67,6 +69,7 @@ func (s *Store) SaveProcessoAposentadoria(ctx context.Context, pa *ProcessoApose
 		pa.Status,
 		pa.AnalistaID,
 		pa.UltimoAnalistaID,
+		pa.Alertas,
 	}
 
 	err := s.db.QueryRow(ctx, q, args...).Scan(
@@ -87,7 +90,7 @@ func (s *Store) GetProcessoAposentadoria(ctx context.Context, id int64) (*Proces
 	SELECT
 		id, processo_id, data_requerimento, cpf_requerente, data_nascimento_requerente,
 		invalidez, judicial, prioridade, score, status,
-		analista_id, ultimo_analista_id, criado_em, atualizado_em
+		analista_id, ultimo_analista_id, alertas, criado_em, atualizado_em
 	FROM processos_aposentadoria
 	WHERE id = $1`
 
@@ -110,7 +113,7 @@ func (s *Store) GetProcessoAposentadoriaByNumero(ctx context.Context, numero str
 	SELECT
 		pa.id, pa.processo_id, pa.data_requerimento, pa.cpf_requerente, pa.data_nascimento_requerente,
 		pa.invalidez, pa.judicial, pa.prioridade, pa.score, pa.status,
-		pa.analista_id, pa.ultimo_analista_id, pa.criado_em, pa.atualizado_em
+		pa.analista_id, pa.ultimo_analista_id, pa.alertas, pa.criado_em, pa.atualizado_em
 	FROM processos_aposentadoria pa
 	INNER JOIN processos p ON pa.processo_id = p.id
 	WHERE p.numero = $1`
@@ -184,7 +187,7 @@ func (s *Store) ListProcessoAposentadoria(ctx context.Context, params ListProces
 		pa.id, pa.processo_id, pa.data_requerimento, pa.cpf_requerente,
 		pa.data_nascimento_requerente, pa.invalidez, pa.judicial, pa.prioridade,
 		pa.score, pa.status, pa.analista_id, pa.ultimo_analista_id,
-		pa.criado_em, pa.atualizado_em, COUNT(*) OVER()
+		pa.alertas, pa.criado_em, pa.atualizado_em, COUNT(*) OVER()
 	FROM processos_aposentadoria pa
 	INNER JOIN processos p ON pa.processo_id = p.id
 	WHERE (LOWER(pa.status::text) = LOWER($1) OR $1 = '')
@@ -210,7 +213,7 @@ func (s *Store) ListProcessoAposentadoria(ctx context.Context, params ListProces
 			&pa.ID, &pa.ProcessoID, &pa.DataRequerimento, &pa.CPFRequerente,
 			&pa.DataNascimentoRequerente, &pa.Invalidez, &pa.Judicial, &pa.Prioridade,
 			&pa.Score, &pa.Status, &pa.AnalistaID, &pa.UltimoAnalistaID,
-			&pa.CriadoEm, &pa.AtualizadoEm, &totalCount,
+			&pa.Alertas, &pa.CriadoEm, &pa.AtualizadoEm, &totalCount,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -230,7 +233,7 @@ func (s *Store) GetProcessoPrioriatario(ctx context.Context, analistaID int64) (
 		pa.id, pa.processo_id, pa.data_requerimento, pa.cpf_requerente,
 		pa.data_nascimento_requerente, pa.invalidez, pa.judicial, pa.prioridade,
 		pa.score, pa.status, pa.analista_id, pa.ultimo_analista_id,
-		pa.criado_em, pa.atualizado_em
+		pa.alertas, pa.criado_em, pa.atualizado_em
 	FROM processos_aposentadoria pa
 	WHERE pa.status IN ('RETORNO_DILIGENCIA', 'ANALISE_PENDENTE')
 	ORDER BY
@@ -250,7 +253,7 @@ func (s *Store) GetProcessoPrioriatario(ctx context.Context, analistaID int64) (
 		&pa.ID, &pa.ProcessoID, &pa.DataRequerimento, &pa.CPFRequerente,
 		&pa.DataNascimentoRequerente, &pa.Invalidez, &pa.Judicial, &pa.Prioridade,
 		&pa.Score, &pa.Status, &pa.AnalistaID, &pa.UltimoAnalistaID,
-		&pa.CriadoEm, &pa.AtualizadoEm,
+		&pa.Alertas, &pa.CriadoEm, &pa.AtualizadoEm,
 	)
 	if err != nil {
 		switch {
@@ -270,7 +273,7 @@ func (s *Store) GetProcessoAtribuido(ctx context.Context, analistaID int64) (*Pr
 		pa.id, pa.processo_id, pa.data_requerimento, pa.cpf_requerente,
 		pa.data_nascimento_requerente, pa.invalidez, pa.judicial, pa.prioridade,
 		pa.score, pa.status, pa.analista_id, pa.ultimo_analista_id,
-		pa.criado_em, pa.atualizado_em
+		pa.alertas, pa.criado_em, pa.atualizado_em
 	FROM processos_aposentadoria pa
 	WHERE pa.status = 'EM_ANALISE'
 	AND analista_id = $1`
@@ -280,7 +283,7 @@ func (s *Store) GetProcessoAtribuido(ctx context.Context, analistaID int64) (*Pr
 		&pa.ID, &pa.ProcessoID, &pa.DataRequerimento, &pa.CPFRequerente,
 		&pa.DataNascimentoRequerente, &pa.Invalidez, &pa.Judicial, &pa.Prioridade,
 		&pa.Score, &pa.Status, &pa.AnalistaID, &pa.UltimoAnalistaID,
-		&pa.CriadoEm, &pa.AtualizadoEm,
+		&pa.Alertas, &pa.CriadoEm, &pa.AtualizadoEm,
 	)
 	if err != nil {
 		switch {
@@ -300,7 +303,7 @@ func (s *Store) ListAllProcessoAposentadoria(ctx context.Context) ([]*ProcessoAp
 	SELECT
 		id, processo_id, data_requerimento, cpf_requerente, data_nascimento_requerente,
 		invalidez, judicial, prioridade, score, status,
-		analista_id, ultimo_analista_id, criado_em, atualizado_em
+		analista_id, ultimo_analista_id, alertas, criado_em, atualizado_em
 	FROM processos_aposentadoria
 	ORDER BY id`
 
@@ -317,7 +320,7 @@ func (s *Store) ListAllProcessoAposentadoria(ctx context.Context) ([]*ProcessoAp
 			&pa.ID, &pa.ProcessoID, &pa.DataRequerimento, &pa.CPFRequerente,
 			&pa.DataNascimentoRequerente, &pa.Invalidez, &pa.Judicial, &pa.Prioridade,
 			&pa.Score, &pa.Status, &pa.AnalistaID, &pa.UltimoAnalistaID,
-			&pa.CriadoEm, &pa.AtualizadoEm,
+			&pa.Alertas, &pa.CriadoEm, &pa.AtualizadoEm,
 		)
 		if err != nil {
 			return nil, err

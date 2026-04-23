@@ -10,6 +10,7 @@
   import GavelIcon from "phosphor-svelte/lib/GavelIcon";
   import FirstAidIcon from "phosphor-svelte/lib/FirstAidIcon";
   import FlagIcon from "phosphor-svelte/lib/FlagIcon";
+  import WarningIcon from "phosphor-svelte/lib/WarningIcon";
 
   type Props = {
     processo: ProcessoAposentadoria;
@@ -123,6 +124,21 @@
       </div>
     </div>
   </div>
+  {#if processo.alertas && processo.alertas.length > 0}
+    <div
+      class="rounded-xl border border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 text-sm"
+    >
+      <p class="flex items-center gap-1 font-medium">
+        <WarningIcon class="size-4" />
+        Alertas
+      </p>
+      <ul class="mt-1 list-disc pl-5 space-y-0.5">
+        {#each processo.alertas as alerta}
+          <li>{alerta}</li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
   <p class="text-xs text-muted-foreground px-1">
     Os dados acima foram extraídos e analisados automaticamente por inteligência
     artificial.

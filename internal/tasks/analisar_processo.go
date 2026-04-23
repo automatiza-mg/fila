@@ -113,6 +113,8 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 
 	invalidez := analise.Invalidez
 
+	var alertas []string
+
 	// Enriquece os dados do processo com informações do servidor no datalake.
 	servidor, err := w.servidorFetcher.GetServidor(ctx, analise.CPF)
 	if err != nil {
@@ -120,6 +122,7 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 			slog.String("cpf", analise.CPF),
 			slog.String("erro", err.Error()),
 		)
+		alertas = append(alertas, "Não foi possível obter os dados do servidor no datalake. Utilizando dados extraídos pela IA.")
 	} else {
 		dataNascimento = servidor.DataNascimento
 		invalidez = invalidez || servidor.PossuiDeficiencia
@@ -128,6 +131,7 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 	// Busca a informação complementar da data de recebimento do processo.
 	dataRequerimento, err := w.dataFetcher.GetDataRecebimento(ctx, p.Numero, UnidadeRecebimento)
 	if err != nil {
+		alertas = append(alertas, "Não foi possível obter a data de recebimento no SEI. Utilizando data extraída pela IA.")
 		dataRequerimento, err = time.Parse(time.DateOnly, analise.DataRequerimento)
 		if err != nil {
 			return err
@@ -150,6 +154,7 @@ func (w *AnalisarProcessoWorker) Work(ctx context.Context, job *river.Job[Analis
 		DataRequerimento:         dataRequerimento,
 		Status:                   database.StatusProcessoAnalisePendente,
 		Score:                    score,
+		Alertas:                  alertas,
 	}
 	err = store.SaveProcessoAposentadoria(ctx, pa)
 	if err != nil {

@@ -34,6 +34,7 @@ type ProcessoAposentadoria struct {
 	Analista                 *string   `json:"analista"`
 	AnalistaID               *int64    `json:"analista_id"`
 	PossuiPreview            bool      `json:"possui_preview"`
+	Alertas                  []string  `json:"alertas"`
 	CriadoEm                 time.Time `json:"criado_em"`
 	AtualizadoEm             time.Time `json:"atualizado_em"`
 }
@@ -54,6 +55,7 @@ func mapProcesso(pa *database.ProcessoAposentadoria, p *database.Processo, anali
 		Analista:                 analista,
 		AnalistaID:               database.Ptr(pa.AnalistaID),
 		PossuiPreview:            p.PreviewHash.Valid,
+		Alertas:                  pa.Alertas,
 		CriadoEm:                 pa.CriadoEm,
 		AtualizadoEm:             pa.AtualizadoEm,
 	}

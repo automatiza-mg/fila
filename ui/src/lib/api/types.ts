@@ -104,6 +104,7 @@ export type ProcessoAposentadoria = {
   analista_id: number | null;
   analista: string | null;
   possui_preview: boolean;
+  alertas: string[];
   criado_em: string;
   atualizado_em: string;
 };

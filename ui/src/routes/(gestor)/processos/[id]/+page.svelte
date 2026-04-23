@@ -14,6 +14,7 @@
   import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
   import CalendarIcon from "phosphor-svelte/lib/CalendarIcon";
   import FilePdfIcon from "phosphor-svelte/lib/FilePdfIcon";
+  import WarningIcon from "phosphor-svelte/lib/WarningIcon";
   import { toast } from "svelte-sonner";
   import type { PageProps } from "./$types";
 
@@ -136,6 +137,22 @@
       />
     </FormField>
   </div>
+
+  {#if data.processo.alertas && data.processo.alertas.length > 0}
+    <div
+      class="rounded-xl border border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 text-sm max-w-4xl"
+    >
+      <p class="flex items-center gap-1 font-medium">
+        <WarningIcon class="size-4" />
+        Alertas
+      </p>
+      <ul class="mt-1 list-disc pl-5 space-y-0.5">
+        {#each data.processo.alertas as alerta}
+          <li>{alerta}</li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
 
   <div class="flex items-center gap-4">
     {#if !data.processo.prioridade && hasPapel(data.usuario, "GESTOR")}
