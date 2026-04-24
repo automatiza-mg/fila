@@ -57,6 +57,9 @@ func (s *Store) SaveProcessoAposentadoria(ctx context.Context, pa *ProcessoApose
 	)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	RETURNING id, data_requerimento, data_nascimento_requerente, criado_em, atualizado_em`
+	if pa.Alertas == nil {
+		pa.Alertas = []string{}
+	}
 	args := []any{
 		pa.ProcessoID,
 		pa.DataRequerimento,
