@@ -14,9 +14,9 @@
   import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
   import CalendarIcon from "phosphor-svelte/lib/CalendarIcon";
   import FilePdfIcon from "phosphor-svelte/lib/FilePdfIcon";
-  import WarningIcon from "phosphor-svelte/lib/WarningIcon";
   import { toast } from "svelte-sonner";
   import type { PageProps } from "./$types";
+  import AlertasProcesso from "$lib/components/alertas-processo.svelte";
 
   let { data }: PageProps = $props();
   let atualizandoPreview = $state(false);
@@ -53,7 +53,9 @@
     </a>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl">
+  <AlertasProcesso processo={data.processo} />
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-3xl">
     <FormField label="CPF Requerente" id="cpf">
       <Input
         type="text"
@@ -137,22 +139,6 @@
       />
     </FormField>
   </div>
-
-  {#if data.processo.alertas && data.processo.alertas.length > 0}
-    <div
-      class="rounded-xl border border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 text-sm max-w-4xl"
-    >
-      <p class="flex items-center gap-1 font-medium">
-        <WarningIcon class="size-4" />
-        Alertas
-      </p>
-      <ul class="mt-1 list-disc pl-5 space-y-0.5">
-        {#each data.processo.alertas as alerta}
-          <li>{alerta}</li>
-        {/each}
-      </ul>
-    </div>
-  {/if}
 
   <div class="flex items-center gap-4">
     {#if !data.processo.prioridade && hasPapel(data.usuario, "GESTOR")}
