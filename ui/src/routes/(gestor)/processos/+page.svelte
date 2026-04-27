@@ -54,7 +54,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each data.processos.data as processo}
+        {#each data.processos.data as processo (processo.id)}
           <tr class="border-b border-border hover:bg-surface-subtle">
             <td class="p-2.5">
               <a
