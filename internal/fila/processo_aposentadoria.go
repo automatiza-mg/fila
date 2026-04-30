@@ -131,11 +131,10 @@ func (s *Service) ListProcesso(ctx context.Context, params ListProcessoAposentad
 		return nil, err
 	}
 
-	if len(paa) == 0 {
-		return pagination.NewResult[*ProcessoAposentadoria](nil, params.Page, 0, params.Limit), nil
-	}
-
 	processos := make([]*ProcessoAposentadoria, 0, len(paa))
+	if len(paa) == 0 {
+		return pagination.NewResult(processos, params.Page, totalCount, params.Limit), nil
+	}
 
 	// Busca os números dos processos.
 	for _, pa := range paa {
@@ -179,11 +178,11 @@ func (s *Service) ListHistoricoAnalista(ctx context.Context, analistaID int64, n
 		return nil, err
 	}
 
+	processos := make([]*ProcessoAposentadoria, 0, len(paa))
 	if len(paa) == 0 {
-		return pagination.NewResult[*ProcessoAposentadoria](nil, page, 0, limit), nil
+		return pagination.NewResult(processos, page, totalCount, limit), nil
 	}
 
-	processos := make([]*ProcessoAposentadoria, 0, len(paa))
 	for _, pa := range paa {
 		p, err := s.store.GetProcesso(ctx, pa.ProcessoID)
 		if err != nil {

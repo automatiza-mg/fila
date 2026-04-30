@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/automatiza-mg/fila/internal/analistas"
+	"github.com/automatiza-mg/fila/internal/analista"
 	"github.com/automatiza-mg/fila/internal/aposentadoria"
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/blob"
@@ -56,7 +56,7 @@ type application struct {
 	cfg         *config.Config
 	logger      *slog.Logger
 	queue       *river.Client[pgx.Tx]
-	analistas   *analistas.Service
+	analistas   *analista.Service
 	apos        *aposentadoria.Service
 	auth        *auth.Service
 	diligencias *diligencias.Service
@@ -119,8 +119,8 @@ func run(ctx context.Context) error {
 	proc := processos.New(pool, storage, sei, cache, queue)
 	apos := aposentadoria.New(pool, dl, cache)
 	auth := auth.New(pool, logger, queue)
-	anali := analistas.New(pool, logger, sei, cache)
-	fila := fila.New(pool, queue)
+	anali := analista.New(pool, logger, sei, cache)
+	fila := fila.New(pool, queue, sei)
 	dil := diligencias.New(pool, logger)
 
 	if err := auth.RegisterHook(fila); err != nil {

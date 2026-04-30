@@ -196,6 +196,7 @@ export type SalvarDiligencia = {
 export type ListProcessosAposentadoriaFilters = {
   page?: number;
   numero?: string;
+  status?: StatusProcessoAposentadoria;
 };
 
 export type ListSolicitacoesPrioridadeFilters = {

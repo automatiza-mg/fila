@@ -275,6 +275,9 @@ export class Client {
     if (filters.numero) {
       q.set("numero", filters.numero);
     }
+    if (filters.status) {
+      q.set("status", filters.status);
+    }
     return this.request<Paginated<ProcessoAposentadoria>>(
       `/api/v1/aposentadoria?${q}`,
     );

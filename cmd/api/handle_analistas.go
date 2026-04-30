@@ -6,15 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/automatiza-mg/fila/internal/analistas"
+	"github.com/automatiza-mg/fila/internal/analista"
 	"github.com/automatiza-mg/fila/internal/database"
 	"github.com/automatiza-mg/fila/internal/validator"
 )
-
-var orgaosAllowed = []string{
-	"SEPLAG",
-	"SEE",
-}
 
 type AnalistaCreateRequest struct {
 	SEIUnidadeID string `json:"sei_unidade_id"`
@@ -44,14 +39,15 @@ func (app *application) handleAnalistaCreate(w http.ResponseWriter, r *http.Requ
 	}
 	unidade, unidadeOk := unidadesMap[input.SEIUnidadeID]
 
-	input.Check(validator.PermittedValue(input.Orgao, orgaosAllowed...), "orgao", fmt.Sprintf("Deve ser um dos valores: %s", strings.Join(orgaosAllowed, ", ")))
+	orgaosMsg := fmt.Sprintf("Deve ser um dos valores: %s", strings.Join(analista.AllowedOrgaos, ", "))
+	input.Check(validator.PermittedValue(input.Orgao, analista.AllowedOrgaos...), "orgao", orgaosMsg)
 	input.Check(unidadeOk, "sei_unidade_id", "A unidade informada deve ser válida")
 	if !input.Valid() {
 		app.validationFailed(w, r, input.FieldErrors)
 		return
 	}
 
-	a, err := app.analistas.CreateAnalista(r.Context(), analistas.CreateAnalistaParams{
+	a, err := app.analistas.CreateAnalista(r.Context(), analista.CreateAnalistaParams{
 		UsuarioID:    usuario.ID,
 		SeiUnidadeID: unidade.ID,
 		Orgao:        input.Orgao,
@@ -135,7 +131,7 @@ func (app *application) handleAnalistaRetornar(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	analista, err := app.analistas.GetAnalista(r.Context(), usuario.ID)
+	a, err := app.analistas.GetAnalista(r.Context(), usuario.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, database.ErrNotFound):
@@ -146,7 +142,7 @@ func (app *application) handleAnalistaRetornar(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = app.analistas.RetornarAnalista(r.Context(), analista.UsuarioID)
+	err = app.analistas.RetornarAnalista(r.Context(), a.UsuarioID)
 	if err != nil {
 		app.serverError(w, r, err)
 		return

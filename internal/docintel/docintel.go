@@ -46,9 +46,10 @@ func (a *AzureDocIntel) ExtractText(ctx context.Context, r io.Reader, contentTyp
 	q := make(url.Values)
 	q.Set("locale", "pt-BR")
 	q.Set("api-version", "2024-11-30")
+	q.Set("outputContentFormat", "markdown")
 
 	endpoint := strings.TrimSuffix(a.endpoint, "/")
-	url := fmt.Sprintf("%s/documentintelligence/documentModels/%s:analyze?%s", endpoint, "prebuilt-read", q.Encode())
+	url := fmt.Sprintf("%s/documentintelligence/documentModels/%s:analyze?%s", endpoint, "prebuilt-layout", q.Encode())
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, r)
 	if err != nil {

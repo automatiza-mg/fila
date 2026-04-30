@@ -1,6 +1,7 @@
 <script lang="ts">
   import ArrowElbowUpLeftIcon from "phosphor-svelte/lib/ArrowElbowUpLeftIcon";
   import Pagination from "$lib/components/ui/pagination.svelte";
+  import Select from "$lib/components/ui/select.svelte";
   import { hasPapel } from "$lib/papel";
   import { toast } from "svelte-sonner";
   import { invalidateAll } from "$app/navigation";
@@ -55,22 +56,17 @@
         class="rounded border border-border bg-surface p-2 text-sm outline-none focus-visible:border-secondary focus-visible:ring-3 focus-visible:ring-secondary/50"
       />
       <label for="status-filter" class="text-sm font-medium">Status:</label>
-      <select
+      <Select
         id="status-filter"
         name="status"
-        class="rounded border border-border bg-surface p-2 min-w-30 text-sm outline-none focus-visible:border-secondary focus-visible:ring-3 focus-visible:ring-secondary/50"
+        class="min-w-30"
+        value={data.status}
       >
-        <option value="" selected={data.status === ""}>Todos</option>
-        <option value="pendente" selected={data.status === "pendente"}
-          >Pendente</option
-        >
-        <option value="aprovado" selected={data.status === "aprovado"}
-          >Aprovado</option
-        >
-        <option value="negado" selected={data.status === "negado"}
-          >Negado</option
-        >
-      </select>
+        <option value="">Todos</option>
+        <option value="pendente">Pendente</option>
+        <option value="aprovado">Aprovado</option>
+        <option value="negado">Negado</option>
+      </Select>
       <button
         type="submit"
         class="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
@@ -128,26 +124,16 @@
                 {new Date(solicitacao.criado_em).toLocaleDateString()}
               </td>
               <td class="p-2.5">
-                <select
+                <Select
                   disabled={!isSubsecretario}
-                  class="rounded bg-surface p-2 text-sm border border-border focus-visible:ring-3 outline-none disabled:bg-surface-alt focus-visible:ring-secondary/50 focus-visible:border-secondary w-full"
+                  class="w-full disabled:bg-surface-alt"
+                  value={solicitacao.status}
                   onchange={(e) => handleStatusChange(e, solicitacao.id)}
                 >
-                  <option
-                    value="pendente"
-                    selected={solicitacao.status === "pendente"}
-                    disabled>Pendente</option
-                  >
-                  <option
-                    value="aprovado"
-                    selected={solicitacao.status === "aprovado"}
-                    >Aprovado</option
-                  >
-                  <option
-                    value="negado"
-                    selected={solicitacao.status === "negado"}>Negado</option
-                  >
-                </select>
+                  <option value="pendente" disabled>Pendente</option>
+                  <option value="aprovado">Aprovado</option>
+                  <option value="negado">Negado</option>
+                </Select>
               </td>
             </tr>
           {/each}

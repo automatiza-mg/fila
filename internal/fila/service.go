@@ -7,6 +7,7 @@ import (
 
 	"github.com/automatiza-mg/fila/internal/auth"
 	"github.com/automatiza-mg/fila/internal/database"
+	"github.com/automatiza-mg/fila/internal/sei"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
@@ -20,19 +21,25 @@ type TaskInserter interface {
 	InsertTx(ctx context.Context, tx pgx.Tx, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error)
 }
 
+type SEIService interface {
+	EnviarProcesso(ctx context.Context, protocolo string, unidadeOrigem string, unidadesDestino []string) (*sei.EnviarProcessoResponse, error)
+}
+
 // Service gerencia a fila de processos de aposentadoria.
 type Service struct {
 	pool  *pgxpool.Pool
 	store *database.Store
 	queue TaskInserter
+	sei   SEIService
 }
 
 // New cria uma nova instância de [Service].
-func New(pool *pgxpool.Pool, queue TaskInserter) *Service {
+func New(pool *pgxpool.Pool, queue TaskInserter, sei SEIService) *Service {
 	return &Service{
 		pool:  pool,
 		store: database.New(pool),
 		queue: queue,
+		sei:   sei,
 	}
 }
 

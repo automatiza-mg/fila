@@ -1,4 +1,4 @@
-package analistas
+package analista
 
 import (
 	"context"
